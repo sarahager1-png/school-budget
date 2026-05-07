@@ -10,6 +10,8 @@ import CourierPage from './pages/CourierPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
+import SalariesPage from './pages/SalariesPage.jsx';
+import SimulationsPage from './pages/SimulationsPage.jsx';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -42,9 +44,34 @@ class ErrorBoundary extends Component {
   }
 }
 
-function AppContent() {
-  const { user, currentPage } = useApp();
+function LoadingScreen() {
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center"
+      dir="rtl"
+      style={{ background: 'linear-gradient(135deg, #1E0A3C 0%, #0B3B47 60%, #0FA3B1 100%)' }}
+    >
+      <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-6 overflow-hidden shadow-lg">
+        <img
+          src="/logo.png"
+          alt="לוגו"
+          className="w-full h-full object-contain p-1"
+          onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size:2rem">🏫</span>'; }}
+        />
+      </div>
+      <svg className="animate-spin w-8 h-8 text-white/60 mb-4" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <p className="text-white/60 text-sm">טוען נתונים...</p>
+    </div>
+  );
+}
 
+function AppContent() {
+  const { user, currentPage, loading } = useApp();
+
+  if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
 
   const pages = {
@@ -55,6 +82,8 @@ function AppContent() {
     courier: <CourierPage />,
     reports: <ReportsPage />,
     settings: <SettingsPage />,
+    salaries: <SalariesPage />,
+    simulations: <SimulationsPage />,
     help: <HelpPage />,
   };
 

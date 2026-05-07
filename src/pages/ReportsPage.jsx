@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { Printer } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
   calculateSchoolTotals, generateMonthlyData, generateCategoryData,
@@ -17,6 +17,22 @@ const TABS = [
   { key: 'categories', label: 'קטגוריות' },
   { key: 'summary', label: 'סיכום שנתי' },
 ];
+
+function exportCSV(filename, headers, rows) {
+  const BOM = '﻿';
+  const escape = (v) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))];
+  const blob = new Blob([BOM + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ReportsPage() {
   const { classes, incomeSources, expenses, constants, currentYear } = useApp();
@@ -48,10 +64,66 @@ export default function ReportsPage() {
           <h2 className="text-xl font-bold text-gray-800">דוחות כספיים</h2>
           <p className="text-gray-500 text-sm mt-0.5">{currentYear?.label}</p>
         </div>
-        <button onClick={() => window.print()} className="btn-outline no-print">
-          <Printer size={16} />
-          הדפסה
-        </button>
+        <div className="flex gap-2 no-print">
+          <button
+            onClick={() => {
+              if (activeTab === 'monthly') {
+                exportCSV(
+                  `דוח_חודשי_${currentYear?.year || ''}.csv`,
+                  ['חודש', 'הכנסות', 'הוצאות', 'יתרה'],
+                  monthlyData.map(r => [r.month, r.הכנסות, r.הוצאות, r.יתרה]),
+                );
+              } else if (activeTab === 'classes') {
+                exportCSV(
+                  `דוח_כיתות_${currentYear?.year || ''}.csv`,
+                  ['כיתה', 'תלמידים', 'הכנסה ממשרד', 'הכנסה כוללת', 'הוצאות', 'יתרה'],
+                  totals.classBreakdowns.map(c => [
+                    c.name, c.studentCount,
+                    Math.round(c.budget.ministryIncome),
+                    Math.round(c.budget.totalIncome),
+                    Math.round(c.budget.totalExpenses),
+                    Math.round(c.budget.balance),
+                  ]),
+                );
+              } else if (activeTab === 'categories') {
+                exportCSV(
+                  `דוח_קטגוריות_${currentYear?.year || ''}.csv`,
+                  ['קטגוריה', 'סכום', 'אחוז'],
+                  categoryData.map(item => [
+                    item.name,
+                    item.value,
+                    `${((item.value / totals.totalExpenses) * 100).toFixed(1)}%`,
+                  ]),
+                );
+              } else {
+                exportCSV(
+                  `סיכום_שנתי_${currentYear?.year || ''}.csv`,
+                  ['פריט', 'סכום'],
+                  [
+                    ['הכנסות ממשרד החינוך', Math.round(totals.totalMinistryIncome)],
+                    ['הכנסות לתלמיד', Math.round(totals.totalStudentIncome)],
+                    ['הכנסות נוספות', Math.round(totals.additionalIncome)],
+                    ['סה״כ הכנסות', Math.round(totals.totalIncome)],
+                    ['עלות הוראה בפועל', Math.round(totals.totalClassActualCost)],
+                    ['שכר', Math.round(totals.salaryExpenses)],
+                    ['בניין ותחזוקה', Math.round(totals.buildingExpenses)],
+                    ['פעילויות שוטפות', Math.round(totals.operationExpenses)],
+                    ['סה״כ הוצאות', Math.round(totals.totalExpenses)],
+                    [totals.isDeficit ? 'גירעון' : 'עודף', Math.round(Math.abs(totals.balance))],
+                  ],
+                );
+              }
+            }}
+            className="btn-outline"
+          >
+            <Download size={16} />
+            ייצוא CSV
+          </button>
+          <button onClick={() => window.print()} className="btn-outline">
+            <Printer size={16} />
+            הדפסה
+          </button>
+        </div>
       </div>
 
       {/* Tab Bar */}

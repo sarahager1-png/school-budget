@@ -1,13 +1,13 @@
 import {
   LayoutDashboard, School, TrendingUp, CreditCard,
-  Package, BarChart2, Settings, LogOut, HelpCircle, X,
+  Package, BarChart2, Settings, LogOut, HelpCircle, X, Wallet, FlaskConical,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 import { NAV_ITEMS } from '../../data/constants.js';
 
 const ICONS = {
   LayoutDashboard, School, TrendingUp, CreditCard,
-  Package, BarChart2, Settings, HelpCircle,
+  Package, BarChart2, Settings, HelpCircle, Wallet, FlaskConical,
 };
 
 export default function Sidebar({ onClose }) {
@@ -31,13 +31,13 @@ export default function Sidebar({ onClose }) {
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {school.logoUrl
+            {school?.logoUrl
               ? <img src={school.logoUrl} alt="לוגו" className="w-full h-full object-contain p-0.5" onError={e => { e.target.style.display='none'; }} />
-              : <span className="text-white font-bold text-lg">{school.name?.[0]}</span>
+              : <span className="text-white font-bold text-lg">{school?.name?.[0]}</span>
             }
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-white font-bold text-sm leading-tight truncate">{school.name}</p>
+            <p className="text-white font-bold text-sm leading-tight truncate">{school?.name}</p>
             <p className="text-white/50 text-xs mt-0.5">מערכת תקציב</p>
           </div>
           {/* Close button (mobile drawer only) */}

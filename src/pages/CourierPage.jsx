@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Upload, CheckCircle, Clock, PlayCircle, XCircle, FileText } from 'lucide-react';
+import { Upload, CheckCircle, Clock, PlayCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
+import { supabase, isMockMode } from '../lib/supabase.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { REQUEST_STATUS } from '../data/constants.js';
 
@@ -38,14 +39,51 @@ function StatusStepper({ status }) {
   );
 }
 
-function ReceiptModal({ request, onSave, onClose }) {
+function ReceiptModal({ request, user, onSave, onClose }) {
   const [file, setFile] = useState(null);
   const [notes, setNotes] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
-  const handleUpload = () => {
-    const url = file ? URL.createObjectURL(file) : `receipt-${request.id}-${Date.now()}.pdf`;
-    onSave({ receiptUrl: url, status: 'paid', paidAt: new Date().toISOString().split('T')[0], notes });
-    onClose();
+  const handleUpload = async () => {
+    if (isMockMode) {
+      const url = file ? URL.createObjectURL(file) : `receipt-${request.id}-${Date.now()}.pdf`;
+      onSave({ receiptUrl: url, status: 'paid', paidAt: new Date().toISOString().split('T')[0], notes });
+      onClose();
+      return;
+    }
+
+    if (!file) {
+      setUploadError('נא לבחור קובץ');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError('');
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const path = `${user.schoolId}/receipts/${request.id}-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('school-documents')
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('school-documents')
+        .getPublicUrl(path);
+
+      onSave({
+        receiptUrl: publicUrl,
+        status: 'paid',
+        paidAt: new Date().toISOString().split('T')[0],
+        notes,
+      });
+      onClose();
+    } catch (err) {
+      setUploadError('שגיאה בהעלאת הקובץ: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -53,25 +91,64 @@ function ReceiptModal({ request, onSave, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-gray-800 mb-1">העלאת קבלה</h2>
         <p className="text-gray-500 text-sm mb-5">{request.name} — {formatCurrency(request.amount)}</p>
+
+        {uploadError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-700 text-sm mb-4">
+            {uploadError}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div>
             <label className="label">קובץ קבלה / חשבונית</label>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-400 transition-colors cursor-pointer" onClick={() => document.getElementById('receipt-input').click()}>
+            <div
+              className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-400 transition-colors cursor-pointer"
+              onClick={() => document.getElementById('receipt-input').click()}
+            >
               <Upload size={24} className="mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-500">{file ? file.name : 'לחץ לבחירת קובץ'}</p>
               <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG</p>
             </div>
-            <input id="receipt-input" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setFile(e.target.files[0])} />
+            <input
+              id="receipt-input"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={e => setFile(e.target.files[0])}
+            />
           </div>
           <div>
             <label className="label">הערות</label>
-            <textarea className="input resize-none" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="הערות נוספות..." />
+            <textarea
+              className="input resize-none"
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="הערות נוספות..."
+            />
           </div>
         </div>
+
         <div className="flex gap-3 mt-6">
-          <button onClick={handleUpload} className="btn-primary flex-1 justify-center">
-            <Upload size={14} />
-            העלה וסמן שולם
+          <button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="btn-primary flex-1 justify-center disabled:opacity-60"
+          >
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                מעלה...
+              </span>
+            ) : (
+              <>
+                <Upload size={14} />
+                העלה וסמן שולם
+              </>
+            )}
           </button>
           <button onClick={onClose} className="btn-outline flex-1 justify-center">ביטול</button>
         </div>
@@ -185,10 +262,16 @@ export default function CourierPage() {
                 <span>נוצר: {req.createdAt}</span>
                 {req.paidAt && <span>שולם: {req.paidAt}</span>}
                 {req.receiptUrl && (
-                  <span className="flex items-center gap-1 text-teal-600">
+                  <a
+                    href={req.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-teal-600 hover:text-teal-700"
+                  >
                     <FileText size={12} />
-                    יש קבלה
-                  </span>
+                    צפה בקבלה
+                    <ExternalLink size={10} />
+                  </a>
                 )}
               </div>
 
@@ -237,6 +320,7 @@ export default function CourierPage() {
       {receiptModal && (
         <ReceiptModal
           request={receiptModal}
+          user={user}
           onSave={data => updateExpenseRequest(receiptModal.id, data)}
           onClose={() => setReceiptModal(null)}
         />

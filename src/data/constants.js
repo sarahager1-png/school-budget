@@ -74,13 +74,17 @@ export const ROLES = {
   admin: { label: 'מנהל מערכת', color: 'bg-coral-100 text-coral-700' },
 };
 
+const ALL_ROLES = ['principal', 'admin', 'courier'];
+
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'לוח מחוונים', icon: 'LayoutDashboard', roles: ['principal', 'admin'] },
-  { id: 'classes', label: 'כיתות', icon: 'School', roles: ['principal', 'admin'] },
-  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ['principal', 'admin'] },
-  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: ['principal', 'admin'] },
-  { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ['courier', 'principal', 'admin'] },
-  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ['principal', 'admin'] },
-  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ['principal', 'admin'] },
-  { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ['principal', 'admin', 'courier'] },
+  { id: 'dashboard', label: 'לוח מחוונים', icon: 'LayoutDashboard', roles: ALL_ROLES },
+  { id: 'classes', label: 'כיתות', icon: 'School', roles: ALL_ROLES },
+  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ALL_ROLES },
+  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: ALL_ROLES },
+  { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES },
+  { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: ALL_ROLES },
+  { id: 'simulations', label: 'סימולציות', icon: 'FlaskConical', roles: ALL_ROLES },
+  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES },
+  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES },
+  { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES },
 ];
