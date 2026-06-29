@@ -150,16 +150,24 @@ ALTER TABLE expense_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE receipts ENABLE ROW LEVEL SECURITY;
 
 -- Helper: get current user's school_id
+-- SECURITY DEFINER is REQUIRED: this function is called from the profiles RLS
+-- policy, so its inner SELECT on profiles must bypass RLS — otherwise the policy
+-- re-invokes the function recursively → "stack depth limit exceeded" on login.
 CREATE OR REPLACE FUNCTION get_user_school_id()
-RETURNS UUID LANGUAGE sql STABLE AS $$
+RETURNS UUID LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT school_id FROM profiles WHERE id = auth.uid()
 $$;
 
--- Helper: get current user's role
+-- Helper: get current user's role (SECURITY DEFINER — same reason as above)
 CREATE OR REPLACE FUNCTION get_user_role()
-RETURNS TEXT LANGUAGE sql STABLE AS $$
+RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT role FROM profiles WHERE id = auth.uid()
 $$;
+
+-- Schools: a user may read their own school row (REQUIRED — RLS is enabled on
+-- this table, so without a policy the school name can never load → 406 on login).
+CREATE POLICY "schools_own" ON schools
+  FOR SELECT USING (id = get_user_school_id());
 
 -- Profiles: users see only their own school
 CREATE POLICY "profiles_own_school" ON profiles

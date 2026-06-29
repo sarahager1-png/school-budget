@@ -172,7 +172,8 @@ export default function HelpPage() {
         </ul>
       </div>
 
-      <p className="text-center text-gray-400 text-xs">© 2026 כל הזכויות שמורות לשרה הגר</p>
+      <p className="text-center text-gray-400 text-xs">בנוי ופיתוח: שרה הגר · 0503339770</p>
+      <p className="text-center text-gray-400 text-xs">יעוץ ארגוני | פתרונות דיגיטליים · מהבנת הארגון לפתרון שעובד.</p>
     </div>
   );
 }
