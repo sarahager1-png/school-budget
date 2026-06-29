@@ -102,7 +102,7 @@ function MockLogin({ login }) {
         </div>
 
         <div className="flex justify-center mt-6">
-          <img src="/logo-mefateach.png" alt="מפתח · שרה הגר" style={{ width: 'auto', maxWidth: 140, height: 'auto', objectFit: 'contain', opacity: 0.85 }} />
+          <p className="text-white/50 text-xs font-medium tracking-wide">בנוי ופיתוח: שרה הגר · 0503339770</p>
         </div>
       </div>
     </div>
@@ -273,7 +273,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex justify-center mt-6">
-          <img src="/logo-mefateach.png" alt="מפתח · שרה הגר" style={{ width: 'auto', maxWidth: 140, height: 'auto', objectFit: 'contain', opacity: 0.85 }} />
+          <p className="text-white/50 text-xs font-medium tracking-wide">בנוי ופיתוח: שרה הגר · 0503339770</p>
         </div>
       </div>
     </div>
