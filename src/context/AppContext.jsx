@@ -59,6 +59,8 @@ export function AppProvider({ children }) {
   const [expenses, setExpenses] = useState([]);
   const [expenseRequests, setExpenseRequests] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  // Message shown on the login page after a bounced OAuth login (no profile)
+  const [authNotice, setAuthNotice] = useState('');
 
   // ── Toasts: feedback after every action ─────────────────────
   const [toasts, setToasts] = useState([]);
@@ -112,7 +114,8 @@ export function AppProvider({ children }) {
       .single();
 
     if (!profile) {
-      return { error: profileError || { message: 'המשתמש לא נמצא בטבלת profiles — בדקי שהשורה קיימת ב-Supabase' } };
+      await supabase.auth.signOut();
+      return { error: { message: 'החשבון הזה עדיין לא חובר לבית הספר. פני לשרה הגר · 0503339770 ונחבר אותו מיד.' } };
     }
 
     setUser({
@@ -123,6 +126,8 @@ export function AppProvider({ children }) {
       schoolId: profile.school_id,
       initials: profile.initials,
     });
+    // couriers land on their own screen
+    if (profile.role === 'courier') setCurrentPage('courier');
 
     const [schoolRes, yearsRes, catsRes, usersRes] = await Promise.all([
       supabase.from('schools').select('*').eq('id', profile.school_id).single(),
@@ -164,7 +169,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        loadSupabaseData(session.user).finally(() => setLoading(false));
+        loadSupabaseData(session.user)
+          .then(res => { if (res?.error) setAuthNotice(res.error.message); })
+          .finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -436,7 +443,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      user, login, logout, loading,
+      user, login, logout, loading, authNotice,
       currentPage, navigate,
       school, setSchool, isSimpleMode,
       budgetYears, addBudgetYear, activateBudgetYear,

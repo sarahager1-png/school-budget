@@ -22,7 +22,7 @@ function StatusStepper({ status }) {
           <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
             i <= activeIdx ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-400'
           }`}>
-            {i < activeIdx ? '✓' : i + 1}
+            {i < activeIdx || activeIdx === steps.length - 1 ? '✓' : i + 1}
           </div>
           <div className="flex-1 mx-1">
             <div className={`h-1 rounded-full ${i < activeIdx ? 'bg-teal-500' : 'bg-gray-200'}`} />

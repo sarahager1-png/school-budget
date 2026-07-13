@@ -64,12 +64,20 @@ async function api(method, url, body) {
   return text ? JSON.parse(text) : null;
 }
 
-async function runSql(ref, query, label) {
-  const res = await fetch(`${API}/projects/${ref}/database/query`, {
-    method: 'POST', headers, body: JSON.stringify({ query }),
-  });
-  if (!res.ok) throw new Error(`SQL ${label} נכשל — HTTP ${res.status}: ${(await res.text()).slice(0, 500)}`);
-  console.log(`   ✓ ${label}`);
+// Retries: right after project creation the storage/auth services can lag
+// behind ACTIVE_HEALTHY by a few minutes (learned 14/7/26 — first batch of 7
+// schools all failed on storage.buckets / auth not ready yet).
+async function runSql(ref, query, label, tries = 5) {
+  for (let i = 1; i <= tries; i++) {
+    const res = await fetch(`${API}/projects/${ref}/database/query`, {
+      method: 'POST', headers, body: JSON.stringify({ query }),
+    });
+    if (res.ok) { console.log(`   ✓ ${label}`); return; }
+    const text = await res.text();
+    if (i === tries) throw new Error(`SQL ${label} נכשל — HTTP ${res.status}: ${text.slice(0, 500)}`);
+    console.log(`   … ${label} עדיין לא מוכן (ניסיון ${i}) — ממתין 25 שניות`);
+    await sleep(25000);
+  }
 }
 
 // שנת לימודים נוכחית: ספטמבר→אוגוסט
@@ -172,6 +180,7 @@ async function main() {
     'supabase/migration_add_constants_cols.sql',
     'supabase/migration_salaries.sql',
     'supabase/migration_v2_kind_mode.sql',
+    'supabase/migration_v3_scenarios.sql',
   ];
   for (const f of sqlFiles) {
     let sql = fs.readFileSync(path.join(root, f), 'utf8');
@@ -198,9 +207,18 @@ SCHOOL_NAME=${name}
 `);
   console.log(`   ✓ .env.${slug} + .env.${slug}.local`);
 
-  // 6. Admin user
+  // 6. Admin user — retry while the auth service warms up
   console.log('6) יוצר משתמשת אדמין ראשונה...');
-  execSync(`node scripts/seed-admin.mjs ${slug}`, { stdio: 'inherit' });
+  for (let i = 1; i <= 6; i++) {
+    try {
+      execSync(`node scripts/seed-admin.mjs ${slug}`, { stdio: 'inherit' });
+      break;
+    } catch (e) {
+      if (i === 6) throw new Error('יצירת האדמין נכשלה גם אחרי 6 ניסיונות');
+      console.log(`   … auth עדיין מתעורר (ניסיון ${i}) — ממתין 20 שניות`);
+      await sleep(20000);
+    }
+  }
 
   // 7. Register in config
   config.schools.push({ slug, name, ref, surge, mode });

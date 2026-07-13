@@ -70,18 +70,20 @@ export const ROLES = {
 };
 
 const ALL_ROLES = ['principal', 'admin', 'courier'];
+const MANAGERS = ['principal', 'admin'];
 
 // simpleMode: false ⇒ הפריט מוסתר בבתי ספר במצב "ללא תקציב"
+// שליח רואה רק את המסך שלו + עזרה
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'דף הבית', icon: 'LayoutDashboard', roles: ALL_ROLES, simpleMode: true },
-  { id: 'classes', label: 'כיתות', icon: 'School', roles: ALL_ROLES, simpleMode: true },
-  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ALL_ROLES, simpleMode: true },
-  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: ALL_ROLES, simpleMode: true },
+  { id: 'dashboard', label: 'דף הבית', icon: 'LayoutDashboard', roles: MANAGERS, simpleMode: true },
+  { id: 'classes', label: 'כיתות', icon: 'School', roles: MANAGERS, simpleMode: true },
+  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: MANAGERS, simpleMode: true },
+  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: MANAGERS, simpleMode: true },
   { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES, simpleMode: true },
-  { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: ALL_ROLES, simpleMode: true },
-  { id: 'simulations', label: 'סימולציות', icon: 'FlaskConical', roles: ALL_ROLES, simpleMode: false },
-  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES, simpleMode: true },
-  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES, simpleMode: true },
+  { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: MANAGERS, simpleMode: true },
+  { id: 'simulations', label: 'סימולציות', icon: 'FlaskConical', roles: MANAGERS, simpleMode: false },
+  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: MANAGERS, simpleMode: true },
+  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: MANAGERS, simpleMode: true },
   { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES, simpleMode: true },
 ];
 

@@ -74,8 +74,9 @@ function AppContent() {
   if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
 
-  // simulations are budget-model only
-  const page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
+  // simulations are budget-model only; couriers stay on their own screens
+  let page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
+  if (user.role === 'courier' && !['courier', 'help'].includes(page)) page = 'courier';
 
   const pages = {
     dashboard: <DashboardPage />,

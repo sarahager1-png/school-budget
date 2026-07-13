@@ -1,7 +1,10 @@
-import { useState, useMemo } from 'react';
-import { RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { RotateCcw, Save, FolderOpen, Trash2, Bookmark } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
+import { supabase } from '../lib/supabase.js';
 import { calculateClassBudget, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
+import Modal from '../components/ui/Modal.jsx';
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 
 function NumberInput({ label, value, onChange, min, max, step = 1, unit = '' }) {
   return (
@@ -84,8 +87,44 @@ function calcSimTotals(simClasses, additionalIncome, expenses, simParams) {
   return { totalIncome, totalExpenses, balance };
 }
 
+function SaveScenarioModal({ onSave, onClose }) {
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (!name.trim()) return setError('חסר שם לתרחיש — למשל: תקציב עם כיתה נוספת');
+    onSave(name.trim());
+    onClose();
+  };
+
+  return (
+    <Modal title="שמירת תרחיש" subtitle="התקציב שבנית יישמר ותוכלי לחזור אליו בכל רגע" onClose={onClose} maxWidth="max-w-sm">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-700 text-sm mb-4">{error}</div>
+      )}
+      <div>
+        <label className="label">שם התרחיש</label>
+        <input
+          className="input"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          placeholder="למשל: תקציב עם כיתה נוספת"
+        />
+      </div>
+      <div className="flex gap-3 mt-6">
+        <button onClick={handleSave} className="btn-primary flex-1 justify-center">
+          <Save size={14} />
+          שמור
+        </button>
+        <button onClick={onClose} className="btn-outline flex-1 justify-center">ביטול</button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function SimulationsPage() {
-  const { classes, incomeSources, expenses, constants, currentYear } = useApp();
+  const { classes, incomeSources, expenses, constants, currentYear, user, notify } = useApp();
 
   const currentAdditionalIncome = incomeSources.reduce((s, src) => s + (src.amount || 0), 0);
   const currentOtherExpenses = expenses
@@ -101,6 +140,62 @@ export default function SimulationsPage() {
   const [extraIncome, setExtraIncome] = useState(0);
   const [extraExpense, setExtraExpense] = useState(0);
 
+  // Saved scenarios — the built budget persists per school+year
+  const [scenarios, setScenarios] = useState([]);
+  const [saveModal, setSaveModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [activeScenarioId, setActiveScenarioId] = useState(null);
+
+  useEffect(() => {
+    if (!user?.schoolId || !currentYear?.id) return;
+    supabase.from('budget_scenarios')
+      .select('*')
+      .eq('school_id', user.schoolId)
+      .eq('budget_year_id', currentYear.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setScenarios(data ?? []));
+  }, [user?.schoolId, currentYear?.id]);
+
+  const currentParams = () => ({
+    studentDelta, extraClasses, incomePerStudent, expensePerStudent,
+    ministryRate, ministryGrant, extraIncome, extraExpense,
+  });
+
+  const saveScenario = async (name) => {
+    const { data, error } = await supabase.from('budget_scenarios').insert({
+      school_id: user.schoolId,
+      budget_year_id: currentYear.id,
+      name,
+      params: currentParams(),
+    }).select().single();
+    if (error || !data) return notify('התרחיש לא נשמר — נסי שוב', 'error');
+    setScenarios(prev => [data, ...prev]);
+    setActiveScenarioId(data.id);
+    notify('התרחיש נשמר ✓');
+  };
+
+  const applyScenario = (s) => {
+    const p = s.params || {};
+    setStudentDelta(p.studentDelta ?? 0);
+    setExtraClasses(p.extraClasses ?? 0);
+    setIncomePerStudent(p.incomePerStudent ?? constants.incomePerStudent);
+    setExpensePerStudent(p.expensePerStudent ?? constants.expensePerStudent);
+    setMinistryRate(p.ministryRate ?? constants.ministryHourlyRate);
+    setMinistryGrant(p.ministryGrant ?? constants.ministryGrantPerStudent);
+    setExtraIncome(p.extraIncome ?? 0);
+    setExtraExpense(p.extraExpense ?? 0);
+    setActiveScenarioId(s.id);
+    notify(`"${s.name}" נטען ✓`);
+  };
+
+  const removeScenario = async (id) => {
+    const { error } = await supabase.from('budget_scenarios').delete().eq('id', id);
+    if (error) return notify('המחיקה נכשלה — נסי שוב', 'error');
+    setScenarios(prev => prev.filter(s => s.id !== id));
+    if (activeScenarioId === id) setActiveScenarioId(null);
+    notify('התרחיש נמחק');
+  };
+
   const reset = () => {
     setStudentDelta(0);
     setExtraClasses(0);
@@ -110,6 +205,7 @@ export default function SimulationsPage() {
     setMinistryGrant(constants.ministryGrantPerStudent);
     setExtraIncome(0);
     setExtraExpense(0);
+    setActiveScenarioId(null);
   };
 
   const simParams = useMemo(() => ({
@@ -155,16 +251,63 @@ export default function SimulationsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-gray-800">סימולציות תקציביות</h2>
-          <p className="text-gray-500 text-sm mt-0.5">שנה פרמטרים וראי את ההשפעה על התקציב בזמן אמת</p>
+          <p className="text-gray-500 text-sm mt-0.5">שני פרמטרים, ראי את ההשפעה מיד — ושמרי את התקציב שבנית</p>
         </div>
-        <button onClick={reset} className="btn-outline btn-sm flex-shrink-0">
-          <RotateCcw size={14} />
-          איפוס
-        </button>
+        <div className="flex gap-2 flex-shrink-0">
+          <button onClick={() => setSaveModal(true)} className="btn-primary btn-sm">
+            <Save size={14} />
+            שמירת תרחיש
+          </button>
+          <button onClick={reset} className="btn-outline btn-sm">
+            <RotateCcw size={14} />
+            איפוס
+          </button>
+        </div>
       </div>
+
+      {/* Saved scenarios */}
+      {scenarios.length > 0 && (
+        <div className="card p-4">
+          <h3 className="font-bold text-gray-700 text-sm mb-3 flex items-center gap-2">
+            <Bookmark size={15} className="text-teal-500" />
+            תרחישים שמורים — {currentYear?.label}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {scenarios.map(s => (
+              <div
+                key={s.id}
+                className={`rounded-xl border p-3 flex items-center gap-2 transition-all ${
+                  activeScenarioId === s.id ? 'border-teal-400 bg-teal-50/50' : 'border-gray-200 bg-white'
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 text-sm truncate">{s.name}</p>
+                  <p className="text-xs text-gray-400">{s.created_at?.split('T')[0]}</p>
+                </div>
+                <button
+                  onClick={() => applyScenario(s)}
+                  aria-label={`טעינת ${s.name}`}
+                  title="טעינה"
+                  className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-50 transition-colors"
+                >
+                  <FolderOpen size={16} />
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(s)}
+                  aria-label={`מחיקת ${s.name}`}
+                  title="מחיקה"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Left: Controls */}
@@ -304,6 +447,19 @@ export default function SimulationsPage() {
               </div>
             </div>
           </div>
+
+          {/* Modals */}
+          {saveModal && (
+            <SaveScenarioModal onSave={saveScenario} onClose={() => setSaveModal(false)} />
+          )}
+          {deleteConfirm && (
+            <ConfirmDialog
+              title="מחיקת תרחיש"
+              message={`למחוק את "${deleteConfirm.name}"? לא ניתן לבטל.`}
+              onConfirm={() => removeScenario(deleteConfirm.id)}
+              onClose={() => setDeleteConfirm(null)}
+            />
+          )}
 
           {/* Class breakdown */}
           {classes.length > 0 && (

@@ -37,11 +37,11 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
-  const { login } = useApp();
+  const { login, authNotice } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(authNotice || '');
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showEmail, setShowEmail] = useState(false);

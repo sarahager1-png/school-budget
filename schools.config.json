@@ -23,6 +23,55 @@
       "ref": "ogkwvrerolofujhydhsl",
       "surge": "chabad-ashkelon-budget.surge.sh",
       "mode": "full"
+    },
+    {
+      "slug": "or-akiva",
+      "name": "שלהבות אור עקיבא",
+      "ref": "fqzyouwodkorgrhoulnf",
+      "surge": "chabad-or-akiva-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "jerusalem",
+      "name": "שלהבות ירושלים",
+      "ref": "yzzautohkioeikjoufpb",
+      "surge": "chabad-jerusalem-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "kiryat-bialik",
+      "name": "שלהבות קרית ביאליק",
+      "ref": "qecoccsdkmunowyjzzoc",
+      "surge": "chabad-kiryat-bialik-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "ganei-tikva",
+      "name": "שלהבות גני תקוה",
+      "ref": "spvcflsbjleayhzsknph",
+      "surge": "chabad-ganei-tikva-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "ramat-yishai",
+      "name": "שלהבות רמת ישי",
+      "ref": "bvxoywkqefpnyxvjydpz",
+      "surge": "chabad-ramat-yishai-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "afula",
+      "name": "שלהבות עפולה",
+      "ref": "inwiirkalzcbpnxngqpi",
+      "surge": "chabad-afula-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "herzliya",
+      "name": "שלהבות הרצליה",
+      "ref": "qawlduxrovrodmxpehvv",
+      "surge": "chabad-herzliya-budget.surge.sh",
+      "mode": "full"
     }
   ]
 }

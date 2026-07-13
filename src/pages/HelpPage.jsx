@@ -58,10 +58,16 @@ export default function HelpPage() {
             כל מה שצריך לדעת על המערכת{school?.name ? ` — ${school.name}` : ''}
           </p>
         </div>
-        <a href="/guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline flex-shrink-0">
-          <Printer size={15} />
-          מדריך מלא להדפסה
-        </a>
+        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          <a href="/guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline">
+            <Printer size={15} />
+            מדריך מלא להדפסה
+          </a>
+          <a href="/courier-guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline">
+            <Package size={15} />
+            מדריך לשליח
+          </a>
+        </div>
       </div>
 
       {/* Events Budget Cap — budget mode only */}
@@ -181,7 +187,7 @@ export default function HelpPage() {
           <PageCard icon={Package} color="bg-gold-500" title="בקשות תשלום" desc="מעקב אחרי ביצוע תשלומים: ממתין ← בביצוע ← שולם ← הושלם, כולל העלאת קבלות." />
           <PageCard icon={Wallet} color="bg-pink-500" title="משכורות" desc="רשימת העובדים והמשכורות, וסימון תשלום חודש-חודש עם אסמכתא." />
           {!isSimpleMode && (
-            <PageCard icon={FlaskConical} color="bg-indigo-500" title="סימולציות" desc='בדיקת "מה יקרה אם" — עוד תלמידים? עוד כיתה? המערכת מראה את ההשפעה מיד, בלי לשנות נתונים אמיתיים.' />
+            <PageCard icon={FlaskConical} color="bg-indigo-500" title="סימולציות" desc='בדיקת "מה יקרה אם" — עוד תלמידים? עוד כיתה? רואים את ההשפעה מיד, ואפשר לשמור כל תקציב שבנית כתרחיש ולחזור אליו.' />
           )}
           <PageCard icon={BarChart2} color="bg-blue-500" title="דוחות" desc="דוחות חודשיים וקטגוריות, סיכום שנתי, ייצוא לאקסל והדפסה." />
           <PageCard icon={Settings} color="bg-gray-500" title="הגדרות" desc="פרטי בית הספר, שנות תקציב, קבועים פיננסיים ומשתמשים." />
