@@ -11,9 +11,11 @@ const ICONS = {
 };
 
 export default function Sidebar({ onClose }) {
-  const { user, logout, currentPage, navigate, school } = useApp();
+  const { user, logout, currentPage, navigate, school, isSimpleMode } = useApp();
 
-  const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(user?.role));
+  const visibleItems = NAV_ITEMS.filter(item =>
+    item.roles.includes(user?.role) && (!isSimpleMode || item.simpleMode)
+  );
 
   const handleNavigate = (id) => {
     navigate(id);

@@ -2,7 +2,7 @@ import { LayoutDashboard, School, CreditCard, Package, MoreHorizontal } from 'lu
 import { useApp } from '../../context/AppContext.jsx';
 
 const PRINCIPAL_ITEMS = [
-  { id: 'dashboard', label: 'דשבורד', icon: LayoutDashboard },
+  { id: 'dashboard', label: 'הבית', icon: LayoutDashboard },
   { id: 'classes', label: 'כיתות', icon: School },
   { id: 'expenses', label: 'הוצאות', icon: CreditCard },
   { id: 'courier', label: 'בקשות', icon: Package },

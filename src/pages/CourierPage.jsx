@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Upload, CheckCircle, Clock, PlayCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
+import { Upload, CheckCircle, Clock, PlayCircle, FileText, ExternalLink, Package } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { supabase, isMockMode } from '../lib/supabase.js';
+import { supabase } from '../lib/supabase.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { REQUEST_STATUS } from '../data/constants.js';
+import EmptyState from '../components/ui/EmptyState.jsx';
 
 function StatusStepper({ status }) {
   const steps = [
@@ -46,13 +47,6 @@ function ReceiptModal({ request, user, onSave, onClose }) {
   const [uploadError, setUploadError] = useState('');
 
   const handleUpload = async () => {
-    if (isMockMode) {
-      const url = file ? URL.createObjectURL(file) : `receipt-${request.id}-${Date.now()}.pdf`;
-      onSave({ receiptUrl: url, status: 'paid', paidAt: new Date().toISOString().split('T')[0], notes });
-      onClose();
-      return;
-    }
-
     if (!file) {
       setUploadError('נא לבחור קובץ');
       return;
@@ -311,10 +305,13 @@ export default function CourierPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="card text-center py-16 text-gray-400">
-          <p className="text-xl mb-2">אין בקשות</p>
-          <p className="text-sm">לא נמצאו בקשות תשלום בסטטוס זה</p>
-        </div>
+        <EmptyState
+          icon={Package}
+          title={myRequests.length === 0 ? 'עוד אין בקשות תשלום' : 'אין בקשות בסטטוס זה'}
+          hint={myRequests.length === 0
+            ? 'המנהלת יוצרת בקשות מתוך מסך ההוצאות, והן מופיעות כאן לביצוע — עם מעקב שלב-אחר-שלב.'
+            : 'נסי לבחור סינון אחר למעלה.'}
+        />
       )}
 
       {receiptModal && (

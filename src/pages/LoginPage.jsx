@@ -1,36 +1,8 @@
 ﻿import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { isMockMode, supabase } from '../lib/supabase.js';
+import { supabase } from '../lib/supabase.js';
 
-const MOCK_ROLES = [
-  {
-    key: 'principal',
-    title: 'מנהלת',
-    subtitle: 'ניהול תקציב, כיתות, הכנסות והוצאות',
-    emoji: '👩‍💼',
-    gradient: 'from-purple-500 to-purple-700',
-    bg: 'bg-purple-50 hover:bg-purple-100 border-purple-200',
-    text: 'text-purple-700',
-  },
-  {
-    key: 'courier',
-    title: 'שליח',
-    subtitle: 'ביצוע תשלומים והעלאת קבלות',
-    emoji: '🧑‍💼',
-    gradient: 'from-teal-500 to-teal-700',
-    bg: 'bg-teal-50 hover:bg-teal-100 border-teal-200',
-    text: 'text-teal-700',
-  },
-  {
-    key: 'admin',
-    title: 'מנהל מערכת',
-    subtitle: 'ניהול משתמשים, הגדרות ומערכת',
-    emoji: '🧑‍💻',
-    gradient: 'from-orange-500 to-orange-700',
-    bg: 'bg-orange-50 hover:bg-orange-100 border-orange-200',
-    text: 'text-orange-700',
-  },
-];
+const SCHOOL_NAME = import.meta.env.VITE_SCHOOL_NAME || '';
 
 function LogoCard({ schoolName }) {
   return (
@@ -64,55 +36,8 @@ function GoogleIcon() {
   );
 }
 
-function MockLogin({ login }) {
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      dir="rtl"
-      style={{ background: 'linear-gradient(135deg, #1E0A3C 0%, #0B3B47 60%, #0FA3B1 100%)' }}
-    >
-      <div className="w-full max-w-md">
-        <LogoCard />
-
-        <div className="bg-white rounded-2xl shadow-2xl p-6">
-          <h2 className="text-center text-gray-500 text-sm font-medium mb-5 uppercase tracking-wide">
-            בחרי תפקיד להתחברות
-          </h2>
-          <div className="space-y-3">
-            {MOCK_ROLES.map(role => (
-              <button
-                key={role.key}
-                onClick={() => login(role.key)}
-                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${role.bg}`}
-              >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${role.gradient} flex items-center justify-center text-2xl flex-shrink-0 shadow-md`}>
-                  {role.emoji}
-                </div>
-                <div className="text-right flex-1">
-                  <p className={`font-bold text-base ${role.text}`}>{role.title}</p>
-                  <p className="text-gray-500 text-sm">{role.subtitle}</p>
-                </div>
-                <svg className={`w-5 h-5 ${role.text} rotate-180 flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            ))}
-          </div>
-          <p className="text-center text-gray-400 text-xs mt-5">גרסת הדגמה — ללא צורך בסיסמה</p>
-        </div>
-
-        <div className="flex justify-center mt-6">
-          <p className="text-white/50 text-xs font-medium tracking-wide">בנוי ופיתוח: שרה הגר · 0503339770</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function LoginPage() {
   const { login } = useApp();
-
-  if (isMockMode) return <MockLogin login={login} />;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -164,7 +89,7 @@ export default function LoginPage() {
       style={{ background: 'linear-gradient(135deg, #1E0A3C 0%, #0B3B47 60%, #0FA3B1 100%)' }}
     >
       <div className="w-full max-w-sm">
-        <LogoCard />
+        <LogoCard schoolName={SCHOOL_NAME} />
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">
           <h2 className="text-center text-gray-700 font-bold text-lg mb-1">כניסה למערכת</h2>

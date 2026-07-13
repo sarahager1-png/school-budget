@@ -69,10 +69,13 @@ function LoadingScreen() {
 }
 
 function AppContent() {
-  const { user, currentPage, loading } = useApp();
+  const { user, currentPage, loading, isSimpleMode } = useApp();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
+
+  // simulations are budget-model only
+  const page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
 
   const pages = {
     dashboard: <DashboardPage />,
@@ -89,7 +92,7 @@ function AppContent() {
 
   return (
     <Layout>
-      {pages[currentPage] || <DashboardPage />}
+      {pages[page] || <DashboardPage />}
     </Layout>
   );
 }

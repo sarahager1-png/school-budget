@@ -1,6 +1,6 @@
 // Minimal service worker — enables PWA install + light offline shell.
 // Only handles same-origin GET; Supabase/API calls pass straight through.
-const CACHE = 'mb-budget-v2';
+const CACHE = 'mb-budget-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) =>

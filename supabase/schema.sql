@@ -4,10 +4,12 @@
 -- ============================================================
 
 -- Schools
+-- mode: 'full' = ניהול תקציב מלא | 'simple' = מעקב הכנסות/הוצאות בלבד (ללא תקציב)
 CREATE TABLE schools (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   logo_url TEXT,
+  mode TEXT NOT NULL DEFAULT 'full' CHECK (mode IN ('full', 'simple')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -83,11 +85,14 @@ CREATE TABLE income_sources (
 );
 
 -- Expense Categories
+-- kind: semantic role used by the budget calculations
+--   salary | building | events | equipment | profdev | other
 CREATE TABLE expense_categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT,
+  kind TEXT DEFAULT 'other',
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

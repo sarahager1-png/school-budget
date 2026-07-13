@@ -40,13 +40,8 @@ export const HEBREW_MONTHS = [
   'מאי', 'יוני', 'יולי', 'אוגוסט',
 ];
 
-export const BUDGET_YEAR_LABELS = {
-  2023: 'תשפ"ד',
-  2024: 'תשפ"ה',
-  2025: 'תשפ"ו',
-  2026: 'תשפ"ז',
-  2027: 'תשפ"ח',
-};
+// כלל רשת: הוצאות פעילויות ואירועים עד 1,400 ₪ לתלמיד לשנה
+export const EVENTS_CAP_PER_STUDENT = 1400;
 
 export const REQUEST_STATUS = {
   pending: { label: 'ממתין', color: 'bg-gold-100 text-gold-700', dot: 'bg-gold-500' },
@@ -76,15 +71,27 @@ export const ROLES = {
 
 const ALL_ROLES = ['principal', 'admin', 'courier'];
 
+// simpleMode: false ⇒ הפריט מוסתר בבתי ספר במצב "ללא תקציב"
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'לוח מחוונים', icon: 'LayoutDashboard', roles: ALL_ROLES },
-  { id: 'classes', label: 'כיתות', icon: 'School', roles: ALL_ROLES },
-  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ALL_ROLES },
-  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: ALL_ROLES },
-  { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES },
-  { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: ALL_ROLES },
-  { id: 'simulations', label: 'סימולציות', icon: 'FlaskConical', roles: ALL_ROLES },
-  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES },
-  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES },
-  { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES },
+  { id: 'dashboard', label: 'דף הבית', icon: 'LayoutDashboard', roles: ALL_ROLES, simpleMode: true },
+  { id: 'classes', label: 'כיתות', icon: 'School', roles: ALL_ROLES, simpleMode: true },
+  { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ALL_ROLES, simpleMode: true },
+  { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: ALL_ROLES, simpleMode: true },
+  { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES, simpleMode: true },
+  { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: ALL_ROLES, simpleMode: true },
+  { id: 'simulations', label: 'סימולציות', icon: 'FlaskConical', roles: ALL_ROLES, simpleMode: false },
+  { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES, simpleMode: true },
+  { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES, simpleMode: true },
+  { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES, simpleMode: true },
 ];
+
+export const SCHOOL_MODES = {
+  full: {
+    label: 'ניהול תקציב מלא',
+    hint: 'חישובי תקן משרד החינוך, תקציב לכיתה, סימולציות ודוחות מלאים',
+  },
+  simple: {
+    label: 'מעקב פשוט — ללא תקציב',
+    hint: 'רישום הכנסות והוצאות, בקשות תשלום ומשכורות בלבד, בלי חישובי תקציב',
+  },
+};

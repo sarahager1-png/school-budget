@@ -4,4 +4,3 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://njsanabfbmnaqv
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_jcJExzHaRNNLVojqKzvt5w_DOzlfFxM';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-export const isMockMode = false;

@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, PieChart, Pie, Cell, Sector,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, ArrowLeft } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, ArrowLeft,
+  School, CreditCard, Settings, Package,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
-  calculateSchoolTotals, generateMonthlyData, generateCategoryData,
-  formatCurrency, formatCurrencyFull,
+  calculateSchoolTotals, calculateSimpleTotals, generateMonthlyData, generateCategoryData,
+  categoryTotals, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import { REQUEST_STATUS, CLASS_TYPE } from '../data/constants.js';
 
@@ -54,25 +57,210 @@ function CustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
   );
 }
 
-export default function DashboardPage() {
-  const { classes, incomeSources, expenses, expenseRequests, constants, navigate } = useApp();
+// First-use guidance: shows only while the year is still empty
+function GettingStarted({ navigate, isSimpleMode, hasClasses, hasExpenses }) {
+  const steps = isSimpleMode
+    ? [
+        { done: hasExpenses, label: 'הוסיפי את ההוצאות של בית הספר', page: 'expenses', icon: CreditCard },
+        { done: false, label: 'רשמי מקורות הכנסה (תרומות, עירייה...)', page: 'income', icon: TrendingUp },
+      ]
+    : [
+        { done: false, label: 'בדקי את הקבועים הפיננסיים (תעריפים ותקנים)', page: 'settings', icon: Settings },
+        { done: hasClasses, label: 'הוסיפי את הכיתות ומספרי התלמידים', page: 'classes', icon: School },
+        { done: hasExpenses, label: 'הוסיפי את ההוצאות הכלליות (שכר, בניין...)', page: 'expenses', icon: CreditCard },
+      ];
 
-  const totals = useMemo(
-    () => calculateSchoolTotals(classes, incomeSources, expenses, constants),
-    [classes, incomeSources, expenses, constants],
+  return (
+    <div className="card p-6 border-2 border-teal-200 bg-teal-50/40">
+      <h3 className="font-bold text-gray-800 text-lg mb-1">ברוכה הבאה! 👋</h3>
+      <p className="text-gray-500 text-sm mb-4">שלושה צעדים קטנים והמערכת מוכנה לעבודה:</p>
+      <div className="space-y-2">
+        {steps.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => navigate(s.page)}
+            className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-right transition-all ${
+              s.done ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-teal-300 hover:shadow-sm'
+            }`}
+          >
+            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0 ${
+              s.done ? 'bg-green-500 text-white' : 'bg-teal-100 text-teal-700'
+            }`}>
+              {s.done ? '✓' : i + 1}
+            </span>
+            <span className={`flex-1 text-sm font-medium ${s.done ? 'text-green-700' : 'text-gray-700'}`}>{s.label}</span>
+            <ArrowLeft size={15} className="text-gray-300 flex-shrink-0" />
+          </button>
+        ))}
+      </div>
+    </div>
   );
+}
 
-  const monthlyData = useMemo(() => generateMonthlyData(totals), [totals]);
-  const categoryData = useMemo(() => generateCategoryData(expenses, classes, constants), [expenses, classes, constants]);
-
-  const recentRequests = [...expenseRequests]
+function RecentRequests({ expenseRequests, navigate }) {
+  const recent = [...expenseRequests]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  const formatK = (v) => `₪${(v / 1000).toFixed(0)}K`;
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-800">בקשות תשלום אחרונות</h3>
+        <button
+          onClick={() => navigate('courier')}
+          className="text-teal-600 text-sm flex items-center gap-1 hover:text-teal-700"
+        >
+          <span>כל הבקשות</span>
+          <ArrowLeft size={14} className="rotate-180" />
+        </button>
+      </div>
+      {recent.length === 0 ? (
+        <p className="text-center text-gray-400 text-sm py-6">
+          עוד אין בקשות תשלום. יוצרים בקשה מתוך מסך ההוצאות — ליד כל הוצאה יש כפתור שליחה לשליח.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {recent.map(req => {
+            const st = REQUEST_STATUS[req.status];
+            return (
+              <div key={req.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${st?.dot}`} />
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-800 text-sm truncate">{req.name}</p>
+                    <p className="text-gray-400 text-xs">{req.createdAt}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className={`badge ${st?.color}`}>{st?.label}</span>
+                  <span className="font-bold text-gray-700 text-sm">{formatCurrency(req.amount)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// "ללא תקציב": הכנסות מול הוצאות בפועל, בלי מודל תקציב
+function SimpleDashboard() {
+  const { incomeSources, expenses, expenseCategories, expenseRequests, navigate } = useApp();
+
+  const totals = useMemo(() => calculateSimpleTotals(incomeSources, expenses), [incomeSources, expenses]);
+  const catData = useMemo(
+    () => categoryTotals(expenses, expenseCategories).filter(c => c.value > 0),
+    [expenses, expenseCategories],
+  );
+  const pendingCount = expenseRequests.filter(r => r.status === 'pending').length;
+  const isEmpty = expenses.length === 0 && incomeSources.length === 0;
 
   return (
     <div className="space-y-6">
+      {isEmpty && (
+        <GettingStarted navigate={navigate} isSimpleMode hasClasses={false} hasExpenses={expenses.length > 0} />
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="סה״כ הכנסות שנתיות" value={formatCurrency(totals.totalIncome)} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false} />
+        <StatCard label="סה״כ הוצאות שנתיות" value={formatCurrency(totals.totalExpenses)} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true} />
+        <StatCard label="יתרה שנתית" value={formatCurrencyFull(totals.balance)} sub={totals.isDeficit ? 'גירעון' : 'עודף'} color={totals.isDeficit ? 'red' : 'green'} icon={DollarSign} isNegative={totals.isDeficit} />
+        <StatCard label="בקשות ממתינות" value={pendingCount} sub="בקשות תשלום לטיפול" color="gold" icon={Package} />
+      </div>
+
+      {catData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="card p-5">
+            <h3 className="font-bold text-gray-800 mb-4">חלוקת הוצאות</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={catData} cx="50%" cy="50%" outerRadius={85} dataKey="value" labelLine={false} label={CustomLabel}>
+                  {catData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Pie>
+                <Tooltip
+                  formatter={(v, n, p) => [`₪${v.toLocaleString('he-IL')}`, p.payload.name]}
+                  contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-1.5 mt-2">
+              {catData.map((d, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.fill }} />
+                    <span className="text-gray-600 truncate">{d.name}</span>
+                  </div>
+                  <span className="font-medium text-gray-700">{formatCurrency(d.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card p-5">
+            <h3 className="font-bold text-gray-800 mb-4">מקורות הכנסה</h3>
+            {incomeSources.length === 0 ? (
+              <p className="text-center text-gray-400 text-sm py-6">עוד לא נרשמו מקורות הכנסה</p>
+            ) : (
+              <div className="space-y-3">
+                {incomeSources.map(src => (
+                  <div key={src.id}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium text-gray-700">{formatCurrency(src.amount)}</span>
+                      <span className="text-gray-500 truncate">{src.name}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-teal-500"
+                        style={{ width: `${Math.min(100, (src.amount / (totals.totalIncome || 1)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <RecentRequests expenseRequests={expenseRequests} navigate={navigate} />
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { isSimpleMode } = useApp();
+  return isSimpleMode ? <SimpleDashboard /> : <FullDashboard />;
+}
+
+function FullDashboard() {
+  const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, navigate } = useApp();
+
+  const totals = useMemo(
+    () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
+    [classes, incomeSources, expenses, constants, expenseCategories],
+  );
+
+  const monthlyData = useMemo(() => generateMonthlyData(totals), [totals]);
+  const categoryData = useMemo(
+    () => generateCategoryData(expenses, classes, constants, expenseCategories),
+    [expenses, classes, constants, expenseCategories],
+  );
+
+  const formatK = (v) => `₪${(v / 1000).toFixed(0)}K`;
+  const isEmpty = classes.length === 0 && expenses.length === 0;
+
+  return (
+    <div className="space-y-6">
+      {isEmpty && (
+        <GettingStarted
+          navigate={navigate}
+          isSimpleMode={false}
+          hasClasses={classes.length > 0}
+          hasExpenses={expenses.length > 0}
+        />
+      )}
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -102,7 +290,7 @@ export default function DashboardPage() {
         <StatCard
           label="פער עלות הוראה"
           value={formatCurrency(totals.ministryGap)}
-          sub="פועל פחות משרד"
+          sub="כמה ההוראה עולה מעבר למימון המשרד"
           color="purple"
           icon={AlertCircle}
           isNegative={true}
@@ -149,7 +337,7 @@ export default function DashboardPage() {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(v) => [`₪${v.toLocaleString('he-IL')}`, '']}
+                formatter={(v, n, p) => [`₪${v.toLocaleString('he-IL')}`, p.payload.name]}
                 contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
               />
             </PieChart>
@@ -175,7 +363,7 @@ export default function DashboardPage() {
           <h3 className="font-bold text-gray-800 mb-4">מקורות הכנסה</h3>
           <div className="space-y-3">
             {[
-              { label: 'משרד החינוך', value: totals.totalMinistryIncome, color: '#0FA3B1' },
+              { label: 'משרד החינוך', value: totals.totalMinistryIncome + totals.totalMinistryGrantIncome, color: '#0FA3B1' },
               { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome, color: '#7B2D8B' },
               { label: 'הכנסות נוספות', value: totals.additionalIncome, color: '#F5C518' },
             ].map(item => (
@@ -188,7 +376,7 @@ export default function DashboardPage() {
                   <div
                     className="h-full rounded-full"
                     style={{
-                      width: `${Math.min(100, (item.value / totals.totalIncome) * 100)}%`,
+                      width: `${Math.min(100, (item.value / (totals.totalIncome || 1)) * 100)}%`,
                       background: item.color,
                     }}
                   />
@@ -210,79 +398,51 @@ export default function DashboardPage() {
               <ArrowLeft size={14} className="rotate-180" />
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-right py-2 text-gray-500 font-medium">כיתה</th>
-                  <th className="text-center py-2 text-gray-500 font-medium">תלמידים</th>
-                  <th className="text-center py-2 text-gray-500 font-medium">סוג</th>
-                  <th className="text-left py-2 text-gray-500 font-medium">יתרה</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {totals.classBreakdowns.slice(0, 6).map(cls => {
-                  const typeInfo = CLASS_TYPE[cls.budget.type];
-                  const isDeficit = cls.budget.isDeficit;
-                  return (
-                    <tr key={cls.id} className="hover:bg-gray-50">
-                      <td className="py-2 font-medium text-gray-800">{cls.name}</td>
-                      <td className="py-2 text-center">
-                        <span className="flex items-center justify-center gap-1 text-gray-600">
-                          <Users size={12} />
-                          {cls.studentCount}
-                        </span>
-                      </td>
-                      <td className="py-2 text-center">
-                        <span className={`badge ${typeInfo?.color}`}>{typeInfo?.label}</span>
-                      </td>
-                      <td className="py-2 text-left">
-                        <span className={`font-bold ${isDeficit ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatCurrencyFull(cls.budget.balance)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {totals.classBreakdowns.length === 0 ? (
+            <p className="text-center text-gray-400 text-sm py-6">עוד לא הוגדרו כיתות לשנה זו</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-right py-2 text-gray-500 font-medium">כיתה</th>
+                    <th className="text-center py-2 text-gray-500 font-medium">תלמידים</th>
+                    <th className="text-center py-2 text-gray-500 font-medium">סוג</th>
+                    <th className="text-left py-2 text-gray-500 font-medium">יתרה</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {totals.classBreakdowns.slice(0, 6).map(cls => {
+                    const typeInfo = CLASS_TYPE[cls.budget.type];
+                    const isDeficit = cls.budget.isDeficit;
+                    return (
+                      <tr key={cls.id} className="hover:bg-gray-50">
+                        <td className="py-2 font-medium text-gray-800">{cls.name}</td>
+                        <td className="py-2 text-center">
+                          <span className="flex items-center justify-center gap-1 text-gray-600">
+                            <Users size={12} />
+                            {cls.studentCount}
+                          </span>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className={`badge ${typeInfo?.color}`}>{typeInfo?.label}</span>
+                        </td>
+                        <td className="py-2 text-left">
+                          <span className={`font-bold ${isDeficit ? 'text-red-600' : 'text-green-600'}`}>
+                            {formatCurrencyFull(cls.budget.balance)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Recent Expense Requests */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-800">בקשות תשלום אחרונות</h3>
-          <button
-            onClick={() => navigate('courier')}
-            className="text-teal-600 text-sm flex items-center gap-1 hover:text-teal-700"
-          >
-            <span>כל הבקשות</span>
-            <ArrowLeft size={14} className="rotate-180" />
-          </button>
-        </div>
-        <div className="space-y-2">
-          {recentRequests.map(req => {
-            const st = REQUEST_STATUS[req.status];
-            return (
-              <div key={req.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${st?.dot}`} />
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-800 text-sm truncate">{req.name}</p>
-                    <p className="text-gray-400 text-xs">{req.createdAt}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className={`badge ${st?.color}`}>{st?.label}</span>
-                  <span className="font-bold text-gray-700 text-sm">{formatCurrency(req.amount)}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <RecentRequests expenseRequests={expenseRequests} navigate={navigate} />
     </div>
   );
 }

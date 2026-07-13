@@ -7,11 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:mazkeret": "vite build --mode mazkeret",
-    "build:ashkelon": "vite build --mode ashkelon",
-    "deploy:mazkeret": "vite build --mode mazkeret && surge dist chabad-mazkeret-budget.surge.sh",
-    "deploy:ashkelon": "vite build --mode ashkelon && surge dist chabad-ashkelon-budget.surge.sh",
-    "seed:ashkelon": "node scripts/seed-admin.mjs ashkelon"
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:all": "node scripts/deploy.mjs --all",
+    "add-school": "node scripts/add-school.mjs",
+    "seed-admin": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",

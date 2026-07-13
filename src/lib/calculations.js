@@ -1,4 +1,5 @@
 import { DEFAULT_CONSTANTS, HEBREW_MONTHS } from '../data/constants.js';
+import { kindMap } from './categoryKinds.js';
 
 export function getClassType(studentCount, constants = DEFAULT_CONSTANTS) {
   if (studentCount >= constants.fullClassStudentThreshold) return 'full';
@@ -61,7 +62,15 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   };
 }
 
-export function calculateSchoolTotals(classes, incomeSources, expenses, constants = DEFAULT_CONSTANTS) {
+// Sum annual amounts of the expense line items whose category has the given kind
+export function sumByKind(expenses, categories, kind) {
+  const kinds = kindMap(categories);
+  return expenses
+    .filter(e => kinds[e.categoryId] === kind)
+    .reduce((sum, e) => sum + annualAmount(e), 0);
+}
+
+export function calculateSchoolTotals(classes, incomeSources, expenses, constants = DEFAULT_CONSTANTS, categories = []) {
   const classBreakdowns = classes.map(c => ({
     ...c,
     budget: calculateClassBudget(c, constants),
@@ -78,21 +87,21 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);
   const totalProfDev = classBreakdowns.reduce((sum, c) => sum + c.budget.profDevExpense, 0);
 
-  // Calculate "other" expenses (non-class-based)
-  const salaryExpenses = expenses
-    .filter(e => e.categoryId === 'ec1')
-    .reduce((sum, e) => sum + annualAmount(e), 0);
-  const buildingExpenses = expenses
-    .filter(e => e.categoryId === 'ec2')
-    .reduce((sum, e) => sum + annualAmount(e), 0);
-  const operationExpenses = expenses
-    .filter(e => e.categoryId === 'ec3')
-    .reduce((sum, e) => sum + annualAmount(e), 0);
-  const summerExpenses = expenses
-    .filter(e => e.categoryId === 'ec5')
+  // General (non-class) expense line items, grouped by semantic kind.
+  // profdev line items are EXCLUDED from the total — professional development
+  // is already computed per class (professionalDevPerClass × classes).
+  const kinds = kindMap(categories);
+  const sumKind = (kind) => expenses
+    .filter(e => kinds[e.categoryId] === kind)
     .reduce((sum, e) => sum + annualAmount(e), 0);
 
-  const otherExpenses = salaryExpenses + buildingExpenses + operationExpenses + summerExpenses;
+  const salaryExpenses = sumKind('salary');
+  const buildingExpenses = sumKind('building');
+  const operationExpenses = sumKind('events');
+  const summerExpenses = sumKind('equipment');
+  const miscExpenses = sumKind('other');
+
+  const otherExpenses = salaryExpenses + buildingExpenses + operationExpenses + summerExpenses + miscExpenses;
   const totalExpenses = totalClassActualCost + totalStudentExpenses + totalProfDev + otherExpenses;
   const balance = totalIncome - totalExpenses;
   const ministryGap = totalClassActualCost - totalMinistryIncome;
@@ -112,12 +121,22 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
     buildingExpenses,
     operationExpenses,
     summerExpenses,
+    miscExpenses,
     otherExpenses,
     totalExpenses,
     balance,
     ministryGap,
     isDeficit: balance < 0,
   };
+}
+
+// "ללא תקציב" mode: plain totals — income sources vs. expense line items,
+// no ministry/class budget model at all.
+export function calculateSimpleTotals(incomeSources, expenses) {
+  const totalIncome = incomeSources.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const totalExpenses = expenses.reduce((sum, e) => sum + annualAmount(e), 0);
+  const balance = totalIncome - totalExpenses;
+  return { totalIncome, totalExpenses, balance, isDeficit: balance < 0 };
 }
 
 export function annualAmount(expense) {
@@ -142,32 +161,44 @@ export function generateMonthlyData(totals) {
   });
 }
 
-export function generateCategoryData(expenses, classes, constants = DEFAULT_CONSTANTS) {
-  const totalClassActualCost = classes.reduce((sum, c) => {
-    const b = calculateClassBudget(c, constants);
-    return sum + b.actualOperatingCost;
-  }, 0);
-  const totalStudentExpenses = classes.reduce((sum, c) => {
-    const b = calculateClassBudget(c, constants);
-    return sum + b.studentExpenses;
-  }, 0);
-  const totalProfDev = classes.reduce((sum, c) => {
-    const b = calculateClassBudget(c, constants);
-    return sum + b.profDevExpense;
-  }, 0);
+const WORD_COLORS = {
+  purple: '#7B2D8B', teal: '#0FA3B1', coral: '#F07A20',
+  gold: '#F5C518', blue: '#3B82F6', green: '#10B981',
+};
+const FALLBACK_COLORS = ['#0FA3B1', '#7B2D8B', '#F07A20', '#F5C518', '#10B981', '#6366F1', '#EC4899', '#64748B'];
 
-  const salaries = expenses.filter(e => e.categoryId === 'ec1').reduce((s, e) => s + annualAmount(e), 0);
-  const building = expenses.filter(e => e.categoryId === 'ec2').reduce((s, e) => s + annualAmount(e), 0);
-  const ops = expenses.filter(e => e.categoryId === 'ec3').reduce((s, e) => s + annualAmount(e), 0);
+export function categoryColor(cat, i = 0) {
+  if (cat?.color?.startsWith('#')) return cat.color;
+  return WORD_COLORS[cat?.color] || FALLBACK_COLORS[i % FALLBACK_COLORS.length];
+}
 
-  return [
+// Pie data: computed class costs + real per-category line-item totals.
+// profdev-kind categories are skipped (already computed per class).
+export function generateCategoryData(expenses, classes, constants = DEFAULT_CONSTANTS, categories = []) {
+  const totalClassActualCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).actualOperatingCost, 0);
+  const totalStudentExpenses = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).studentExpenses, 0);
+  const totalProfDev = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).profDevExpense, 0);
+
+  const rows = [
     { name: 'עלות הוראה', value: totalClassActualCost, fill: '#0FA3B1' },
     { name: 'הוצאות תלמידים', value: totalStudentExpenses, fill: '#7B2D8B' },
-    { name: 'שכר', value: salaries, fill: '#F07A20' },
-    { name: 'בניין', value: building, fill: '#F5C518' },
-    { name: 'פעילויות', value: ops, fill: '#10B981' },
     { name: 'פיתוח מקצועי', value: totalProfDev, fill: '#6366F1' },
+    ...categoryTotals(expenses, categories).filter(c => c.kind !== 'profdev'),
   ];
+  return rows.filter(r => r.value > 0);
+}
+
+// Per-category line-item totals with display color (both modes)
+export function categoryTotals(expenses, categories = []) {
+  return categories.map((cat, i) => ({
+    id: cat.id,
+    name: cat.name,
+    kind: cat.kind,
+    fill: categoryColor(cat, i),
+    value: expenses
+      .filter(e => e.categoryId === cat.id)
+      .reduce((sum, e) => sum + annualAmount(e), 0),
+  }));
 }
 
 export function formatCurrency(amount) {

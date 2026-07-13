@@ -2,9 +2,12 @@ import { useState } from 'react';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 import BottomNav from './BottomNav.jsx';
+import ToastHost from '../ui/Toast.jsx';
+import { useApp } from '../../context/AppContext.jsx';
 
 export default function Layout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { toasts } = useApp();
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50" dir="rtl">
@@ -33,6 +36,9 @@ export default function Layout({ children }) {
 
       {/* Mobile Bottom Navigation */}
       <BottomNav onMoreClick={() => setDrawerOpen(true)} />
+
+      {/* Action feedback */}
+      <ToastHost toasts={toasts} />
     </div>
   );
 }

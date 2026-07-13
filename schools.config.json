@@ -1,0 +1,29 @@
+{
+  "comment": "רישום מרכזי של כל בתי הספר במערכת התקציב. add-school.mjs מוסיף לכאן אוטומטית.",
+  "supabaseOrg": "bpmawvmbfammiktearuv",
+  "region": "eu-central-1",
+  "schools": [
+    {
+      "slug": "raanana",
+      "name": "בית חינוך רעננה",
+      "ref": "jhtajcejwxfcksvjzkzx",
+      "surge": "chabad-raanana-budget.surge.sh",
+      "mode": "full",
+      "note": "הוקם לפני התשתית הרב-בית-ספרית; להשלים .env.raanana לפני פריסה ראשונה"
+    },
+    {
+      "slug": "mazkeret",
+      "name": "שלהבות מזכרת בתיה",
+      "ref": "njsanabfbmnaqvwraqdh",
+      "surge": "chabad-mazkeret-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "ashkelon",
+      "name": "שלהבות אשקלון",
+      "ref": "ogkwvrerolofujhydhsl",
+      "surge": "chabad-ashkelon-budget.surge.sh",
+      "mode": "full"
+    }
+  ]
+}

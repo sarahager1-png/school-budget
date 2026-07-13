@@ -6,17 +6,9 @@ import {
 import { Printer, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
-  calculateSchoolTotals, generateMonthlyData, generateCategoryData,
-  calculateClassBudget, formatCurrency, formatCurrencyFull,
+  calculateSchoolTotals, calculateSimpleTotals, generateMonthlyData, generateCategoryData,
+  categoryTotals, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
-import { HEBREW_MONTHS } from '../data/constants.js';
-
-const TABS = [
-  { key: 'monthly', label: 'חודשי' },
-  { key: 'classes', label: 'כיתות' },
-  { key: 'categories', label: 'קטגוריות' },
-  { key: 'summary', label: 'סיכום שנתי' },
-];
 
 function exportCSV(filename, headers, rows) {
   const BOM = '﻿';
@@ -35,89 +27,110 @@ function exportCSV(filename, headers, rows) {
 }
 
 export default function ReportsPage() {
-  const { classes, incomeSources, expenses, constants, currentYear } = useApp();
+  const { classes, incomeSources, expenses, expenseCategories, constants, currentYear, isSimpleMode } = useApp();
+
+  const TABS = [
+    { key: 'monthly', label: 'חודשי' },
+    ...(isSimpleMode ? [] : [{ key: 'classes', label: 'כיתות' }]),
+    { key: 'categories', label: 'קטגוריות' },
+    { key: 'summary', label: 'סיכום שנתי' },
+  ];
   const [activeTab, setActiveTab] = useState('monthly');
 
   const totals = useMemo(
-    () => calculateSchoolTotals(classes, incomeSources, expenses, constants),
-    [classes, incomeSources, expenses, constants],
+    () => isSimpleMode
+      ? calculateSimpleTotals(incomeSources, expenses)
+      : calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
+    [isSimpleMode, classes, incomeSources, expenses, constants, expenseCategories],
   );
 
   const monthlyData = useMemo(() => generateMonthlyData(totals), [totals]);
-  const categoryData = useMemo(() => generateCategoryData(expenses, classes, constants), [expenses, classes, constants]);
+
+  const categoryData = useMemo(
+    () => isSimpleMode
+      ? categoryTotals(expenses, expenseCategories).filter(c => c.value > 0)
+      : generateCategoryData(expenses, classes, constants, expenseCategories),
+    [isSimpleMode, expenses, classes, constants, expenseCategories],
+  );
 
   const classChartData = useMemo(() =>
-    totals.classBreakdowns.map(c => ({
+    isSimpleMode ? [] : totals.classBreakdowns.map(c => ({
       name: c.name,
       הכנסות: Math.round(c.budget.totalIncome),
       הוצאות: Math.round(c.budget.totalExpenses),
     })),
-    [totals],
+    [isSimpleMode, totals],
   );
 
-  const COLORS = ['#0FA3B1', '#7B2D8B', '#F07A20', '#F5C518', '#10B981', '#6366F1'];
+  const handleExport = () => {
+    if (activeTab === 'monthly') {
+      exportCSV(
+        `דוח_חודשי_${currentYear?.year || ''}.csv`,
+        ['חודש', 'הכנסות', 'הוצאות', 'יתרה'],
+        monthlyData.map(r => [r.month, r.הכנסות, r.הוצאות, r.יתרה]),
+      );
+    } else if (activeTab === 'classes' && !isSimpleMode) {
+      exportCSV(
+        `דוח_כיתות_${currentYear?.year || ''}.csv`,
+        ['כיתה', 'תלמידים', 'הכנסה ממשרד', 'הכנסה כוללת', 'הוצאות', 'יתרה'],
+        totals.classBreakdowns.map(c => [
+          c.name, c.studentCount,
+          Math.round(c.budget.ministryIncome),
+          Math.round(c.budget.totalIncome),
+          Math.round(c.budget.totalExpenses),
+          Math.round(c.budget.balance),
+        ]),
+      );
+    } else if (activeTab === 'categories') {
+      exportCSV(
+        `דוח_קטגוריות_${currentYear?.year || ''}.csv`,
+        ['קטגוריה', 'סכום', 'אחוז'],
+        categoryData.map(item => [
+          item.name,
+          item.value,
+          `${((item.value / (totals.totalExpenses || 1)) * 100).toFixed(1)}%`,
+        ]),
+      );
+    } else {
+      const rows = isSimpleMode
+        ? [
+            ...incomeSources.map(s => [`הכנסה — ${s.name}`, Math.round(s.amount)]),
+            ['סה״כ הכנסות', Math.round(totals.totalIncome)],
+            ...categoryData.map(c => [`הוצאות — ${c.name}`, Math.round(c.value)]),
+            ['סה״כ הוצאות', Math.round(totals.totalExpenses)],
+            [totals.isDeficit ? 'גירעון' : 'עודף', Math.round(Math.abs(totals.balance))],
+          ]
+        : [
+            ['הכנסות ממשרד החינוך', Math.round(totals.totalMinistryIncome + totals.totalMinistryGrantIncome)],
+            ['הכנסות לתלמיד', Math.round(totals.totalStudentIncome)],
+            ['הכנסות נוספות', Math.round(totals.additionalIncome)],
+            ['סה״כ הכנסות', Math.round(totals.totalIncome)],
+            ['עלות הוראה בפועל', Math.round(totals.totalClassActualCost)],
+            ['הוצאות תלמידים', Math.round(totals.totalStudentExpenses)],
+            ['פיתוח מקצועי', Math.round(totals.totalProfDev)],
+            ['שכר', Math.round(totals.salaryExpenses)],
+            ['בניין ותחזוקה', Math.round(totals.buildingExpenses)],
+            ['פעילויות ואירועים', Math.round(totals.operationExpenses)],
+            ['ציוד ותשתיות', Math.round(totals.summerExpenses)],
+            ['אחר', Math.round(totals.miscExpenses)],
+            ['סה״כ הוצאות', Math.round(totals.totalExpenses)],
+            [totals.isDeficit ? 'גירעון' : 'עודף', Math.round(Math.abs(totals.balance))],
+          ];
+      exportCSV(`סיכום_שנתי_${currentYear?.year || ''}.csv`, ['פריט', 'סכום'], rows);
+    }
+  };
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-gray-800">דוחות כספיים</h2>
           <p className="text-gray-500 text-sm mt-0.5">{currentYear?.label}</p>
         </div>
         <div className="flex gap-2 no-print">
-          <button
-            onClick={() => {
-              if (activeTab === 'monthly') {
-                exportCSV(
-                  `דוח_חודשי_${currentYear?.year || ''}.csv`,
-                  ['חודש', 'הכנסות', 'הוצאות', 'יתרה'],
-                  monthlyData.map(r => [r.month, r.הכנסות, r.הוצאות, r.יתרה]),
-                );
-              } else if (activeTab === 'classes') {
-                exportCSV(
-                  `דוח_כיתות_${currentYear?.year || ''}.csv`,
-                  ['כיתה', 'תלמידים', 'הכנסה ממשרד', 'הכנסה כוללת', 'הוצאות', 'יתרה'],
-                  totals.classBreakdowns.map(c => [
-                    c.name, c.studentCount,
-                    Math.round(c.budget.ministryIncome),
-                    Math.round(c.budget.totalIncome),
-                    Math.round(c.budget.totalExpenses),
-                    Math.round(c.budget.balance),
-                  ]),
-                );
-              } else if (activeTab === 'categories') {
-                exportCSV(
-                  `דוח_קטגוריות_${currentYear?.year || ''}.csv`,
-                  ['קטגוריה', 'סכום', 'אחוז'],
-                  categoryData.map(item => [
-                    item.name,
-                    item.value,
-                    `${((item.value / totals.totalExpenses) * 100).toFixed(1)}%`,
-                  ]),
-                );
-              } else {
-                exportCSV(
-                  `סיכום_שנתי_${currentYear?.year || ''}.csv`,
-                  ['פריט', 'סכום'],
-                  [
-                    ['הכנסות ממשרד החינוך', Math.round(totals.totalMinistryIncome)],
-                    ['הכנסות לתלמיד', Math.round(totals.totalStudentIncome)],
-                    ['הכנסות נוספות', Math.round(totals.additionalIncome)],
-                    ['סה״כ הכנסות', Math.round(totals.totalIncome)],
-                    ['עלות הוראה בפועל', Math.round(totals.totalClassActualCost)],
-                    ['שכר', Math.round(totals.salaryExpenses)],
-                    ['בניין ותחזוקה', Math.round(totals.buildingExpenses)],
-                    ['פעילויות שוטפות', Math.round(totals.operationExpenses)],
-                    ['סה״כ הוצאות', Math.round(totals.totalExpenses)],
-                    [totals.isDeficit ? 'גירעון' : 'עודף', Math.round(Math.abs(totals.balance))],
-                  ],
-                );
-              }
-            }}
-            className="btn-outline"
-          >
+          <button onClick={handleExport} className="btn-outline">
             <Download size={16} />
-            ייצוא CSV
+            ייצוא לאקסל
           </button>
           <button onClick={() => window.print()} className="btn-outline">
             <Printer size={16} />
@@ -127,12 +140,12 @@ export default function ReportsPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto no-print">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.key ? 'tab-active' : 'tab-inactive'}`}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.key ? 'tab-active' : 'tab-inactive'}`}
           >
             {tab.label}
           </button>
@@ -201,8 +214,8 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Classes Tab */}
-      {activeTab === 'classes' && (
+      {/* Classes Tab — budget mode only */}
+      {activeTab === 'classes' && !isSimpleMode && (
         <div className="space-y-4">
           <div className="card p-5">
             <h3 className="font-bold text-gray-800 mb-4">הכנסות מול הוצאות לפי כיתה</h3>
@@ -262,19 +275,23 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="card p-5">
             <h3 className="font-bold text-gray-800 mb-4">חלוקת הוצאות לפי קטגוריה</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" labelLine={false}>
-                  {categoryData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(v, n, p) => [`₪${v.toLocaleString('he-IL')}`, p.payload.name]}
-                  contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {categoryData.length === 0 ? (
+              <p className="text-center text-gray-400 text-sm py-10">עוד אין הוצאות לשנה זו</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" labelLine={false}>
+                    {categoryData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v, n, p) => [`₪${v.toLocaleString('he-IL')}`, p.payload.name]}
+                    contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           <div className="card p-5">
@@ -293,13 +310,13 @@ export default function ReportsPage() {
                     <div
                       className="h-full rounded-full"
                       style={{
-                        width: `${(item.value / totals.totalExpenses) * 100}%`,
+                        width: `${(item.value / (totals.totalExpenses || 1)) * 100}%`,
                         background: item.fill,
                       }}
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5 text-left">
-                    {((item.value / totals.totalExpenses) * 100).toFixed(1)}%
+                    {((item.value / (totals.totalExpenses || 1)) * 100).toFixed(1)}%
                   </p>
                 </div>
               ))}
@@ -311,42 +328,59 @@ export default function ReportsPage() {
       {/* Yearly Summary Tab */}
       {activeTab === 'summary' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'סה״כ כיתות', value: classes.length, unit: 'כיתות', color: 'teal' },
-              { label: 'סה״כ תלמידים', value: totals.totalStudents, unit: 'תלמידים', color: 'purple' },
-              { label: 'הכנסה ממשרד', value: formatCurrency(totals.totalMinistryIncome), unit: '', color: 'teal' },
-              { label: 'פער עלות הוראה', value: formatCurrency(totals.ministryGap), unit: '', color: 'coral' },
-            ].map(item => (
-              <div key={item.label} className="card p-4">
-                <p className="text-gray-500 text-xs mb-1">{item.label}</p>
-                <p className={`font-black text-xl text-${item.color}-600`}>{item.value}</p>
-                {item.unit && <p className="text-xs text-gray-400">{item.unit}</p>}
-              </div>
-            ))}
-          </div>
+          {!isSimpleMode && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'סה״כ כיתות', value: classes.length, unit: 'כיתות', color: 'text-teal-600' },
+                { label: 'סה״כ תלמידים', value: totals.totalStudents, unit: 'תלמידים', color: 'text-purple-600' },
+                { label: 'הכנסה ממשרד', value: formatCurrency(totals.totalMinistryIncome), unit: '', color: 'text-teal-600' },
+                { label: 'פער עלות הוראה', value: formatCurrency(totals.ministryGap), unit: '', color: 'text-coral-600' },
+              ].map(item => (
+                <div key={item.label} className="card p-4">
+                  <p className="text-gray-500 text-xs mb-1">{item.label}</p>
+                  <p className={`font-black text-xl ${item.color}`}>{item.value}</p>
+                  {item.unit && <p className="text-xs text-gray-400">{item.unit}</p>}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="card p-6">
             <h3 className="font-bold text-gray-800 text-lg mb-5">סיכום כספי שנתי — {currentYear?.label}</h3>
             <div className="space-y-3">
-              {[
-                { label: 'הכנסות ממשרד החינוך', value: totals.totalMinistryIncome, type: 'income' },
-                { label: 'הכנסות לתלמיד', value: totals.totalStudentIncome, type: 'income' },
-                { label: 'הכנסות נוספות (תרומות, עירייה וכו׳)', value: totals.additionalIncome, type: 'income' },
-                { label: null },
-                { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },
-                { label: null },
-                { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost, type: 'expense' },
-                { label: 'הוצאות לתלמיד', value: totals.totalStudentExpenses, type: 'expense' },
-                { label: 'פיתוח מקצועי', value: totals.totalProfDev, type: 'expense' },
-                { label: 'שכר', value: totals.salaryExpenses, type: 'expense' },
-                { label: 'בניין ותחזוקה', value: totals.buildingExpenses, type: 'expense' },
-                { label: 'פעילויות שוטפות', value: totals.operationExpenses, type: 'expense' },
-                { label: null },
-                { label: 'סה״כ הוצאות', value: totals.totalExpenses, type: 'total-expense' },
-                { label: null },
-                { label: totals.isDeficit ? 'גירעון שנתי' : 'עודף שנתי', value: totals.balance, type: 'balance' },
-              ].map((row, i) =>
+              {(isSimpleMode
+                ? [
+                    ...incomeSources.map(s => ({ label: s.name, value: s.amount, type: 'income' })),
+                    { label: null },
+                    { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },
+                    { label: null },
+                    ...categoryData.map(c => ({ label: c.name, value: c.value, type: 'expense' })),
+                    { label: null },
+                    { label: 'סה״כ הוצאות', value: totals.totalExpenses, type: 'total-expense' },
+                    { label: null },
+                    { label: totals.isDeficit ? 'גירעון שנתי' : 'עודף שנתי', value: totals.balance, type: 'balance' },
+                  ]
+                : [
+                    { label: 'הכנסות ממשרד החינוך', value: totals.totalMinistryIncome + totals.totalMinistryGrantIncome, type: 'income' },
+                    { label: 'הכנסות לתלמיד', value: totals.totalStudentIncome, type: 'income' },
+                    { label: 'הכנסות נוספות (תרומות, עירייה וכו׳)', value: totals.additionalIncome, type: 'income' },
+                    { label: null },
+                    { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },
+                    { label: null },
+                    { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost, type: 'expense' },
+                    { label: 'הוצאות לתלמיד', value: totals.totalStudentExpenses, type: 'expense' },
+                    { label: 'פיתוח מקצועי', value: totals.totalProfDev, type: 'expense' },
+                    { label: 'שכר', value: totals.salaryExpenses, type: 'expense' },
+                    { label: 'בניין ותחזוקה', value: totals.buildingExpenses, type: 'expense' },
+                    { label: 'פעילויות ואירועים', value: totals.operationExpenses, type: 'expense' },
+                    { label: 'ציוד ותשתיות', value: totals.summerExpenses, type: 'expense' },
+                    ...(totals.miscExpenses > 0 ? [{ label: 'אחר', value: totals.miscExpenses, type: 'expense' }] : []),
+                    { label: null },
+                    { label: 'סה״כ הוצאות', value: totals.totalExpenses, type: 'total-expense' },
+                    { label: null },
+                    { label: totals.isDeficit ? 'גירעון שנתי' : 'עודף שנתי', value: totals.balance, type: 'balance' },
+                  ]
+              ).map((row, i) =>
                 !row.label ? (
                   <div key={i} className="border-t border-gray-100 my-1" />
                 ) : (
