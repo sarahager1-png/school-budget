@@ -8,8 +8,7 @@
       "name": "בית חינוך רעננה",
       "ref": "jhtajcejwxfcksvjzkzx",
       "surge": "chabad-raanana-budget.surge.sh",
-      "mode": "full",
-      "note": "הוקם לפני התשתית הרב-בית-ספרית; להשלים .env.raanana לפני פריסה ראשונה"
+      "mode": "full"
     },
     {
       "slug": "mazkeret",
