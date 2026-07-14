@@ -253,7 +253,7 @@ export default function SimulationsPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">סימולציות תקציביות</h2>
+          <h2 className="text-xl font-bold text-gray-800">סימולציית תקציב — שערוך</h2>
           <p className="text-gray-500 text-sm mt-0.5">שני פרמטרים, ראי את ההשפעה מיד — ושמרי את התקציב שבנית</p>
         </div>
         <div className="flex gap-2 flex-shrink-0">

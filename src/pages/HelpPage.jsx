@@ -188,7 +188,7 @@ export default function HelpPage() {
           <PageCard icon={Package} color="bg-gold-500" title="בקשות תשלום" desc="מעקב אחרי ביצוע תשלומים: ממתין ← בביצוע ← שולם ← הושלם, כולל העלאת קבלות." />
           <PageCard icon={Wallet} color="bg-pink-500" title="משכורות" desc="רשימת העובדים והמשכורות, וסימון תשלום חודש-חודש עם אסמכתא." />
           {!isSimpleMode && (
-            <PageCard icon={FlaskConical} color="bg-indigo-500" title="סימולציות" desc='בדיקת "מה יקרה אם" — עוד תלמידים? עוד כיתה? רואים את ההשפעה מיד, ואפשר לשמור כל תקציב שבנית כתרחיש ולחזור אליו.' />
+            <PageCard icon={FlaskConical} color="bg-indigo-500" title="שערוך תקציב (סימולציה)" desc='בדיקת "מה יקרה אם" — עוד תלמידים? עוד כיתה? רואים את ההשפעה מיד, ואפשר לשמור כל תקציב שבנית כתרחיש ולחזור אליו.' />
           )}
           <PageCard icon={BarChart2} color="bg-blue-500" title="דוחות" desc="דוחות חודשיים וקטגוריות, סיכום שנתי, ייצוא לאקסל והדפסה." />
           <PageCard icon={Settings} color="bg-gray-500" title="הגדרות" desc="פרטי בית הספר, שנות תקציב, קבועים פיננסיים ומשתמשים." />
