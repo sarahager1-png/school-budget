@@ -209,7 +209,7 @@ export default function CourierPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
         {FILTERS.map(f => (
           <button
             key={f.key}

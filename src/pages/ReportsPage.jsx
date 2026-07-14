@@ -140,7 +140,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto no-print">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full no-print">
         {TABS.map(tab => (
           <button
             key={tab.key}

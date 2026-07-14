@@ -324,7 +324,7 @@ export default function SettingsPage() {
         <p className="text-gray-500 text-sm mt-0.5">ניהול מערכת ותצורה</p>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
         {availableTabs.map(tab => (
           <button
             key={tab.key}

@@ -244,7 +244,7 @@ export default function SalariesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
         {[
           { key: 'monthly', label: 'תשלום חודשי', icon: Calendar },
           { key: 'employees', label: 'עובדים', icon: Users },

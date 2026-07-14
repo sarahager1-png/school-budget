@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 
 const SCHOOL_NAME = import.meta.env.VITE_SCHOOL_NAME || '';
+// לוגו לפי מותג בית הספר: שלהבות (ברירת מחדל) או סמל הרשת בלבד (בתי "בית חינוך").
+const LOGO_SRC = import.meta.env.VITE_LOGO || '/logo.png';
 // כפתור Google מוצג רק בבתי ספר שה-provider חובר להם (VITE_GOOGLE_AUTH=1),
 // אחרת לחיצה עליו מקבלת שגיאת "provider is not enabled" גולמית מהשרת.
 const GOOGLE_ENABLED = import.meta.env.VITE_GOOGLE_AUTH === '1';
@@ -12,8 +14,8 @@ function LogoCard({ schoolName }) {
     <div className="text-center mb-8">
       <div className="bg-white rounded-2xl mb-4 shadow-lg px-5 py-4">
         <img
-          src="/logo.png"
-          alt="שלהבות חב״ד"
+          src={LOGO_SRC}
+          alt={schoolName || 'רשת חינוך חב״ד'}
           className="w-full h-auto max-h-16 object-contain mx-auto"
           onError={e => {
             e.target.style.display = 'none';

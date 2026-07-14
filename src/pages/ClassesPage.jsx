@@ -164,7 +164,7 @@ export default function ClassesPage() {
 
       {/* Filter Tabs — budget mode only */}
       {!isSimpleMode && classes.length > 0 && (
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto">
+        <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
           {FILTERS.map(f => (
             <button
               key={f.key}
