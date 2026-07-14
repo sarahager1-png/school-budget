@@ -183,6 +183,7 @@ export default function HelpPage() {
           <PageCard icon={TrendingUp} color="bg-green-500" title="הכנסות" desc={isSimpleMode
             ? 'רישום כל מקורות ההכנסה: תרומות, עירייה, הורים, אירועים.'
             : 'הכנסות משרד החינוך מחושבות אוטומטית לפי הכיתות; כאן מוסיפים הכנסות נוספות.'} />
+          <PageCard icon={Wallet} color="bg-teal-600" title="גבייה" desc="מעקב שכר לימוד: מייבאים את רשימת התלמידים מאקסל, רושמים כל תשלום שנכנס — ורואים מיד מי שילם, מי חלקית ומה נותר לגבות." />
           <PageCard icon={CreditCard} color="bg-coral-500" title="הוצאות" desc="רישום כל הוצאה לפי קטגוריה. מכל הוצאה אפשר לשלוח בקשת תשלום לשליח." />
           <PageCard icon={Package} color="bg-gold-500" title="בקשות תשלום" desc="מעקב אחרי ביצוע תשלומים: ממתין ← בביצוע ← שולם ← הושלם, כולל העלאת קבלות." />
           <PageCard icon={Wallet} color="bg-pink-500" title="משכורות" desc="רשימת העובדים והמשכורות, וסימון תשלום חודש-חודש עם אסמכתא." />

@@ -1,13 +1,13 @@
 import {
   LayoutDashboard, School, TrendingUp, CreditCard,
-  Package, BarChart2, Settings, LogOut, HelpCircle, X, Wallet, FlaskConical,
+  Package, BarChart2, Settings, LogOut, HelpCircle, X, Wallet, FlaskConical, HandCoins,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 import { NAV_ITEMS } from '../../data/constants.js';
 
 const ICONS = {
   LayoutDashboard, School, TrendingUp, CreditCard,
-  Package, BarChart2, Settings, HelpCircle, Wallet, FlaskConical,
+  Package, BarChart2, Settings, HelpCircle, Wallet, FlaskConical, HandCoins,
 };
 
 export default function Sidebar({ onClose }) {

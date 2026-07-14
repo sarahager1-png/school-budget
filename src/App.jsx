@@ -12,6 +12,7 @@ import SettingsPage from './pages/SettingsPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
 import SalariesPage from './pages/SalariesPage.jsx';
 import SimulationsPage from './pages/SimulationsPage.jsx';
+import TuitionPage from './pages/TuitionPage.jsx';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -82,6 +83,7 @@ function AppContent() {
     dashboard: <DashboardPage />,
     classes: <ClassesPage />,
     income: <IncomePage />,
+    tuition: <TuitionPage />,
     expenses: <ExpensesPage />,
     courier: <CourierPage />,
     reports: <ReportsPage />,

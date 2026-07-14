@@ -399,6 +399,25 @@ export function AppProvider({ children }) {
 
   // ── Constants ────────────────────────────────────────────────
 
+  // שכר מנהלת: ממלאים פעם אחת בהגדרות ← נרשם/מתעדכן אוטומטית
+  // כהוצאה חודשית בקטגוריית השכר (ונספר ×12 בכל התחשיבים).
+  const syncPrincipalSalaryExpense = async (monthlyAmount) => {
+    if (!monthlyAmount || monthlyAmount <= 0) return;
+    const salaryCat = expenseCategories.find(c => c.kind === 'salary');
+    if (!salaryCat) return;
+    const existing = expenses.find(e => e.name === 'שכר מנהלת');
+    if (existing) {
+      if (existing.amount === monthlyAmount && existing.period === 'monthly') return;
+      await updateExpense(existing.id, { ...existing, amount: monthlyAmount, period: 'monthly' });
+    } else {
+      await addExpense({
+        categoryId: salaryCat.id, name: 'שכר מנהלת', amount: monthlyAmount,
+        period: 'monthly', isRecurring: true, status: 'approved',
+        notes: 'מתעדכן אוטומטית מההגדרות',
+      });
+    }
+  };
+
   const setConstants = async (newConstants) => {
     setConstantsState(newConstants);
     if (!currentYear) return;
@@ -417,6 +436,7 @@ export function AppProvider({ children }) {
       ? await supabase.from('financial_constants').update(dbData).eq('id', existing.id)
       : await supabase.from('financial_constants').insert(dbData);
     if (error) return saveFailed(error);
+    await syncPrincipalSalaryExpense(newConstants.principalMonthlySalary);
     notify('הקבועים נשמרו ✓');
   };
 

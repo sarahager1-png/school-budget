@@ -181,6 +181,7 @@ async function main() {
     'supabase/migration_salaries.sql',
     'supabase/migration_v2_kind_mode.sql',
     'supabase/migration_v3_scenarios.sql',
+    'supabase/migration_v4_tuition.sql',
   ];
   for (const f of sqlFiles) {
     let sql = fs.readFileSync(path.join(root, f), 'utf8');
