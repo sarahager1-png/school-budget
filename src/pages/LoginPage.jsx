@@ -3,6 +3,9 @@ import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 
 const SCHOOL_NAME = import.meta.env.VITE_SCHOOL_NAME || '';
+// כפתור Google מוצג רק בבתי ספר שה-provider חובר להם (VITE_GOOGLE_AUTH=1),
+// אחרת לחיצה עליו מקבלת שגיאת "provider is not enabled" גולמית מהשרת.
+const GOOGLE_ENABLED = import.meta.env.VITE_GOOGLE_AUTH === '1';
 
 function LogoCard({ schoolName }) {
   return (
@@ -93,7 +96,9 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">
           <h2 className="text-center text-gray-700 font-bold text-lg mb-1">כניסה למערכת</h2>
-          <p className="text-center text-gray-400 text-sm mb-5">התחברי עם חשבון Google שלך</p>
+          <p className="text-center text-gray-400 text-sm mb-5">
+            {GOOGLE_ENABLED ? 'התחברי עם חשבון Google שלך' : 'התחברי עם האימייל והסיסמה שקיבלת'}
+          </p>
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm text-center mb-4">
@@ -101,31 +106,35 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Google — primary */}
-          <button
-            onClick={handleGoogle}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl py-3 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {googleLoading ? (
-              <svg className="animate-spin w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <GoogleIcon />
-            )}
-            המשך עם Google
-          </button>
+          {/* Google — רק בבתי ספר שה-provider חובר להם */}
+          {GOOGLE_ENABLED && (
+            <>
+              <button
+                onClick={handleGoogle}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl py-3 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {googleLoading ? (
+                  <svg className="animate-spin w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <GoogleIcon />
+                )}
+                המשך עם Google
+              </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="h-px bg-gray-200 flex-1" />
-            <span className="text-gray-400 text-xs">או</span>
-            <div className="h-px bg-gray-200 flex-1" />
-          </div>
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-px bg-gray-200 flex-1" />
+                <span className="text-gray-400 text-xs">או</span>
+                <div className="h-px bg-gray-200 flex-1" />
+              </div>
+            </>
+          )}
 
-          {!showEmail ? (
+          {!showEmail && GOOGLE_ENABLED ? (
             <button
               onClick={() => setShowEmail(true)}
               className="w-full text-center text-sm text-gray-500 hover:text-gray-700 font-medium transition"
