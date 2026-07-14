@@ -49,7 +49,9 @@ export default function LoginPage() {
   const [error, setError] = useState(authNotice || '');
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showEmail, setShowEmail] = useState(false);
+  // שדות האימייל+סיסמה מוצגים ישר (הדרך הבטוחה שעובדת בכל בית ספר);
+  // כפתור Google נשאר כאופציה נוספת מעליהם.
+  const [showEmail, setShowEmail] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogle = async () => {
@@ -99,7 +101,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-6">
           <h2 className="text-center text-gray-700 font-bold text-lg mb-1">כניסה למערכת</h2>
           <p className="text-center text-gray-400 text-sm mb-5">
-            {GOOGLE_ENABLED ? 'התחברי עם חשבון Google שלך' : 'התחברי עם האימייל והסיסמה שקיבלת'}
+            {GOOGLE_ENABLED ? 'התחברי עם Google, או עם האימייל והסיסמה שקיבלת' : 'התחברי עם האימייל והסיסמה שקיבלת'}
           </p>
 
           {error && (
