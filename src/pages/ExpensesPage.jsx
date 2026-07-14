@@ -277,11 +277,11 @@ export default function ExpensesPage() {
         <>
           {/* Mobile: cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map(exp => {
+            {filtered.map((exp, i) => {
               const cat = categoryMap[exp.categoryId];
               const st = EXPENSE_STATUS[exp.status];
               return (
-                <div key={exp.id} className="card p-4">
+                <div key={exp.id} className="card p-4 spring-enter" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-800">{exp.name}</p>

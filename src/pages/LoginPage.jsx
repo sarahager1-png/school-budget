@@ -86,7 +86,7 @@ export default function LoginPage() {
     <div
       className="min-h-screen flex items-center justify-center p-4"
       dir="rtl"
-      style={{ background: 'linear-gradient(135deg, #1E0A3C 0%, #0B3B47 60%, #0FA3B1 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #1A0B35 0%, #3D2570 60%, #00B4CC 100%)' }}
     >
       <div className="w-full max-w-sm">
         <LogoCard schoolName={SCHOOL_NAME} />

@@ -13,8 +13,9 @@ import {
   categoryTotals, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import { REQUEST_STATUS, CLASS_TYPE } from '../data/constants.js';
+import CountUp from '../components/ui/CountUp.jsx';
 
-function StatCard({ label, value, sub, color, icon: Icon, isNegative }) {
+function StatCard({ label, value, rawValue, format, sub, color, icon: Icon, isNegative, index = 0 }) {
   const colors = {
     teal: { bg: 'bg-teal-50', border: 'border-teal-200', icon: 'bg-teal-500', text: 'text-teal-600' },
     purple: { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'bg-purple-500', text: 'text-purple-600' },
@@ -26,7 +27,7 @@ function StatCard({ label, value, sub, color, icon: Icon, isNegative }) {
   const c = colors[color] || colors.teal;
 
   return (
-    <div className={`card p-5 border-r-4 ${c.border}`}>
+    <div className={`card p-5 border-r-4 ${c.border} spring-enter`} style={{ animationDelay: `${index * 70}ms` }}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl ${c.icon} flex items-center justify-center`}>
           <Icon size={20} className="text-white" />
@@ -38,7 +39,11 @@ function StatCard({ label, value, sub, color, icon: Icon, isNegative }) {
         )}
       </div>
       <p className="text-gray-500 text-sm mb-1">{label}</p>
-      <p className={`text-2xl font-black ${isNegative ? 'text-red-600' : 'text-gray-800'}`}>{value}</p>
+      <p className={`text-2xl font-black ${isNegative ? 'text-red-600' : 'text-gray-800'}`}>
+        {rawValue !== undefined
+          ? <CountUp to={rawValue} format={format} delay={index * 70} />
+          : value}
+      </p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
@@ -163,10 +168,10 @@ function SimpleDashboard() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="סה״כ הכנסות שנתיות" value={formatCurrency(totals.totalIncome)} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false} />
-        <StatCard label="סה״כ הוצאות שנתיות" value={formatCurrency(totals.totalExpenses)} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true} />
-        <StatCard label="יתרה שנתית" value={formatCurrencyFull(totals.balance)} sub={totals.isDeficit ? 'גירעון' : 'עודף'} color={totals.isDeficit ? 'red' : 'green'} icon={DollarSign} isNegative={totals.isDeficit} />
-        <StatCard label="בקשות ממתינות" value={pendingCount} sub="בקשות תשלום לטיפול" color="gold" icon={Package} />
+        <StatCard index={0} label="סה״כ הכנסות שנתיות" rawValue={totals.totalIncome} format={formatCurrency} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false} />
+        <StatCard index={1} label="סה״כ הוצאות שנתיות" rawValue={totals.totalExpenses} format={formatCurrency} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true} />
+        <StatCard index={2} label="יתרה שנתית" rawValue={totals.balance} format={formatCurrencyFull} sub={totals.isDeficit ? 'גירעון' : 'עודף'} color={totals.isDeficit ? 'red' : 'green'} icon={DollarSign} isNegative={totals.isDeficit} />
+        <StatCard index={3} label="בקשות ממתינות" rawValue={pendingCount} format={n => n} sub="בקשות תשלום לטיפול" color="gold" icon={Package} />
       </div>
 
       {catData.length > 0 && (
@@ -264,32 +269,40 @@ function FullDashboard() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
+          index={0}
           label="סה״כ הכנסות שנתיות"
-          value={formatCurrency(totals.totalIncome)}
+          rawValue={totals.totalIncome}
+          format={formatCurrency}
           sub={`${totals.totalStudents} תלמידים`}
           color="teal"
           icon={TrendingUp}
           isNegative={false}
         />
         <StatCard
+          index={1}
           label="סה״כ הוצאות שנתיות"
-          value={formatCurrency(totals.totalExpenses)}
+          rawValue={totals.totalExpenses}
+          format={formatCurrency}
           sub={`${classes.length} כיתות`}
           color="coral"
           icon={TrendingDown}
           isNegative={true}
         />
         <StatCard
+          index={2}
           label="יתרה שנתית"
-          value={formatCurrencyFull(totals.balance)}
+          rawValue={totals.balance}
+          format={formatCurrencyFull}
           sub={totals.isDeficit ? 'גירעון' : 'עודף'}
           color={totals.isDeficit ? 'red' : 'green'}
           icon={DollarSign}
           isNegative={totals.isDeficit}
         />
         <StatCard
+          index={3}
           label="פער עלות הוראה"
-          value={formatCurrency(totals.ministryGap)}
+          rawValue={totals.ministryGap}
+          format={formatCurrency}
           sub="כמה ההוראה עולה מעבר למימון המשרד"
           color="purple"
           icon={AlertCircle}
@@ -312,7 +325,7 @@ function FullDashboard() {
                 contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
               />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
-              <Bar dataKey="הכנסות" fill="#0FA3B1" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="הכנסות" fill="#00B4CC" radius={[3, 3, 0, 0]} />
               <Bar dataKey="הוצאות" fill="#F07A20" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -363,8 +376,8 @@ function FullDashboard() {
           <h3 className="font-bold text-gray-800 mb-4">מקורות הכנסה</h3>
           <div className="space-y-3">
             {[
-              { label: 'משרד החינוך', value: totals.totalMinistryIncome + totals.totalMinistryGrantIncome, color: '#0FA3B1' },
-              { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome, color: '#7B2D8B' },
+              { label: 'משרד החינוך', value: totals.totalMinistryIncome + totals.totalMinistryGrantIncome, color: '#00B4CC' },
+              { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome, color: '#4B2E83' },
               { label: 'הכנסות נוספות', value: totals.additionalIncome, color: '#F5C518' },
             ].map(item => (
               <div key={item.label}>

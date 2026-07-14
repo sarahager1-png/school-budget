@@ -189,11 +189,11 @@ export default function ClassesPage() {
         <>
           {/* Mobile: cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map(cls => {
+            {filtered.map((cls, i) => {
               const typeInfo = CLASS_TYPE[cls.budget.type];
               const isExp = expanded === cls.id;
               return (
-                <div key={cls.id} className="card p-4">
+                <div key={cls.id} className="card p-4 spring-enter" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
                   <div className="flex items-start justify-between gap-2">
                     <button className="flex-1 min-w-0 text-right" onClick={() => setExpanded(isExp ? null : cls.id)}>
                       <p className="font-bold text-gray-800">{cls.name}</p>

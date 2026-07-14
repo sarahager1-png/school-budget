@@ -7,34 +7,41 @@
 
   body {
     font-family: 'Heebo', system-ui, sans-serif;
-    background-color: #F0F4F8;
-    color: #1E293B;
+    background-color: #F8F7FB; /* off-white בגוון סגול — רקע הרשת */
+    color: #1A0B35;
   }
 }
 
 @layer components {
+  /* גרדיאנט הזהות: כהה-סגול של הרשת */
   .sidebar-bg {
-    background: linear-gradient(180deg, #1E0A3C 0%, #0B3B47 100%);
+    background: linear-gradient(180deg, #1A0B35 0%, #2D1B5C 55%, #3D2570 100%);
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100;
+    @apply bg-white rounded-[20px] border border-purple-100 transition-shadow duration-200;
+    box-shadow: 0 2px 12px rgba(75, 46, 131, .10), 0 1px 3px rgba(75, 46, 131, .06);
+  }
+  .card:hover {
+    box-shadow: 0 8px 28px rgba(75, 46, 131, .16), 0 2px 8px rgba(75, 46, 131, .09);
   }
 
   .btn {
-    @apply inline-flex items-center gap-2 font-medium py-2 px-4 rounded-lg transition-all cursor-pointer text-sm;
+    @apply inline-flex items-center gap-2 font-semibold py-2 px-4 rounded-xl transition-all duration-150 cursor-pointer text-sm active:scale-[0.97];
   }
 
   .btn-primary {
-    @apply btn bg-teal-500 hover:bg-teal-600 text-white;
+    @apply btn bg-purple-500 hover:bg-purple-600 text-white;
+    box-shadow: 0 4px 14px rgba(75, 46, 131, .30);
   }
 
   .btn-secondary {
-    @apply btn bg-purple-500 hover:bg-purple-600 text-white;
+    @apply btn bg-teal-500 hover:bg-teal-600 text-white;
+    box-shadow: 0 4px 14px rgba(0, 180, 204, .28);
   }
 
   .btn-outline {
-    @apply btn border border-gray-200 hover:bg-gray-50 text-gray-700;
+    @apply btn border border-purple-100 hover:bg-purple-50 text-gray-700;
   }
 
   .btn-ghost {
@@ -45,8 +52,9 @@
     @apply btn bg-red-500 hover:bg-red-600 text-white;
   }
 
+  /* mobile-first: אצבע נוחה בנייד, קומפקטי בדסקטופ */
   .btn-sm {
-    @apply py-1 px-3 text-xs;
+    @apply py-2 px-3 text-xs md:py-1.5;
   }
 
   .badge {
@@ -54,7 +62,7 @@
   }
 
   .input {
-    @apply w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white;
+    @apply w-full border border-purple-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 bg-white;
   }
 
   .label {
@@ -62,7 +70,7 @@
   }
 
   .tab-active {
-    @apply bg-white text-teal-600 shadow-sm font-semibold;
+    @apply bg-white text-purple-600 shadow-sm font-semibold;
   }
 
   .tab-inactive {
@@ -72,14 +80,14 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F1F5F9; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-track { background: #F0EDF8; }
+::-webkit-scrollbar-thumb { background: #C9BDE4; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A794D0; }
 
 /* Print styles */
 @media print {
   .no-print { display: none !important; }
-  .card { box-shadow: none; border: 1px solid #e2e8f0; }
+  .card { box-shadow: none; border: 1px solid #E2DCF0; }
 }
 
 /* Animations */
@@ -88,6 +96,13 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .fade-in { animation: fadeIn 0.2s ease-out; }
+
+/* כניסה קפיצית לרשימות — ה"חוק" של שפת העיצוב */
+@keyframes springUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.spring-enter { animation: springUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 /* Mobile touch tap highlight */
 * { -webkit-tap-highlight-color: transparent; }

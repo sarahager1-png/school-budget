@@ -33,7 +33,7 @@ class ErrorBoundary extends Component {
           </pre>
           <button
             onClick={() => this.setState({ error: null })}
-            style={{ marginTop: 16, padding: '8px 20px', background: '#0FA3B1', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
+            style={{ marginTop: 16, padding: '8px 20px', background: '#00B4CC', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
           >
             נסה שוב
           </button>
@@ -49,7 +49,7 @@ function LoadingScreen() {
     <div
       className="min-h-screen flex flex-col items-center justify-center"
       dir="rtl"
-      style={{ background: 'linear-gradient(135deg, #1E0A3C 0%, #0B3B47 60%, #0FA3B1 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #1A0B35 0%, #3D2570 60%, #00B4CC 100%)' }}
     >
       <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-6 overflow-hidden shadow-lg">
         <img

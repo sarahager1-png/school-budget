@@ -28,7 +28,7 @@ export default function BottomNav({ onMoreClick }) {
           <button
             key={item.id}
             onClick={() => navigate(item.id)}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 relative transition-colors ${active ? 'text-teal-600' : 'text-gray-400 active:text-gray-600'}`}
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 relative transition-colors ${active ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'}`}
           >
             <div className="relative">
               <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
@@ -39,7 +39,7 @@ export default function BottomNav({ onMoreClick }) {
               )}
             </div>
             <span className={`text-xs ${active ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
-            {active && <span className="absolute top-0 inset-x-0 h-0.5 bg-teal-500 rounded-b" />}
+            {active && <span className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-l from-purple-500 to-teal-500 rounded-b" />}
           </button>
         );
       })}

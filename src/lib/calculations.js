@@ -162,10 +162,10 @@ export function generateMonthlyData(totals) {
 }
 
 const WORD_COLORS = {
-  purple: '#7B2D8B', teal: '#0FA3B1', coral: '#F07A20',
+  purple: '#4B2E83', teal: '#00B4CC', coral: '#F07A20',
   gold: '#F5C518', blue: '#3B82F6', green: '#10B981',
 };
-const FALLBACK_COLORS = ['#0FA3B1', '#7B2D8B', '#F07A20', '#F5C518', '#10B981', '#6366F1', '#EC4899', '#64748B'];
+const FALLBACK_COLORS = ['#00B4CC', '#4B2E83', '#F07A20', '#F5C518', '#10B981', '#6366F1', '#EC4899', '#64748B'];
 
 export function categoryColor(cat, i = 0) {
   if (cat?.color?.startsWith('#')) return cat.color;
@@ -180,8 +180,8 @@ export function generateCategoryData(expenses, classes, constants = DEFAULT_CONS
   const totalProfDev = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).profDevExpense, 0);
 
   const rows = [
-    { name: 'עלות הוראה', value: totalClassActualCost, fill: '#0FA3B1' },
-    { name: 'הוצאות תלמידים', value: totalStudentExpenses, fill: '#7B2D8B' },
+    { name: 'עלות הוראה', value: totalClassActualCost, fill: '#00B4CC' },
+    { name: 'הוצאות תלמידים', value: totalStudentExpenses, fill: '#4B2E83' },
     { name: 'פיתוח מקצועי', value: totalProfDev, fill: '#6366F1' },
     ...categoryTotals(expenses, categories).filter(c => c.kind !== 'profdev'),
   ];

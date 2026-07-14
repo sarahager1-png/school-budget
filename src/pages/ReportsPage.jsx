@@ -167,7 +167,7 @@ export default function ReportsPage() {
                   contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '13px' }} />
-                <Bar dataKey="הכנסות" fill="#0FA3B1" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="הכנסות" fill="#00B4CC" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="הוצאות" fill="#F07A20" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -229,7 +229,7 @@ export default function ReportsPage() {
                   contentStyle={{ direction: 'rtl', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '13px' }} />
-                <Bar dataKey="הכנסות" fill="#0FA3B1" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="הכנסות" fill="#00B4CC" radius={[0, 3, 3, 0]} />
                 <Bar dataKey="הוצאות" fill="#F07A20" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>

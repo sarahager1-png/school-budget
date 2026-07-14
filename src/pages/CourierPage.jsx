@@ -228,11 +228,11 @@ export default function CourierPage() {
 
       {/* Request Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filtered.map(req => {
+        {filtered.map((req, i) => {
           const st = REQUEST_STATUS[req.status];
           const exp = expenseMap[req.expenseId];
           return (
-            <div key={req.id} className="card p-5">
+            <div key={req.id} className="card p-5 spring-enter" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
