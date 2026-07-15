@@ -59,6 +59,10 @@ export default function HelpPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          <a href="/system-guide.html" target="_blank" rel="noopener noreferrer" className="btn-primary">
+            <BookOpen size={15} />
+            מדריך כולל למערכת
+          </a>
           <a href="/guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline">
             <Printer size={15} />
             מדריך מלא להדפסה
