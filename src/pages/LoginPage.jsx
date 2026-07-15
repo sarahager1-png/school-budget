@@ -211,7 +211,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex justify-center mt-6">
-          <p className="text-white/50 text-xs font-medium tracking-wide">בנוי ופיתוח: שרה הגר · 0503339770</p>
+          <p className="text-white/50 text-xs font-medium tracking-wide">בנוי ופיתוח: שרה הגר · 0503339770 · יעוץ ארגוני | פתרונות דיגיטליים · מהבנת הארגון לפתרון שעובד.</p>
         </div>
       </div>
     </div>
