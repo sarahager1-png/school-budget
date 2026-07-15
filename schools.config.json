@@ -57,7 +57,7 @@
       "name": "שלהבות רמת ישי",
       "ref": "bvxoywkqefpnyxvjydpz",
       "surge": "chabad-ramat-yishai-budget.surge.sh",
-      "mode": "full"
+      "mode": "simple"
     },
     {
       "slug": "afula",
