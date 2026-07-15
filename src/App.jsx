@@ -75,9 +75,9 @@ function AppContent() {
   if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
 
-  // simulations are budget-model only; couriers can also open שערוך תקציב + עזרה
+  // simulations are budget-model only — hidden in simple-mode schools for every role
+  // every role can otherwise navigate to every page (view-only for non-managers; writes are gated per-page + RLS)
   let page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
-  if (user.role === 'courier' && !['courier', 'help', 'simulations'].includes(page)) page = 'courier';
 
   const pages = {
     dashboard: <DashboardPage />,

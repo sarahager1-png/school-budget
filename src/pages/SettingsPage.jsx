@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES } from '../data/constants.js';
+import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS } from '../data/constants.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
 import Picker from '../components/ui/Picker.jsx';
@@ -11,11 +11,12 @@ const TABS = [
   { key: 'school', label: 'בית הספר', simpleMode: true },
   { key: 'years', label: 'שנות תקציב', simpleMode: true },
   { key: 'financial', label: 'קבועים פיננסיים', simpleMode: false },
-  { key: 'users', label: 'משתמשים', simpleMode: true, adminOnly: true },
+  { key: 'users', label: 'משתמשים', simpleMode: true },
 ];
 
 function SchoolTab() {
-  const { school, setSchool } = useApp();
+  const { school, setSchool, user } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [form, setForm] = useState({ name: school.name, mode: school.mode || 'full' });
   const [logo, setLogo] = useState(school.logoUrl);
 
@@ -82,15 +83,18 @@ function SchoolTab() {
         </div>
       )}
 
-      <button onClick={handleSave} className="btn-primary">
-        <Save size={16} /> שמור שינויים
-      </button>
+      {canEdit && (
+        <button onClick={handleSave} className="btn-primary">
+          <Save size={16} /> שמור שינויים
+        </button>
+      )}
     </div>
   );
 }
 
 function YearsTab() {
-  const { budgetYears, addBudgetYear, activateBudgetYear } = useApp();
+  const { budgetYears, addBudgetYear, activateBudgetYear, user } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [showNew, setShowNew] = useState(false);
   const [newYear, setNewYear] = useState({ year: new Date().getFullYear() + 1 });
 
@@ -112,13 +116,15 @@ function YearsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-gray-800">שנות תקציב</h3>
-        <button onClick={() => setShowNew(p => !p)} className="btn-primary btn-sm">
-          <Plus size={14} />
-          הוסף שנה
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowNew(p => !p)} className="btn-primary btn-sm">
+            <Plus size={14} />
+            הוסף שנה
+          </button>
+        )}
       </div>
 
-      {showNew && (
+      {canEdit && showNew && (
         <div className="card p-4">
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-40">
@@ -166,7 +172,7 @@ function YearsTab() {
                   )}
                 </td>
                 <td className="px-3 py-3">
-                  {!yr.isActive && (
+                  {canEdit && !yr.isActive && (
                     <button onClick={() => activateBudgetYear(yr.id)} className="btn-outline btn-sm">
                       <CheckCircle size={12} />
                       הפעל
@@ -183,7 +189,8 @@ function YearsTab() {
 }
 
 function FinancialTab() {
-  const { constants, setConstants } = useApp();
+  const { constants, setConstants, user } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [form, setForm] = useState({ ...constants });
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: Number(v) }));
@@ -230,15 +237,18 @@ function FinancialTab() {
         </div>
       </div>
 
-      <button onClick={() => setConstants(form)} className="btn-primary">
-        <Save size={16} /> שמור קבועים
-      </button>
+      {canEdit && (
+        <button onClick={() => setConstants(form)} className="btn-primary">
+          <Save size={16} /> שמור קבועים
+        </button>
+      )}
     </div>
   );
 }
 
 function UsersTab() {
   const { usersList, deleteUser, user: currentUser } = useApp();
+  const canDeleteUsers = currentUser?.role === 'admin';
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   return (
@@ -279,7 +289,7 @@ function UsersTab() {
                     <span className={`badge ${roleInfo?.color}`}>{roleInfo?.label}</span>
                   </td>
                   <td className="px-3 py-3 text-left">
-                    {u.id !== currentUser?.id && (
+                    {canDeleteUsers && u.id !== currentUser?.id && (
                       <button
                         onClick={() => setDeleteConfirm(u)}
                         aria-label={`הסרת ${u.name}`}
@@ -310,12 +320,10 @@ function UsersTab() {
 }
 
 export default function SettingsPage() {
-  const { user, isSimpleMode } = useApp();
+  const { isSimpleMode } = useApp();
   const [activeTab, setActiveTab] = useState('school');
 
-  const availableTabs = TABS.filter(t =>
-    (!t.adminOnly || user?.role === 'admin') && (!isSimpleMode || t.simpleMode)
-  );
+  const availableTabs = TABS.filter(t => !isSimpleMode || t.simpleMode);
 
   return (
     <div className="space-y-5">
@@ -339,7 +347,7 @@ export default function SettingsPage() {
       {activeTab === 'school' && <SchoolTab />}
       {activeTab === 'years' && <YearsTab />}
       {activeTab === 'financial' && !isSimpleMode && <FinancialTab />}
-      {activeTab === 'users' && user?.role === 'admin' && <UsersTab />}
+      {activeTab === 'users' && <UsersTab />}
     </div>
   );
 }

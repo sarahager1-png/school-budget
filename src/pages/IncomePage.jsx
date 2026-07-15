@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateClassBudget, formatCurrency } from '../lib/calculations.js';
-import { CLASS_TYPE } from '../data/constants.js';
+import { CLASS_TYPE, MANAGERS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -67,7 +67,8 @@ function IncomeModal({ src, onSave, onClose }) {
 }
 
 export default function IncomePage() {
-  const { classes, incomeSources, addIncomeSource, updateIncomeSource, deleteIncomeSource, constants, isSimpleMode } = useApp();
+  const { classes, incomeSources, addIncomeSource, updateIncomeSource, deleteIncomeSource, constants, isSimpleMode, user } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [modal, setModal] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -89,10 +90,12 @@ export default function IncomePage() {
           <h2 className="text-xl font-bold text-gray-800">הכנסות</h2>
           <p className="text-gray-500 text-sm mt-0.5">סה״כ שנתי: {formatCurrency(grandTotal)}</p>
         </div>
-        <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
-          <Plus size={16} />
-          הוסף מקור הכנסה
-        </button>
+        {canEdit && (
+          <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
+            <Plus size={16} />
+            הוסף מקור הכנסה
+          </button>
+        )}
       </div>
 
       {/* Summary Row — budget mode only */}
@@ -179,8 +182,8 @@ export default function IncomePage() {
           icon={TrendingUp}
           title="עוד אין מקורות הכנסה"
           hint="רושמים כאן כל הכנסה: תרומות, מענקים, תשלומי הורים, אירועים."
-          actionLabel="הוספת מקור הכנסה"
-          onAction={() => setModal('new')}
+          actionLabel={canEdit ? 'הוספת מקור הכנסה' : undefined}
+          onAction={canEdit ? () => setModal('new') : undefined}
         />
       ) : (
         <div className="card p-5">
@@ -197,14 +200,16 @@ export default function IncomePage() {
                 </div>
                 <span className="badge bg-gold-100 text-gold-700">{INCOME_TYPE_LABELS[src.type] || src.type}</span>
                 <span className="font-bold text-gray-700 text-sm">{formatCurrency(src.amount)}</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setModal(src)} aria-label={`עריכת ${src.name}`} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-teal-600 transition-colors">
-                    <Edit2 size={14} />
-                  </button>
-                  <button onClick={() => setDeleteConfirm(src)} aria-label={`מחיקת ${src.name}`} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-red-600 transition-colors">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                {canEdit && (
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setModal(src)} aria-label={`עריכת ${src.name}`} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-teal-600 transition-colors">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => setDeleteConfirm(src)} aria-label={`מחיקת ${src.name}`} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-red-600 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {incomeSources.length === 0 && (

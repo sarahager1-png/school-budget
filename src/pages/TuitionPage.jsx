@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Picker from '../components/ui/Picker.jsx';
+import { MANAGERS } from '../data/constants.js';
 
 const PAY_METHODS = [
   { value: 'transfer', label: 'העברה בנקאית' },
@@ -225,6 +226,7 @@ function ImportModal({ defaultDue, onImport, onClose }) {
 
 export default function TuitionPage() {
   const { user, currentYear, classes, constants, notify, isSimpleMode } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [payers, setPayers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,16 +345,18 @@ export default function TuitionPage() {
           <h2 className="text-xl font-bold text-gray-800">גבייה — שכר לימוד</h2>
           <p className="text-gray-500 text-sm mt-0.5">{payers.length} רשומות · {currentYear?.label}</p>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button onClick={() => setImportModal(true)} className="btn-outline">
-            <ClipboardPaste size={15} />
-            ייבוא רשימה
-          </button>
-          <button onClick={() => setPayerModal('new')} className="btn-primary">
-            <Plus size={16} />
-            הוסף לגבייה
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => setImportModal(true)} className="btn-outline">
+              <ClipboardPaste size={15} />
+              ייבוא רשימה
+            </button>
+            <button onClick={() => setPayerModal('new')} className="btn-primary">
+              <Plus size={16} />
+              הוסף לגבייה
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Summary */}
@@ -391,8 +395,8 @@ export default function TuitionPage() {
           icon={HandCoins}
           title="עוד אין רשומות גבייה"
           hint='הכי מהיר: "ייבוא רשימה" למעלה — מדביקים את שמות התלמידים ישר מאקסל, וכולם נכנסים בבת אחת עם שכר הלימוד. ואז מסמנים כל תשלום שנכנס ורואים מי שילם ומה נשאר.'
-          actionLabel="ייבוא רשימת תלמידים"
-          onAction={() => setImportModal(true)}
+          actionLabel={canEdit ? 'ייבוא רשימת תלמידים' : undefined}
+          onAction={canEdit ? () => setImportModal(true) : undefined}
         />
       ) : (
         <>
@@ -419,7 +423,7 @@ export default function TuitionPage() {
                       style={{ width: `${p.amountDue > 0 ? Math.min((paid / p.amountDue) * 100, 100) : 0}%` }} />
                   </div>
                   <div className="flex gap-2 mt-3">
-                    {paid < p.amountDue && (
+                    {canEdit && paid < p.amountDue && (
                       <button onClick={() => setPaymentModal(p)} className="btn-primary btn-sm flex-1 justify-center">
                         <CheckCircle size={13} /> רישום תשלום
                       </button>
@@ -427,12 +431,18 @@ export default function TuitionPage() {
                     <button onClick={() => setExpanded(isExp ? null : p.id)} className="btn-outline btn-sm flex-1 justify-center">
                       {isExp ? <ChevronUp size={13} /> : <ChevronDown size={13} />} תשלומים ({payerPayments.length})
                     </button>
-                    <button onClick={() => setPayerModal(p)} aria-label={`עריכת ${p.name}`} className="btn-outline btn-sm justify-center px-2.5">
-                      <Edit2 size={13} />
-                    </button>
+                    {canEdit && (
+                      <button onClick={() => setPayerModal(p)} aria-label={`עריכת ${p.name}`} className="btn-outline btn-sm justify-center px-2.5">
+                        <Edit2 size={13} />
+                      </button>
+                    )}
                   </div>
                   {isExp && (
-                    <PaymentsList payments={payerPayments} onDelete={deletePayment} onDeletePayer={() => setDeleteConfirm(p)} />
+                    <PaymentsList
+                      payments={payerPayments}
+                      onDelete={canEdit ? deletePayment : undefined}
+                      onDeletePayer={canEdit ? () => setDeleteConfirm(p) : undefined}
+                    />
                   )}
                 </div>
               );
@@ -479,20 +489,24 @@ export default function TuitionPage() {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 justify-center" onClick={e => e.stopPropagation()}>
-                            {paid < p.amountDue && (
+                            {canEdit && paid < p.amountDue && (
                               <button onClick={() => setPaymentModal(p)} title="רישום תשלום" aria-label={`רישום תשלום — ${p.name}`}
                                 className="p-1.5 hover:bg-teal-50 rounded-lg text-gray-400 hover:text-teal-600 transition-colors">
                                 <CheckCircle size={14} />
                               </button>
                             )}
-                            <button onClick={() => setPayerModal(p)} aria-label={`עריכת ${p.name}`}
-                              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-purple-600 transition-colors">
-                              <Edit2 size={14} />
-                            </button>
-                            <button onClick={() => setDeleteConfirm(p)} aria-label={`מחיקת ${p.name}`}
-                              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors">
-                              <Trash2 size={14} />
-                            </button>
+                            {canEdit && (
+                              <>
+                                <button onClick={() => setPayerModal(p)} aria-label={`עריכת ${p.name}`}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-purple-600 transition-colors">
+                                  <Edit2 size={14} />
+                                </button>
+                                <button onClick={() => setDeleteConfirm(p)} aria-label={`מחיקת ${p.name}`}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors">
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )}
                             {isExp ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
                           </div>
                         </td>
@@ -500,7 +514,7 @@ export default function TuitionPage() {
                       {isExp && (
                         <tr className="bg-gray-50/50">
                           <td colSpan={7} className="px-4 pb-4">
-                            <PaymentsList payments={payerPayments} onDelete={deletePayment} />
+                            <PaymentsList payments={payerPayments} onDelete={canEdit ? deletePayment : undefined} />
                           </td>
                         </tr>
                       )}
@@ -565,10 +579,12 @@ function PaymentsList({ payments, onDelete, onDeletePayer }) {
               <span className="font-bold text-gray-800">{formatCurrency(pay.amount)}</span>
               <span className="text-gray-500 text-xs">{methodLabel(pay.method)}</span>
               <span className="text-gray-400 text-xs flex-1">{pay.paidAt}{pay.notes ? ` · ${pay.notes}` : ''}</span>
-              <button onClick={() => onDelete(pay.id)} aria-label="מחיקת תשלום"
-                className="p-1 hover:bg-white rounded text-gray-300 hover:text-red-500 transition-colors">
-                <Trash2 size={12} />
-              </button>
+              {onDelete && (
+                <button onClick={() => onDelete(pay.id)} aria-label="מחיקת תשלום"
+                  className="p-1 hover:bg-white rounded text-gray-300 hover:text-red-500 transition-colors">
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
           ))}
         </div>

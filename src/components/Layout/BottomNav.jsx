@@ -1,30 +1,22 @@
-import { LayoutDashboard, School, CreditCard, Package, FlaskConical, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, School, CreditCard, Package, MoreHorizontal } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 
-const PRINCIPAL_ITEMS = [
+const ITEMS = [
   { id: 'dashboard', label: 'הבית', icon: LayoutDashboard },
   { id: 'classes', label: 'כיתות', icon: School },
   { id: 'expenses', label: 'הוצאות', icon: CreditCard },
   { id: 'courier', label: 'בקשות', icon: Package },
 ];
 
-const COURIER_ITEMS = [
-  { id: 'courier', label: 'בקשות', icon: Package },
-  { id: 'simulations', label: 'שערוך', icon: FlaskConical },
-];
-
 export default function BottomNav({ onMoreClick }) {
-  const { currentPage, navigate, user, expenseRequests, isSimpleMode } = useApp();
+  const { currentPage, navigate, expenseRequests } = useApp();
 
-  const items = user?.role === 'courier'
-    ? COURIER_ITEMS.filter(item => item.id !== 'simulations' || !isSimpleMode)
-    : PRINCIPAL_ITEMS;
   const pendingCount = expenseRequests.filter(r => r.status === 'pending').length;
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 z-40 flex" dir="rtl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {items.map(item => {
+      {ITEMS.map(item => {
         const Icon = item.icon;
         const active = currentPage === item.id;
         return (

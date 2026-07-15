@@ -2,7 +2,7 @@ import { Fragment, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, ChevronDown, ChevronUp, Users, School } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateClassBudget, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
-import { CLASS_TYPE } from '../data/constants.js';
+import { CLASS_TYPE, MANAGERS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -102,7 +102,8 @@ function BudgetBreakdown({ budget }) {
 }
 
 export default function ClassesPage() {
-  const { classes, addClass, updateClass, deleteClass, constants, isSimpleMode } = useApp();
+  const { classes, addClass, updateClass, deleteClass, constants, isSimpleMode, user } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState(null);
   const [modal, setModal] = useState(null);
@@ -139,10 +140,12 @@ export default function ClassesPage() {
           <h2 className="text-xl font-bold text-gray-800">ניהול כיתות</h2>
           <p className="text-gray-500 text-sm mt-0.5">{classes.length} כיתות · {totals.students} תלמידים</p>
         </div>
-        <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
-          <Plus size={16} />
-          הוסף כיתה
-        </button>
+        {canEdit && (
+          <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
+            <Plus size={16} />
+            הוסף כיתה
+          </button>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -182,8 +185,8 @@ export default function ClassesPage() {
           icon={School}
           title="עוד אין כיתות"
           hint="מוסיפים כל כיתה עם מספר התלמידים שלה — והמערכת מחשבת הכל לבד."
-          actionLabel="הוספת כיתה ראשונה"
-          onAction={() => setModal('new')}
+          actionLabel={canEdit ? 'הוספת כיתה ראשונה' : undefined}
+          onAction={canEdit ? () => setModal('new') : undefined}
         />
       ) : (
         <>
@@ -223,14 +226,16 @@ export default function ClassesPage() {
 
                   {isExp && !isSimpleMode && <BudgetBreakdown budget={cls.budget} />}
 
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => setModal(cls)} className="btn-outline btn-sm flex-1 justify-center">
-                      <Edit2 size={13} /> עריכה
-                    </button>
-                    <button onClick={() => setDeleteConfirm(cls)} className="btn-outline btn-sm flex-1 justify-center text-red-500 hover:bg-red-50">
-                      <Trash2 size={13} /> מחיקה
-                    </button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => setModal(cls)} className="btn-outline btn-sm flex-1 justify-center">
+                        <Edit2 size={13} /> עריכה
+                      </button>
+                      <button onClick={() => setDeleteConfirm(cls)} className="btn-outline btn-sm flex-1 justify-center text-red-500 hover:bg-red-50">
+                        <Trash2 size={13} /> מחיקה
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -299,20 +304,24 @@ export default function ClassesPage() {
                           )}
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={() => setModal(cls)}
-                                aria-label={`עריכת ${cls.name}`}
-                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirm(cls)}
-                                aria-label={`מחיקת ${cls.name}`}
-                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              {canEdit && (
+                                <>
+                                  <button
+                                    onClick={() => setModal(cls)}
+                                    aria-label={`עריכת ${cls.name}`}
+                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(cls)}
+                                    aria-label={`מחיקת ${cls.name}`}
+                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              )}
                               {!isSimpleMode && (isExp ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />)}
                             </div>
                           </td>

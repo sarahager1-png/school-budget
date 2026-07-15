@@ -6,6 +6,7 @@ import { formatCurrency } from '../lib/calculations.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
+import { MANAGERS } from '../data/constants.js';
 
 function getSchoolMonths(year) {
   // School year: Sep year → Aug year+1
@@ -140,6 +141,7 @@ function PaymentModal({ employee, month, payment, user, notify, onSave, onClose 
 
 export default function SalariesPage() {
   const { user, currentYear, notify } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
   const [activeTab, setActiveTab] = useState('monthly');
   const [employees, setEmployees] = useState([]);
   const [payments, setPayments] = useState({}); // { 'empId-YYYY-MM': { status, receiptUrl, notes } }
@@ -268,8 +270,8 @@ export default function SalariesPage() {
               icon={Wallet}
               title="עוד אין עובדים"
               hint='קודם מוסיפים את העובדים בלשונית "עובדים", ואז מסמנים כאן כל חודש מי קיבל משכורת.'
-              actionLabel="הוספת עובד/ת"
-              onAction={() => { setActiveTab('employees'); setEmployeeForm({}); }}
+              actionLabel={canEdit ? 'הוספת עובד/ת' : undefined}
+              onAction={canEdit ? () => { setActiveTab('employees'); setEmployeeForm({}); } : undefined}
             />
           ) : (
             <>
@@ -336,7 +338,7 @@ export default function SalariesPage() {
                           <p className="text-xs text-gold-600">ממתין</p>
                         )}
                       </div>
-                      {!paid && (
+                      {!paid && canEdit && (
                         <button
                           onClick={() => setPaymentModal({ employee: emp, month: selectedMonth })}
                           className="btn-primary btn-sm flex-shrink-0"
@@ -364,7 +366,7 @@ export default function SalariesPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">{employees.length} עובדים פעילים</p>
-            {(user?.role === 'principal' || user?.role === 'admin') && (
+            {canEdit && (
               <button onClick={() => setEmployeeForm({})} className="btn-primary btn-sm">
                 <Plus size={14} />
                 הוסף עובד/ת
@@ -377,8 +379,8 @@ export default function SalariesPage() {
               icon={Users}
               title="עוד אין עובדים"
               hint="מוסיפים כל עובד/ת עם המשכורת החודשית — ואז אפשר לסמן תשלומים חודש-חודש."
-              actionLabel="הוספת עובד/ת"
-              onAction={() => setEmployeeForm({})}
+              actionLabel={canEdit ? 'הוספת עובד/ת' : undefined}
+              onAction={canEdit ? () => setEmployeeForm({}) : undefined}
             />
           ) : (
             <div className="card overflow-hidden">
@@ -388,7 +390,7 @@ export default function SalariesPage() {
                     <th className="text-right px-4 py-3 text-gray-500 font-medium">שם</th>
                     <th className="text-right px-3 py-3 text-gray-500 font-medium">תפקיד</th>
                     <th className="text-left px-3 py-3 text-gray-500 font-medium">משכורת</th>
-                    {(user?.role === 'principal' || user?.role === 'admin') && <th className="px-3 py-3" />}
+                    {canEdit && <th className="px-3 py-3" />}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -397,7 +399,7 @@ export default function SalariesPage() {
                       <td className="px-4 py-3 font-medium text-gray-800">{emp.name}</td>
                       <td className="px-3 py-3 text-gray-500">{emp.role}</td>
                       <td className="px-3 py-3 text-left font-bold text-gray-800">{formatCurrency(emp.monthlySalary)}</td>
-                      {(user?.role === 'principal' || user?.role === 'admin') && (
+                      {canEdit && (
                         <td className="px-3 py-3 text-left">
                           <button
                             onClick={() => setDeleteConfirm(emp)}
