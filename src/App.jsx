@@ -75,9 +75,9 @@ function AppContent() {
   if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
 
-  // simulations are budget-model only; couriers stay on their own screens
+  // simulations are budget-model only; couriers can also open שערוך תקציב + עזרה
   let page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
-  if (user.role === 'courier' && !['courier', 'help'].includes(page)) page = 'courier';
+  if (user.role === 'courier' && !['courier', 'help', 'simulations'].includes(page)) page = 'courier';
 
   const pages = {
     dashboard: <DashboardPage />,

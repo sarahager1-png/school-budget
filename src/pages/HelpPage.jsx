@@ -67,6 +67,12 @@ export default function HelpPage() {
             <Package size={15} />
             מדריך לשליח
           </a>
+          {!isSimpleMode && (
+            <a href="/simulation-guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline">
+              <FlaskConical size={15} />
+              מדריך לשערוך תקציב
+            </a>
+          )}
         </div>
       </div>
 

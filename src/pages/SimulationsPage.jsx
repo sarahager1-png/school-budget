@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { RotateCcw, Save, FolderOpen, Trash2, Bookmark } from 'lucide-react';
+import { RotateCcw, Save, FolderOpen, Trash2, Bookmark, TrendingUp, TrendingDown } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import { calculateClassBudget, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';

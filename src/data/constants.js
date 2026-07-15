@@ -82,7 +82,7 @@ export const NAV_ITEMS = [
   { id: 'expenses', label: 'הוצאות', icon: 'CreditCard', roles: MANAGERS, simpleMode: true },
   { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES, simpleMode: true },
   { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: MANAGERS, simpleMode: true },
-  { id: 'simulations', label: 'שערוך תקציב', icon: 'FlaskConical', roles: MANAGERS, simpleMode: false },
+  { id: 'simulations', label: 'שערוך תקציב', icon: 'FlaskConical', roles: ALL_ROLES, simpleMode: false },
   { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: MANAGERS, simpleMode: true },
   { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: MANAGERS, simpleMode: true },
   { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES, simpleMode: true },

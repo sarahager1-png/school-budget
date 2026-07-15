@@ -1,4 +1,4 @@
-import { LayoutDashboard, School, CreditCard, Package, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, School, CreditCard, Package, FlaskConical, MoreHorizontal } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 
 const PRINCIPAL_ITEMS = [
@@ -10,12 +10,15 @@ const PRINCIPAL_ITEMS = [
 
 const COURIER_ITEMS = [
   { id: 'courier', label: 'בקשות', icon: Package },
+  { id: 'simulations', label: 'שערוך', icon: FlaskConical },
 ];
 
 export default function BottomNav({ onMoreClick }) {
-  const { currentPage, navigate, user, expenseRequests } = useApp();
+  const { currentPage, navigate, user, expenseRequests, isSimpleMode } = useApp();
 
-  const items = user?.role === 'courier' ? COURIER_ITEMS : PRINCIPAL_ITEMS;
+  const items = user?.role === 'courier'
+    ? COURIER_ITEMS.filter(item => item.id !== 'simulations' || !isSimpleMode)
+    : PRINCIPAL_ITEMS;
   const pendingCount = expenseRequests.filter(r => r.status === 'pending').length;
 
   return (
