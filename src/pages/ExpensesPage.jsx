@@ -198,7 +198,7 @@ function AutoExpensesCard({ classes, constants }) {
   const profDev = budgets.reduce((s, b) => s + b.profDevExpense, 0);
 
   const rows = [
-    { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours * 4} שעות בחודש × ${constants.actualHourlyRate} ₪`, monthly: teaching / 12, annual: teaching },
+    { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: teaching / 12, annual: teaching },
     { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} — אירועים, ערבי הורים, פיתוח מקצועי ושכפולים`, annual: students },
     { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
   ].filter(r => r.annual > 0);

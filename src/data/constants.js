@@ -1,6 +1,5 @@
-// מודל התשלום החודשי: שעות שבועיות × 4 = שעות בחודש (למשל 22 × 4 = 88),
-// והמשרד משלם 12 חודשים בשנה. כיתה מלאה: 88 שעות × 400 ₪ × 12 = 422,400 ₪ לשנה.
-export const WEEKS_PER_MONTH = 4;
+// השעות הן חודשיות והתשלום 12 חודשים בשנה.
+// כיתה מלאה: 22 שעות חודשיות × 400 ₪ = 8,800 ₪ בחודש = 105,600 ₪ בשנה.
 export const PAYMENT_MONTHS = 12;
 
 // שכר אופק חדש קובע את תעריף עלות ההוראה בפועל: כן = 600 ₪/שעה, לא = 400 ₪/שעה.
@@ -24,16 +23,16 @@ export const DEFAULT_CONSTANTS = {
   principalMonthlySalary: 27000,
   incomePerStudentCaharon: 0,
   expensePerStudentCaharon: 0,
-  ministryGrantPerStudent: 360,
+  ministryGrantPerStudent: 370,
 };
 
 export const CONSTANTS_LABELS = {
   fullClassStudentThreshold: { label: 'סף כיתה מלאה (תלמידים)', unit: 'תלמידים' },
   halfClassStudentThreshold: { label: 'סף כיתה חצי (תלמידים)', unit: 'תלמידים' },
-  fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות/שבוע' },
-  halfClassMinistryHours: { label: 'שעות תקן חצי (משרד)', unit: 'שעות/שבוע' },
+  fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות/חודש' },
+  halfClassMinistryHours: { label: 'שעות תקן חצי (משרד)', unit: 'שעות/חודש' },
   ministryHourlyRate: { label: 'תעריף שעה — משרד החינוך', unit: '₪/שעה' },
-  actualWeeklyHours: { label: 'שעות בפועל לכיתה בשבוע', unit: 'שעות/שבוע' },
+  actualWeeklyHours: { label: 'שעות בפועל לכיתה בחודש', unit: 'שעות/חודש' },
   actualHourlyRate: { label: 'תעריף שעה — עלות בפועל', unit: '₪/שעה' },
   incomePerStudent: { label: 'הכנסה לתלמיד בשנה', unit: '₪/תלמיד/שנה' },
   incomePerStudentBooks: { label: 'ספרי לימוד — הכנסה לתלמיד בשנה', unit: '₪/תלמיד/שנה' },

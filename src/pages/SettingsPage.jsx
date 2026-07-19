@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, WEEKS_PER_MONTH, PAYMENT_MONTHS, OFEK_RATES } from '../data/constants.js';
+import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, PAYMENT_MONTHS, OFEK_RATES } from '../data/constants.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
 import Picker from '../components/ui/Picker.jsx';
@@ -195,10 +195,9 @@ function FinancialTab() {
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: Number(v) }));
 
-  const monthlyHoursFull = form.fullClassMinistryHours * WEEKS_PER_MONTH;
-  const monthlyMinistryFull = monthlyHoursFull * form.ministryHourlyRate;
+  const monthlyMinistryFull = form.fullClassMinistryHours * form.ministryHourlyRate;
   const annualMinistryFull = monthlyMinistryFull * PAYMENT_MONTHS;
-  const monthlyActual = form.actualWeeklyHours * WEEKS_PER_MONTH * form.actualHourlyRate;
+  const monthlyActual = form.actualWeeklyHours * form.actualHourlyRate;
   const annualActual = monthlyActual * PAYMENT_MONTHS;
 
   const setOfek = (yes) => setForm(p => ({
@@ -257,7 +256,7 @@ function FinancialTab() {
         <h4 className="font-bold text-teal-800 mb-3">תצוגה מקדימה — כיתה מלאה</h4>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-gray-500">הכנסה ממשרד בחודש ({monthlyHoursFull} שעות × {form.ministryHourlyRate} ₪)</p>
+            <p className="text-gray-500">הכנסה ממשרד בחודש ({form.fullClassMinistryHours} שעות × {form.ministryHourlyRate} ₪)</p>
             <p className="font-bold text-teal-700">{formatCurrency(monthlyMinistryFull)}</p>
           </div>
           <div>

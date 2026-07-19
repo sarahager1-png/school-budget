@@ -58,7 +58,7 @@ CREATE TABLE financial_constants (
   principal_monthly_salary NUMERIC DEFAULT 27000,
   income_per_student_caharon NUMERIC DEFAULT 0,
   expense_per_student_caharon NUMERIC DEFAULT 0,
-  ministry_grant_per_student NUMERIC DEFAULT 360,
+  ministry_grant_per_student NUMERIC DEFAULT 370,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

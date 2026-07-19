@@ -65,7 +65,7 @@ function ClassModal({ cls, onSave, onClose }) {
 
 function BudgetBreakdown({ budget }) {
   const rows = [
-    { label: 'שעות משרד', value: `${budget.ministryWeeklyHours} בשבוע · ${budget.ministryMonthlyHours} בחודש`, neutral: true },
+    { label: 'שעות תקן בחודש', value: `${budget.ministryWeeklyHours} שעות`, neutral: true },
     { label: 'הכנסה ממשרד בחודש', value: formatCurrency(budget.ministryMonthlyIncome), positive: true },
     { label: 'הכנסה ממשרד בשנה (12 ח׳)', value: formatCurrency(budget.ministryIncome), positive: true },
     ...(budget.ministryGrantIncome > 0 ? [{ label: 'תוספת לתלמיד — משרד', value: formatCurrency(budget.ministryGrantIncome), positive: true }] : []),

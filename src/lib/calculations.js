@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTANTS, HEBREW_MONTHS, WEEKS_PER_MONTH, PAYMENT_MONTHS } from '../data/constants.js';
+import { DEFAULT_CONSTANTS, HEBREW_MONTHS, PAYMENT_MONTHS } from '../data/constants.js';
 import { kindMap } from './categoryKinds.js';
 
 export function getClassType(studentCount, constants = DEFAULT_CONSTANTS) {
@@ -30,9 +30,9 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   if (type === 'full') ministryWeeklyHours = fullClassMinistryHours;
   else if (type === 'half') ministryWeeklyHours = halfClassMinistryHours;
 
-  // מודל חודשי: 22 שעות/שבוע × 4 = 88 שעות בחודש × תעריף × 12 חודשים
-  const ministryMonthlyHours = ministryWeeklyHours * WEEKS_PER_MONTH;
-  const ministryMonthlyIncome = ministryMonthlyHours * ministryHourlyRate;
+  // השעות חודשיות: כיתה מלאה 22 שעות × 400 ₪ = 8,800 ₪ בחודש × 12 חודשים
+  // (השמות *WeeklyHours היסטוריים — הערכים הם שעות חודשיות)
+  const ministryMonthlyIncome = ministryWeeklyHours * ministryHourlyRate;
   const ministryIncome = ministryMonthlyIncome * PAYMENT_MONTHS;
   const ministryGrantIncome = n * ministryGrantPerStudent;
   const studentIncome = n * incomePerStudent;
@@ -40,7 +40,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   const caharonIncome = n * incomePerStudentCaharon;
   const totalIncome = ministryIncome + ministryGrantIncome + studentIncome + booksIncome + caharonIncome;
 
-  const actualMonthlyCost = actualWeeklyHours * WEEKS_PER_MONTH * actualHourlyRate;
+  const actualMonthlyCost = actualWeeklyHours * actualHourlyRate;
   const actualOperatingCost = actualMonthlyCost * PAYMENT_MONTHS;
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
@@ -52,7 +52,6 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   return {
     type,
     ministryWeeklyHours,
-    ministryMonthlyHours,
     ministryMonthlyIncome,
     ministryIncome,
     actualMonthlyCost,

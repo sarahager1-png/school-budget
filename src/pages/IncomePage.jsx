@@ -137,7 +137,7 @@ export default function IncomePage() {
                   <th className="text-right px-4 py-3 text-gray-500 font-medium">כיתה</th>
                   <th className="text-center px-3 py-3 text-gray-500 font-medium">תלמידים</th>
                   <th className="text-center px-3 py-3 text-gray-500 font-medium">תקן</th>
-                  <th className="text-center px-3 py-3 text-gray-500 font-medium">שעות/שבוע</th>
+                  <th className="text-center px-3 py-3 text-gray-500 font-medium">שעות/חודש</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">תקן משרד</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">תוספת לתלמיד</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">הכנסה לתלמיד</th>
