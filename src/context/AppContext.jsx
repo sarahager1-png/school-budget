@@ -61,6 +61,9 @@ export function AppProvider({ children }) {
   const [usersList, setUsersList] = useState([]);
   // Message shown on the login page after a bounced OAuth login (no profile)
   const [authNotice, setAuthNotice] = useState('');
+  // Set only after loadDataForYear finished — expenses/constants in state really belong to this year.
+  // Guards the salary self-heal from firing on the default constants before the real ones load.
+  const [yearDataInfo, setYearDataInfo] = useState(null);
 
   // ── Toasts: feedback after every action ─────────────────────
   const [toasts, setToasts] = useState([]);
@@ -76,6 +79,7 @@ export function AppProvider({ children }) {
   }, [notify]);
 
   const loadDataForYear = useCallback(async (schoolId, yearId) => {
+    setYearDataInfo(null);
     const [classesRes, incomeRes, expensesRes, requestsRes, constRes] = await Promise.all([
       supabase.from('classes').select('*').eq('school_id', schoolId).eq('budget_year_id', yearId),
       supabase.from('income_sources').select('*').eq('school_id', schoolId).eq('budget_year_id', yearId),
@@ -104,6 +108,7 @@ export function AppProvider({ children }) {
     })));
     // No constants row yet for this year → fall back to defaults, never to a stale year
     setConstantsState(constRes.data ? mapConstantsFromDB(constRes.data) : DEFAULT_CONSTANTS);
+    setYearDataInfo({ yearId, hasConstantsRow: !!constRes.data });
   }, []);
 
   const loadSupabaseData = useCallback(async (supabaseUser) => {
@@ -425,6 +430,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!user || !currentYear || school?.mode === 'simple') return;
     if (!MANAGERS.includes(user.role)) return;
+    // רק אחרי שנתוני השנה נטענו בפועל, ורק כשיש שורת קבועים אמיתית ב-DB —
+    // אחרת האפקט רץ על ברירות המחדל ורושם שכר שגוי / כפול (קרה באשקלון 19/7)
+    if (!yearDataInfo || yearDataInfo.yearId !== currentYear.id || !yearDataInfo.hasConstantsRow) return;
     if (salaryHealed.current === currentYear.id) return;
     if (expenseCategories.length === 0) return;
     if (!(constants.principalMonthlySalary > 0)) return;
@@ -432,7 +440,7 @@ export function AppProvider({ children }) {
     if (expenses.some(e => e.name === 'שכר מנהלת')) return;
     if (!expenseCategories.some(c => c.kind === 'salary')) return;
     syncPrincipalSalaryExpense(constants.principalMonthlySalary);
-  }, [user, currentYear, school, constants, expenses, expenseCategories]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, currentYear, school, constants, expenses, expenseCategories, yearDataInfo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setConstants = async (newConstants) => {
     setConstantsState(newConstants);
