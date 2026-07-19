@@ -120,15 +120,41 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   };
 }
 
+// כניסה בלחיצה מהפורטל: מייצר קישור קסם חד-פעמי לחשבון הרשת בבית הספר המבוקש —
+// שרה נכנסת למערכת המלאה בלי סיסמה (ה-redirect הולך ל-site_url של הפרויקט).
+const HUB_LOGIN_EMAIL = 'data@reshetch.org.il';
+
+async function launchLink(ref: string, key: string) {
+  const r = await fetch(`https://${ref}.supabase.co/auth/v1/admin/generate_link`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'magiclink', email: HUB_LOGIN_EMAIL }),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.action_link) throw new Error(`generate_link: ${r.status}`);
+  return j.action_link as string;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
 
-  const { code } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  const { code } = body;
   const expected = Deno.env.get('HUB_ACCESS_CODE');
   if (!expected || code !== expected) return json({ error: 'unauthorized' }, 401);
 
   const keys = JSON.parse(Deno.env.get('SCHOOL_KEYS') ?? '{}');
+
+  if (body.launch) {
+    const s = SCHOOLS.find((x) => x.slug === body.launch);
+    if (!s || !keys[s.ref]) return json({ error: 'unknown school' }, 400);
+    try {
+      return json({ url: await launchLink(s.ref, keys[s.ref]) });
+    } catch (e) {
+      return json({ error: String(e) }, 500);
+    }
+  }
   const schools = await Promise.all(
     SCHOOLS.map(async (s) => {
       try {

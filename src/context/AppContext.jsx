@@ -175,19 +175,27 @@ export function AppProvider({ children }) {
     return { error: null };
   }, [loadDataForYear]);
 
+  // מזהה המשתמש שכבר נטען — מונע טעינה כפולה כשגם login() וגם SIGNED_IN יורים
+  const loadedUserId = useRef(null);
+
   useEffect(() => {
+    const loadOnce = (sessionUser) => {
+      if (!sessionUser || loadedUserId.current === sessionUser.id) return;
+      loadedUserId.current = sessionUser.id;
+      loadSupabaseData(sessionUser)
+        .then(res => { if (res?.error) setAuthNotice(res.error.message); })
+        .finally(() => setLoading(false));
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadSupabaseData(session.user)
-          .then(res => { if (res?.error) setAuthNotice(res.error.message); })
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      if (session?.user) loadOnce(session.user);
+      else setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // גם כניסה שמגיעה מקישור קסם (הפורטל) נקלטת כאן — לא רק התנתקות
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
+        loadedUserId.current = null;
         setUser(null);
         setSchoolState(null);
         setBudgetYears([]);
@@ -198,7 +206,9 @@ export function AppProvider({ children }) {
         setExpenses([]);
         setExpenseRequests([]);
         setUsersList([]);
+        return;
       }
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') loadOnce(session.user);
     });
 
     return () => subscription.unsubscribe();
@@ -209,8 +219,11 @@ export function AppProvider({ children }) {
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error };
-    const result = await loadSupabaseData(data.user);
-    if (result?.error) return { error: result.error };
+    if (loadedUserId.current !== data.user.id) {
+      loadedUserId.current = data.user.id;
+      const result = await loadSupabaseData(data.user);
+      if (result?.error) { loadedUserId.current = null; return { error: result.error }; }
+    }
     setLoading(false);
     return { error: null };
   };
