@@ -65,8 +65,9 @@ function ClassModal({ cls, onSave, onClose }) {
 
 function BudgetBreakdown({ budget }) {
   const rows = [
-    { label: 'שעות משרד שבועיות', value: `${budget.ministryWeeklyHours} שעות`, neutral: true },
-    { label: 'הכנסה ממשרד החינוך', value: formatCurrency(budget.ministryIncome), positive: true },
+    { label: 'שעות משרד', value: `${budget.ministryWeeklyHours} בשבוע · ${budget.ministryMonthlyHours} בחודש`, neutral: true },
+    { label: 'הכנסה ממשרד בחודש', value: formatCurrency(budget.ministryMonthlyIncome), positive: true },
+    { label: 'הכנסה ממשרד בשנה (12 ח׳)', value: formatCurrency(budget.ministryIncome), positive: true },
     ...(budget.ministryGrantIncome > 0 ? [{ label: 'תוספת לתלמיד — משרד', value: formatCurrency(budget.ministryGrantIncome), positive: true }] : []),
     { label: 'הכנסה לתלמיד', value: formatCurrency(budget.studentIncome), positive: true },
     ...(budget.caharonIncome > 0 ? [{ label: 'הכנסות צהרון', value: formatCurrency(budget.caharonIncome), positive: true }] : []),

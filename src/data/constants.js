@@ -1,5 +1,10 @@
+// מודל התשלום החודשי: שעות שבועיות × 4 = שעות בחודש (למשל 22 × 4 = 88),
+// והמשרד משלם 12 חודשים בשנה. כיתה מלאה: 88 שעות × 400 ₪ × 12 = 422,400 ₪ לשנה.
+export const WEEKS_PER_MONTH = 4;
+export const PAYMENT_MONTHS = 12;
+
 export const DEFAULT_CONSTANTS = {
-  schoolWeeks: 36,
+  schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
   fullClassStudentThreshold: 21,
   halfClassStudentThreshold: 11,
   fullClassMinistryHours: 22,
@@ -17,7 +22,6 @@ export const DEFAULT_CONSTANTS = {
 };
 
 export const CONSTANTS_LABELS = {
-  schoolWeeks: { label: 'שבועות לימוד בשנה', unit: 'שבועות' },
   fullClassStudentThreshold: { label: 'סף כיתה מלאה (תלמידים)', unit: 'תלמידים' },
   halfClassStudentThreshold: { label: 'סף כיתה חצי (תלמידים)', unit: 'תלמידים' },
   fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות/שבוע' },

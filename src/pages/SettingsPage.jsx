@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS } from '../data/constants.js';
+import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, WEEKS_PER_MONTH, PAYMENT_MONTHS } from '../data/constants.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
 import Picker from '../components/ui/Picker.jsx';
@@ -195,8 +195,11 @@ function FinancialTab() {
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: Number(v) }));
 
-  const annualMinistryFull = form.fullClassMinistryHours * form.ministryHourlyRate * form.schoolWeeks;
-  const annualActual = form.actualWeeklyHours * form.actualHourlyRate * form.schoolWeeks;
+  const monthlyHoursFull = form.fullClassMinistryHours * WEEKS_PER_MONTH;
+  const monthlyMinistryFull = monthlyHoursFull * form.ministryHourlyRate;
+  const annualMinistryFull = monthlyMinistryFull * PAYMENT_MONTHS;
+  const monthlyActual = form.actualWeeklyHours * WEEKS_PER_MONTH * form.actualHourlyRate;
+  const annualActual = monthlyActual * PAYMENT_MONTHS;
 
   return (
     <div className="space-y-5">
@@ -223,15 +226,23 @@ function FinancialTab() {
         <h4 className="font-bold text-teal-800 mb-3">תצוגה מקדימה — כיתה מלאה</h4>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-gray-500">הכנסה ממשרד (שנתית)</p>
+            <p className="text-gray-500">הכנסה ממשרד בחודש ({monthlyHoursFull} שעות × {form.ministryHourlyRate} ₪)</p>
+            <p className="font-bold text-teal-700">{formatCurrency(monthlyMinistryFull)}</p>
+          </div>
+          <div>
+            <p className="text-gray-500">הכנסה ממשרד בשנה ({PAYMENT_MONTHS} חודשים)</p>
             <p className="font-bold text-teal-700">{formatCurrency(annualMinistryFull)}</p>
           </div>
           <div>
-            <p className="text-gray-500">עלות הוראה בפועל (שנתית)</p>
+            <p className="text-gray-500">עלות הוראה בפועל בחודש</p>
+            <p className="font-bold text-coral-600">{formatCurrency(monthlyActual)}</p>
+          </div>
+          <div>
+            <p className="text-gray-500">עלות הוראה בפועל בשנה</p>
             <p className="font-bold text-coral-600">{formatCurrency(annualActual)}</p>
           </div>
           <div>
-            <p className="text-gray-500">פער לכיתה מלאה</p>
+            <p className="text-gray-500">פער לכיתה מלאה (שנתי)</p>
             <p className="font-bold text-red-600">{formatCurrency(annualActual - annualMinistryFull)}</p>
           </div>
         </div>

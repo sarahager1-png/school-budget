@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext.jsx';
 import { annualAmount, formatCurrency } from '../lib/calculations.js';
-import { EVENTS_CAP_PER_STUDENT } from '../data/constants.js';
+import { EVENTS_CAP_PER_STUDENT, WEEKS_PER_MONTH, PAYMENT_MONTHS } from '../data/constants.js';
 import {
   AlertTriangle, CheckCircle, BookOpen, Calculator, Users, CreditCard,
   TrendingUp, BarChart2, Settings, Package, Wallet, FlaskConical, Printer,
@@ -143,11 +143,11 @@ export default function HelpPage() {
               <div className="space-y-1.5 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <span className="badge bg-teal-100 text-teal-700">תקן מלא</span>
-                  <span>{c.fullClassStudentThreshold}+ תלמידים — {c.fullClassMinistryHours} שעות/שבוע × {c.ministryHourlyRate} ₪ × {c.schoolWeeks} שבועות</span>
+                  <span>{c.fullClassStudentThreshold}+ תלמידים — {c.fullClassMinistryHours * WEEKS_PER_MONTH} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="badge bg-gold-100 text-gold-700">תקן חצי</span>
-                  <span>{c.halfClassStudentThreshold}–{c.fullClassStudentThreshold - 1} תלמידים — {c.halfClassMinistryHours} שעות/שבוע × {c.ministryHourlyRate} ₪ × {c.schoolWeeks} שבועות</span>
+                  <span>{c.halfClassStudentThreshold}–{c.fullClassStudentThreshold - 1} תלמידים — {c.halfClassMinistryHours * WEEKS_PER_MONTH} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="badge bg-red-100 text-red-700">ללא תקן</span>
@@ -158,7 +158,7 @@ export default function HelpPage() {
 
             <RuleCard icon={TrendingUp} color="border-green-500" title="מקורות הכנסה">
               <ul className="space-y-1.5 text-sm text-gray-600">
-                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה ממשרד: שעות תקן × {c.ministryHourlyRate} ₪/שעה × {c.schoolWeeks} שבועות</span></li>
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה ממשרד: שעות תקן חודשיות × {c.ministryHourlyRate} ₪/שעה × {PAYMENT_MONTHS} חודשים</span></li>
                 {c.ministryGrantPerStudent > 0 && (
                   <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תוספת משרד לתלמיד: {formatCurrency(c.ministryGrantPerStudent)} לשנה</span></li>
                 )}
@@ -172,7 +172,7 @@ export default function HelpPage() {
 
             <RuleCard icon={CreditCard} color="border-coral-500" title="מבנה הוצאות">
               <ul className="space-y-1.5 text-sm text-gray-600">
-                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>עלות הוראה:</strong> {c.actualWeeklyHours} שעות/שבוע × {c.actualHourlyRate} ₪/שעה × {c.schoolWeeks} שבועות לכל כיתה</span></li>
+                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>עלות הוראה:</strong> {c.actualWeeklyHours * WEEKS_PER_MONTH} שעות בחודש × {c.actualHourlyRate} ₪/שעה × {PAYMENT_MONTHS} חודשים לכל כיתה</span></li>
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות תלמיד:</strong> {formatCurrency(c.expensePerStudent)} לתלמיד לשנה</span></li>
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>פיתוח מקצועי:</strong> {formatCurrency(c.professionalDevPerClass)} לכיתה לשנה</span></li>
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות כלליות:</strong> שכר, בניין, אירועים וציוד — נרשמות במסך ההוצאות לפי קטגוריה</span></li>
