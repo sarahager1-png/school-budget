@@ -344,7 +344,7 @@ export default function SimulationsPage() {
               unit="₪"
             />
             <NumberInput
-              label="תוספת משרד החינוך לתלמיד"
+              label="תוספת כללית לתלמיד — משרד החינוך"
               value={ministryGrant}
               onChange={setMinistryGrant}
               min={0}

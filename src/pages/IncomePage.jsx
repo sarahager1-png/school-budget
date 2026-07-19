@@ -104,7 +104,7 @@ export default function IncomePage() {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: 'תקן משרד החינוך', value: totalMinistry, bar: 'bg-teal-500', pct: grandTotal ? totalMinistry / grandTotal * 100 : 0 },
-            { label: 'תוספת לתלמיד — משרד', value: totalMinistryGrant, bar: 'bg-blue-500', pct: grandTotal ? totalMinistryGrant / grandTotal * 100 : 0 },
+            { label: 'תוספת כללית — משרד', value: totalMinistryGrant, bar: 'bg-blue-500', pct: grandTotal ? totalMinistryGrant / grandTotal * 100 : 0 },
             { label: 'הכנסה לתלמיד', value: totalStudentIncome, bar: 'bg-purple-500', pct: grandTotal ? totalStudentIncome / grandTotal * 100 : 0 },
             { label: 'ספרי לימוד', value: totalBooks, bar: 'bg-coral-500', pct: grandTotal ? totalBooks / grandTotal * 100 : 0 },
             { label: 'הכנסות נוספות', value: totalAdditional, bar: 'bg-gold-500', pct: grandTotal ? totalAdditional / grandTotal * 100 : 0 },

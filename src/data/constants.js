@@ -41,7 +41,7 @@ export const CONSTANTS_LABELS = {
   principalMonthlySalary: { label: 'שכר מנהלת חודשי — ממלאים פעם אחת, נרשם אוטומטית בהוצאות ×12', unit: '₪/חודש' },
   incomePerStudentCaharon: { label: 'הכנסות צהרון לתלמיד', unit: '₪/תלמיד/שנה' },
   expensePerStudentCaharon: { label: 'הוצאות צהרון לתלמיד', unit: '₪/תלמיד/שנה' },
-  ministryGrantPerStudent: { label: 'תוספת לתלמיד — משרד החינוך', unit: '₪/תלמיד/שנה' },
+  ministryGrantPerStudent: { label: 'תוספת כללית לתלמיד — משרד החינוך (הכנסה, לא קשורה להוצאה לתלמיד)', unit: '₪/תלמיד/שנה' },
 };
 
 export const HEBREW_MONTHS = [

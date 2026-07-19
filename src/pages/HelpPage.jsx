@@ -160,7 +160,7 @@ export default function HelpPage() {
               <ul className="space-y-1.5 text-sm text-gray-600">
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה ממשרד: שעות תקן חודשיות × {c.ministryHourlyRate} ₪/שעה × {PAYMENT_MONTHS} חודשים</span></li>
                 {c.ministryGrantPerStudent > 0 && (
-                  <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תוספת משרד לתלמיד: {formatCurrency(c.ministryGrantPerStudent)} לשנה</span></li>
+                  <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תוספת כללית לתלמיד — משרד: {formatCurrency(c.ministryGrantPerStudent)} לשנה</span></li>
                 )}
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה מתלמיד: {formatCurrency(c.incomePerStudent)} לשנה</span></li>
                 {c.incomePerStudentBooks > 0 && (

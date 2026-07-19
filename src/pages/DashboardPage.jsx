@@ -316,7 +316,7 @@ function FullDashboard() {
   // "מה כולל?" — הרכב מלא של כל מספר מסכם
   const incomeBreakdown = [
     { label: 'משרד החינוך לפי תקן', value: totals.totalMinistryIncome },
-    { label: 'תוספת משרד לתלמיד', value: totals.totalMinistryGrantIncome },
+    { label: 'תוספת כללית לתלמיד — משרד', value: totals.totalMinistryGrantIncome },
     { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome },
     { label: 'ספרי לימוד לתלמיד', value: totals.totalBooksIncome },
     ...incomeSources.map(s => ({ label: s.name, value: s.amount || 0 })),
