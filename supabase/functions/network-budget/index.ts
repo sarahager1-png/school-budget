@@ -86,7 +86,7 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const halfH = Number(c.half_class_ministry_hours ?? 11);
   const rate = Number(c.ministry_hourly_rate ?? 400);
   const actH = Number(c.actual_weekly_hours ?? 29);
-  const actRate = Number(c.actual_hourly_rate ?? 600);
+  const actRate = Number(c.actual_hourly_rate ?? 700);
   const perStudent = Number(c.income_per_student ?? 350);
   const talan = Number(c.income_per_student_talan ?? 885);
   const grant = Number(c.ministry_grant_per_student ?? 370);

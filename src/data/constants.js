@@ -2,9 +2,9 @@
 // כיתה מלאה: 22 שעות חודשיות × 400 ₪ = 8,800 ₪ בחודש = 105,600 ₪ בשנה.
 export const PAYMENT_MONTHS = 12;
 
-// שכר אופק חדש קובע את תעריף עלות ההוראה בפועל: כן = 600 ₪/שעה, לא = 400 ₪/שעה.
+// שכר אופק חדש קובע את תעריף עלות ההוראה בפועל: כן = 700 ₪/שעה, לא = 400 ₪/שעה.
 // ofekSalary === null ⇒ טרם נענתה — המערכת שואלת בדף הבית עד שעונים.
-export const OFEK_RATES = { yes: 600, no: 400 };
+export const OFEK_RATES = { yes: 700, no: 400 };
 
 export const DEFAULT_CONSTANTS = {
   schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
@@ -14,7 +14,7 @@ export const DEFAULT_CONSTANTS = {
   halfClassMinistryHours: 11,
   ministryHourlyRate: 400,
   actualWeeklyHours: 34,
-  actualHourlyRate: 600,
+  actualHourlyRate: 700,
   ofekSalary: null,
   incomePerStudent: 350,
   incomePerStudentTalan: 885,
