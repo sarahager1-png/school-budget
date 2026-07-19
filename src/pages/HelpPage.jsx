@@ -163,6 +163,9 @@ export default function HelpPage() {
                   <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תוספת משרד לתלמיד: {formatCurrency(c.ministryGrantPerStudent)} לשנה</span></li>
                 )}
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה מתלמיד: {formatCurrency(c.incomePerStudent)} לשנה</span></li>
+                {c.incomePerStudentBooks > 0 && (
+                  <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>ספרי לימוד: {formatCurrency(c.incomePerStudentBooks)} לתלמיד לשנה</span></li>
+                )}
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>מקורות נוספים: תרומות, מענקים עירוניים, אירועי גיוס כספים</span></li>
                 {c.incomePerStudentCaharon > 0 && (
                   <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>צהרון: {formatCurrency(c.incomePerStudentCaharon)} הכנסה לתלמיד לשנה</span></li>
@@ -173,8 +176,10 @@ export default function HelpPage() {
             <RuleCard icon={CreditCard} color="border-coral-500" title="מבנה הוצאות">
               <ul className="space-y-1.5 text-sm text-gray-600">
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>עלות הוראה:</strong> {c.actualWeeklyHours * WEEKS_PER_MONTH} שעות בחודש × {c.actualHourlyRate} ₪/שעה × {PAYMENT_MONTHS} חודשים לכל כיתה</span></li>
-                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות תלמיד:</strong> {formatCurrency(c.expensePerStudent)} לתלמיד לשנה</span></li>
-                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>פיתוח מקצועי:</strong> {formatCurrency(c.professionalDevPerClass)} לכיתה לשנה</span></li>
+                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות תלמיד:</strong> {formatCurrency(c.expensePerStudent)} לתלמיד לשנה — כולל אירועים, ערבי הורים, פיתוח מקצועי ושכפולים</span></li>
+                {c.professionalDevPerClass > 0 && (
+                  <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>פיתוח מקצועי:</strong> {formatCurrency(c.professionalDevPerClass)} לכיתה לשנה</span></li>
+                )}
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות כלליות:</strong> שכר, בניין, אירועים וציוד — נרשמות במסך ההוצאות לפי קטגוריה</span></li>
               </ul>
             </RuleCard>

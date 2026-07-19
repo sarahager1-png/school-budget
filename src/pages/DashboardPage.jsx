@@ -1,21 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, ArrowLeft,
-  School, CreditCard, Settings, Package,
+  School, CreditCard, Settings, Package, ChevronDown,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
   calculateSchoolTotals, calculateSimpleTotals, generateMonthlyData, generateCategoryData,
-  categoryTotals, formatCurrency, formatCurrencyFull,
+  categoryTotals, annualAmount, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import { REQUEST_STATUS, CLASS_TYPE } from '../data/constants.js';
 import CountUp from '../components/ui/CountUp.jsx';
 
-function StatCard({ label, value, rawValue, format, sub, color, icon: Icon, isNegative, index = 0 }) {
+// breakdown: [{label, value, negative?}] — "מה כולל?" נפתח ומראה ממה המספר מורכב
+function StatCard({ label, value, rawValue, format, sub, color, icon: Icon, isNegative, index = 0, breakdown }) {
+  const [open, setOpen] = useState(false);
   const colors = {
     teal: { bg: 'bg-teal-50', border: 'border-teal-200', icon: 'bg-teal-500', text: 'text-teal-600' },
     purple: { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'bg-purple-500', text: 'text-purple-600' },
@@ -45,6 +47,30 @@ function StatCard({ label, value, rawValue, format, sub, color, icon: Icon, isNe
           : value}
       </p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      {breakdown?.some(r => r.value !== 0) && (
+        <>
+          <button
+            onClick={() => setOpen(o => !o)}
+            aria-expanded={open}
+            className={`mt-2.5 text-xs font-bold flex items-center gap-1 ${c.text} hover:opacity-75 transition-opacity`}
+          >
+            מה כולל?
+            <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+          {open && (
+            <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+              {breakdown.filter(r => r.value !== 0).map(r => (
+                <div key={r.label} className="flex justify-between items-baseline gap-2 text-xs">
+                  <span className="text-gray-500 truncate">{r.label}</span>
+                  <span className={`font-bold flex-shrink-0 ${r.negative ? 'text-red-500' : 'text-gray-700'}`}>
+                    {r.negative ? '− ' : ''}{formatCurrency(r.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -168,9 +194,15 @@ function SimpleDashboard() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard index={0} label="סה״כ הכנסות שנתיות" rawValue={totals.totalIncome} format={formatCurrency} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false} />
-        <StatCard index={1} label="סה״כ הוצאות שנתיות" rawValue={totals.totalExpenses} format={formatCurrency} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true} />
-        <StatCard index={2} label="יתרה שנתית" rawValue={totals.balance} format={formatCurrencyFull} sub={totals.isDeficit ? 'גירעון' : 'עודף'} color={totals.isDeficit ? 'red' : 'green'} icon={DollarSign} isNegative={totals.isDeficit} />
+        <StatCard index={0} label="סה״כ הכנסות שנתיות" rawValue={totals.totalIncome} format={formatCurrency} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false}
+          breakdown={incomeSources.map(s => ({ label: s.name, value: s.amount || 0 }))} />
+        <StatCard index={1} label="סה״כ הוצאות שנתיות" rawValue={totals.totalExpenses} format={formatCurrency} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true}
+          breakdown={catData.map(c => ({ label: c.name, value: c.value }))} />
+        <StatCard index={2} label="יתרה שנתית" rawValue={totals.balance} format={formatCurrencyFull} sub={totals.isDeficit ? 'גירעון' : 'עודף'} color={totals.isDeficit ? 'red' : 'green'} icon={DollarSign} isNegative={totals.isDeficit}
+          breakdown={[
+            { label: 'סה״כ הכנסות', value: totals.totalIncome },
+            { label: 'סה״כ הוצאות', value: totals.totalExpenses, negative: true },
+          ]} />
         <StatCard index={3} label="בקשות ממתינות" rawValue={pendingCount} format={n => n} sub="בקשות תשלום לטיפול" color="gold" icon={Package} />
       </div>
 
@@ -255,6 +287,38 @@ function FullDashboard() {
   const formatK = (v) => `₪${(v / 1000).toFixed(0)}K`;
   const isEmpty = classes.length === 0 && expenses.length === 0;
 
+  // "מה כולל?" — הרכב מלא של כל מספר מסכם
+  const incomeBreakdown = [
+    { label: 'משרד החינוך לפי תקן', value: totals.totalMinistryIncome },
+    { label: 'תוספת משרד לתלמיד', value: totals.totalMinistryGrantIncome },
+    { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome },
+    { label: 'ספרי לימוד לתלמיד', value: totals.totalBooksIncome },
+    ...incomeSources.map(s => ({ label: s.name, value: s.amount || 0 })),
+  ];
+  // שכר מנהלת מוצג בשמו, בנפרד מקטגוריית השכר שהוא רשום בה
+  const principalLine = expenses.find(e => e.name === 'שכר מנהלת');
+  const principalAnnual = principalLine ? annualAmount(principalLine) : 0;
+  const expenseBreakdown = [
+    { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
+    { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
+    { label: 'פיתוח מקצועי', value: totals.totalProfDev },
+    ...(principalAnnual > 0 ? [{ label: 'שכר מנהלת', value: principalAnnual }] : []),
+    ...categoryTotals(expenses, expenseCategories)
+      .filter(c => c.kind !== 'profdev')
+      .map(c => (principalLine && c.id === principalLine.categoryId
+        ? { label: c.name, value: c.value - principalAnnual }
+        : { label: c.name, value: c.value }))
+      .filter(c => c.value > 0),
+  ];
+  const balanceBreakdown = [
+    { label: 'סה״כ הכנסות', value: totals.totalIncome },
+    { label: 'סה״כ הוצאות', value: totals.totalExpenses, negative: true },
+  ];
+  const gapBreakdown = [
+    { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost },
+    { label: 'מימון משרד לפי תקן', value: totals.totalMinistryIncome, negative: true },
+  ];
+
   return (
     <div className="space-y-6">
       {isEmpty && (
@@ -277,6 +341,7 @@ function FullDashboard() {
           color="teal"
           icon={TrendingUp}
           isNegative={false}
+          breakdown={incomeBreakdown}
         />
         <StatCard
           index={1}
@@ -287,6 +352,7 @@ function FullDashboard() {
           color="coral"
           icon={TrendingDown}
           isNegative={true}
+          breakdown={expenseBreakdown}
         />
         <StatCard
           index={2}
@@ -297,6 +363,7 @@ function FullDashboard() {
           color={totals.isDeficit ? 'red' : 'green'}
           icon={DollarSign}
           isNegative={totals.isDeficit}
+          breakdown={balanceBreakdown}
         />
         <StatCard
           index={3}
@@ -307,6 +374,7 @@ function FullDashboard() {
           color="purple"
           icon={AlertCircle}
           isNegative={true}
+          breakdown={gapBreakdown}
         />
       </div>
 

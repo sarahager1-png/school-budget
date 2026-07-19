@@ -16,6 +16,7 @@ function mapConstantsFromDB(row) {
     actualWeeklyHours: row.actual_weekly_hours,
     actualHourlyRate: Number(row.actual_hourly_rate),
     incomePerStudent: Number(row.income_per_student),
+    incomePerStudentBooks: Number(row.income_per_student_books ?? 280),
     expensePerStudent: Number(row.expense_per_student),
     professionalDevPerClass: Number(row.professional_dev_per_class),
     principalMonthlySalary: Number(row.principal_monthly_salary),
@@ -36,6 +37,7 @@ function mapConstantsToDB(c) {
     actual_weekly_hours: c.actualWeeklyHours,
     actual_hourly_rate: c.actualHourlyRate,
     income_per_student: c.incomePerStudent,
+    income_per_student_books: c.incomePerStudentBooks,
     expense_per_student: c.expensePerStudent,
     professional_dev_per_class: c.professionalDevPerClass,
     principal_monthly_salary: c.principalMonthlySalary,
@@ -315,13 +317,28 @@ export function AppProvider({ children }) {
     }).eq('id', id);
     if (error) return saveFailed(error);
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...exp } : e));
+    // שכר מנהלת נערך גם מכאן — שומרים את הקבוע בהגדרות מסונכרן, מקור אמת אחד
+    if (exp.name === 'שכר מנהלת' && exp.period === 'monthly' && currentYear) {
+      await supabase.from('financial_constants')
+        .update({ principal_monthly_salary: exp.amount })
+        .eq('budget_year_id', currentYear.id);
+      setConstantsState(prev => ({ ...prev, principalMonthlySalary: exp.amount }));
+    }
     notify('ההוצאה עודכנה ✓');
   };
 
   const deleteExpense = async (id) => {
+    const removed = expenses.find(e => e.id === id);
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) return saveFailed(error);
     setExpenses(prev => prev.filter(e => e.id !== id));
+    // מחיקת שכר מנהלת מאפסת את הקבוע — אחרת הריפוי האוטומטי ירשום אותו מחדש בכניסה הבאה
+    if (removed?.name === 'שכר מנהלת' && currentYear) {
+      await supabase.from('financial_constants')
+        .update({ principal_monthly_salary: 0 })
+        .eq('budget_year_id', currentYear.id);
+      setConstantsState(prev => ({ ...prev, principalMonthlySalary: 0 }));
+    }
     notify('ההוצאה נמחקה');
   };
 

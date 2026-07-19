@@ -50,8 +50,10 @@ CREATE TABLE financial_constants (
   actual_weekly_hours INTEGER DEFAULT 29,
   actual_hourly_rate NUMERIC DEFAULT 600,
   income_per_student NUMERIC DEFAULT 350,
-  expense_per_student NUMERIC DEFAULT 1400,
-  professional_dev_per_class NUMERIC DEFAULT 2000,
+  income_per_student_books NUMERIC DEFAULT 280,
+  expense_per_student NUMERIC DEFAULT 1200, -- כולל אירועים, ערבי הורים, פיתוח מקצועי, שכפולים
+  professional_dev_per_class NUMERIC DEFAULT 0, -- נכלל בהוצאה לתלמיד
+
   principal_monthly_salary NUMERIC DEFAULT 27000,
   income_per_student_caharon NUMERIC DEFAULT 0,
   expense_per_student_caharon NUMERIC DEFAULT 0,

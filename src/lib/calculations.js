@@ -16,6 +16,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
     actualWeeklyHours,
     actualHourlyRate,
     incomePerStudent,
+    incomePerStudentBooks = 0,
     expensePerStudent,
     professionalDevPerClass,
     incomePerStudentCaharon = 0,
@@ -35,8 +36,9 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   const ministryIncome = ministryMonthlyIncome * PAYMENT_MONTHS;
   const ministryGrantIncome = n * ministryGrantPerStudent;
   const studentIncome = n * incomePerStudent;
+  const booksIncome = n * incomePerStudentBooks;
   const caharonIncome = n * incomePerStudentCaharon;
-  const totalIncome = ministryIncome + ministryGrantIncome + studentIncome + caharonIncome;
+  const totalIncome = ministryIncome + ministryGrantIncome + studentIncome + booksIncome + caharonIncome;
 
   const actualMonthlyCost = actualWeeklyHours * WEEKS_PER_MONTH * actualHourlyRate;
   const actualOperatingCost = actualMonthlyCost * PAYMENT_MONTHS;
@@ -56,6 +58,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
     actualMonthlyCost,
     ministryGrantIncome,
     studentIncome,
+    booksIncome,
     caharonIncome,
     totalIncome,
     actualOperatingCost,
@@ -86,8 +89,9 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalMinistryIncome = classBreakdowns.reduce((sum, c) => sum + c.budget.ministryIncome, 0);
   const totalMinistryGrantIncome = classBreakdowns.reduce((sum, c) => sum + c.budget.ministryGrantIncome, 0);
   const totalStudentIncome = classBreakdowns.reduce((sum, c) => sum + c.budget.studentIncome, 0);
+  const totalBooksIncome = classBreakdowns.reduce((sum, c) => sum + c.budget.booksIncome, 0);
   const additionalIncome = incomeSources.reduce((sum, s) => sum + (s.amount || 0), 0);
-  const totalIncome = totalMinistryIncome + totalMinistryGrantIncome + totalStudentIncome + additionalIncome;
+  const totalIncome = totalMinistryIncome + totalMinistryGrantIncome + totalStudentIncome + totalBooksIncome + additionalIncome;
 
   const totalClassActualCost = classBreakdowns.reduce((sum, c) => sum + c.budget.actualOperatingCost, 0);
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);
@@ -118,6 +122,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
     totalMinistryIncome,
     totalMinistryGrantIncome,
     totalStudentIncome,
+    totalBooksIncome,
     additionalIncome,
     totalIncome,
     totalClassActualCost,

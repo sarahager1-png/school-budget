@@ -80,8 +80,9 @@ export default function IncomePage() {
   const totalMinistry = isSimpleMode ? 0 : classBreakdowns.reduce((s, c) => s + c.budget.ministryIncome, 0);
   const totalMinistryGrant = isSimpleMode ? 0 : classBreakdowns.reduce((s, c) => s + c.budget.ministryGrantIncome, 0);
   const totalStudentIncome = isSimpleMode ? 0 : classBreakdowns.reduce((s, c) => s + c.budget.studentIncome, 0);
+  const totalBooks = isSimpleMode ? 0 : classBreakdowns.reduce((s, c) => s + c.budget.booksIncome, 0);
   const totalAdditional = incomeSources.reduce((s, i) => s + (i.amount || 0), 0);
-  const grandTotal = totalMinistry + totalMinistryGrant + totalStudentIncome + totalAdditional;
+  const grandTotal = totalMinistry + totalMinistryGrant + totalStudentIncome + totalBooks + totalAdditional;
 
   return (
     <div className="space-y-5">
@@ -100,11 +101,12 @@ export default function IncomePage() {
 
       {/* Summary Row — budget mode only */}
       {!isSimpleMode && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: 'תקן משרד החינוך', value: totalMinistry, bar: 'bg-teal-500', pct: grandTotal ? totalMinistry / grandTotal * 100 : 0 },
             { label: 'תוספת לתלמיד — משרד', value: totalMinistryGrant, bar: 'bg-blue-500', pct: grandTotal ? totalMinistryGrant / grandTotal * 100 : 0 },
             { label: 'הכנסה לתלמיד', value: totalStudentIncome, bar: 'bg-purple-500', pct: grandTotal ? totalStudentIncome / grandTotal * 100 : 0 },
+            { label: 'ספרי לימוד', value: totalBooks, bar: 'bg-coral-500', pct: grandTotal ? totalBooks / grandTotal * 100 : 0 },
             { label: 'הכנסות נוספות', value: totalAdditional, bar: 'bg-gold-500', pct: grandTotal ? totalAdditional / grandTotal * 100 : 0 },
           ].map(item => (
             <div key={item.label} className="card p-4">
@@ -139,6 +141,7 @@ export default function IncomePage() {
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">תקן משרד</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">תוספת לתלמיד</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">הכנסה לתלמיד</th>
+                  <th className="text-left px-3 py-3 text-gray-500 font-medium">ספרי לימוד</th>
                   <th className="text-left px-3 py-3 text-gray-500 font-medium">סה״כ</th>
                 </tr>
               </thead>
@@ -156,6 +159,7 @@ export default function IncomePage() {
                       <td className="px-3 py-3 text-left font-medium text-teal-600">{formatCurrency(cls.budget.ministryIncome)}</td>
                       <td className="px-3 py-3 text-left font-medium text-blue-600">{formatCurrency(cls.budget.ministryGrantIncome)}</td>
                       <td className="px-3 py-3 text-left font-medium text-purple-600">{formatCurrency(cls.budget.studentIncome)}</td>
+                      <td className="px-3 py-3 text-left font-medium text-coral-600">{formatCurrency(cls.budget.booksIncome)}</td>
                       <td className="px-3 py-3 text-left font-bold text-gray-800">{formatCurrency(cls.budget.totalIncome)}</td>
                     </tr>
                   );
@@ -168,7 +172,8 @@ export default function IncomePage() {
                   <td className="px-3 py-3 text-left font-bold text-teal-600">{formatCurrency(totalMinistry)}</td>
                   <td className="px-3 py-3 text-left font-bold text-blue-600">{formatCurrency(totalMinistryGrant)}</td>
                   <td className="px-3 py-3 text-left font-bold text-purple-600">{formatCurrency(totalStudentIncome)}</td>
-                  <td className="px-3 py-3 text-left font-bold text-gray-800">{formatCurrency(totalMinistry + totalMinistryGrant + totalStudentIncome)}</td>
+                  <td className="px-3 py-3 text-left font-bold text-coral-600">{formatCurrency(totalBooks)}</td>
+                  <td className="px-3 py-3 text-left font-bold text-gray-800">{formatCurrency(totalMinistry + totalMinistryGrant + totalStudentIncome + totalBooks)}</td>
                 </tr>
               </tbody>
             </table>
