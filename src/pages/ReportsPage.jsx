@@ -363,7 +363,7 @@ export default function ReportsPage() {
                 : [
                     { label: 'הכנסות ממשרד החינוך', value: totals.totalMinistryIncome + totals.totalMinistryGrantIncome, type: 'income' },
                     { label: 'הכנסות לתלמיד', value: totals.totalStudentIncome, type: 'income' },
-                    ...(totals.totalBooksIncome > 0 ? [{ label: 'ספרי לימוד', value: totals.totalBooksIncome, type: 'income' }] : []),
+                    ...(totals.totalTalanIncome > 0 ? [{ label: 'תל"ן (תשלומי הורים)', value: totals.totalTalanIncome, type: 'income' }] : []),
                     { label: 'הכנסות נוספות (תרומות, עירייה וכו׳)', value: totals.additionalIncome, type: 'income' },
                     { label: null },
                     { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },

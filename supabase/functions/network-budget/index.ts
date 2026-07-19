@@ -88,7 +88,7 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const actH = Number(c.actual_weekly_hours ?? 29);
   const actRate = Number(c.actual_hourly_rate ?? 600);
   const perStudent = Number(c.income_per_student ?? 350);
-  const books = Number(c.income_per_student_books ?? 280);
+  const talan = Number(c.income_per_student_talan ?? 885);
   const grant = Number(c.ministry_grant_per_student ?? 370);
   const expStudent = Number(c.expense_per_student ?? 1200);
   const profDev = Number(c.professional_dev_per_class ?? 0);
@@ -101,18 +101,18 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const ministry = classRows.reduce((t, x) => t + x.ministryAnnual, 0);
   const grantIncome = students * grant;
   const studentIncome = students * perStudent;
-  const booksIncome = students * books;
+  const talanIncome = students * talan;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
-  const totalIncome = ministry + grantIncome + studentIncome + booksIncome + additional;
+  const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
   const totalExpenses = teaching + studentExp + profDevExp + manualTotal;
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
     students, classCount: classes.length,
     ofek: c.ofek_salary ?? null,
-    income: { ministry, grant: grantIncome, perStudent: studentIncome, books: booksIncome, additional, sources: income, total: totalIncome },
+    income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
     expenses: { teaching, teachingMonthly: classes.length * actH * actRate, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
     balance: totalIncome - totalExpenses,
     principalMonthly: principal ? Number(principal.amount) : 0,

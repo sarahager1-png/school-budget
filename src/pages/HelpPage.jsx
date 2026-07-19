@@ -163,8 +163,8 @@ export default function HelpPage() {
                   <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תוספת כללית לתלמיד — משרד: {formatCurrency(c.ministryGrantPerStudent)} לשנה</span></li>
                 )}
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>הכנסה מתלמיד: {formatCurrency(c.incomePerStudent)} לשנה</span></li>
-                {c.incomePerStudentBooks > 0 && (
-                  <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>ספרי לימוד: {formatCurrency(c.incomePerStudentBooks)} לתלמיד לשנה</span></li>
+                {c.incomePerStudentTalan > 0 && (
+                  <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>תל"ן — תשלום הורה: {formatCurrency(c.incomePerStudentTalan)} לתלמיד לשנה</span></li>
                 )}
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>מקורות נוספים: תרומות, מענקים עירוניים, אירועי גיוס כספים</span></li>
                 {c.incomePerStudentCaharon > 0 && (

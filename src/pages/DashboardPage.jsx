@@ -318,7 +318,7 @@ function FullDashboard() {
     { label: 'משרד החינוך לפי תקן', value: totals.totalMinistryIncome },
     { label: 'תוספת כללית לתלמיד — משרד', value: totals.totalMinistryGrantIncome },
     { label: 'הכנסה לתלמיד', value: totals.totalStudentIncome },
-    { label: 'ספרי לימוד לתלמיד', value: totals.totalBooksIncome },
+    { label: 'תל"ן (תשלומי הורים)', value: totals.totalTalanIncome },
     ...incomeSources.map(s => ({ label: s.name, value: s.amount || 0 })),
   ];
   // שכר מנהלת מוצג בשמו, בנפרד מקטגוריית השכר שהוא רשום בה

@@ -47,11 +47,11 @@ CREATE TABLE financial_constants (
   full_class_ministry_hours INTEGER DEFAULT 22,
   half_class_ministry_hours INTEGER DEFAULT 11,
   ministry_hourly_rate NUMERIC DEFAULT 400,
-  actual_weekly_hours INTEGER DEFAULT 29,
+  actual_weekly_hours INTEGER DEFAULT 34, -- שעות בפועל לכיתה בחודש
   actual_hourly_rate NUMERIC DEFAULT 600,
   ofek_salary BOOLEAN, -- NULL = טרם נענתה; כן=600 ₪/שעה, לא=400 ₪/שעה
   income_per_student NUMERIC DEFAULT 350,
-  income_per_student_books NUMERIC DEFAULT 280,
+  income_per_student_talan NUMERIC DEFAULT 885, -- תל"ן תשלום הורה לשנה
   expense_per_student NUMERIC DEFAULT 1200, -- כולל אירועים, ערבי הורים, פיתוח מקצועי, שכפולים
   professional_dev_per_class NUMERIC DEFAULT 0, -- נכלל בהוצאה לתלמיד
 

@@ -70,7 +70,7 @@ function BudgetBreakdown({ budget }) {
     { label: 'הכנסה ממשרד בשנה (12 ח׳)', value: formatCurrency(budget.ministryIncome), positive: true },
     ...(budget.ministryGrantIncome > 0 ? [{ label: 'תוספת לתלמיד — משרד', value: formatCurrency(budget.ministryGrantIncome), positive: true }] : []),
     { label: 'הכנסה לתלמיד', value: formatCurrency(budget.studentIncome), positive: true },
-    ...(budget.booksIncome > 0 ? [{ label: 'ספרי לימוד', value: formatCurrency(budget.booksIncome), positive: true }] : []),
+    ...(budget.talanIncome > 0 ? [{ label: 'תל"ן (תשלומי הורים)', value: formatCurrency(budget.talanIncome), positive: true }] : []),
     ...(budget.caharonIncome > 0 ? [{ label: 'הכנסות צהרון', value: formatCurrency(budget.caharonIncome), positive: true }] : []),
     { label: 'סה״כ הכנסות', value: formatCurrency(budget.totalIncome), bold: true, positive: true },
     null,
