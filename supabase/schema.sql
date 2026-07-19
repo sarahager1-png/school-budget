@@ -49,6 +49,7 @@ CREATE TABLE financial_constants (
   ministry_hourly_rate NUMERIC DEFAULT 400,
   actual_weekly_hours INTEGER DEFAULT 29,
   actual_hourly_rate NUMERIC DEFAULT 600,
+  ofek_salary BOOLEAN, -- NULL = טרם נענתה; כן=600 ₪/שעה, לא=400 ₪/שעה
   income_per_student NUMERIC DEFAULT 350,
   income_per_student_books NUMERIC DEFAULT 280,
   expense_per_student NUMERIC DEFAULT 1200, -- כולל אירועים, ערבי הורים, פיתוח מקצועי, שכפולים

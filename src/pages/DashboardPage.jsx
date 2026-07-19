@@ -12,7 +12,7 @@ import {
   calculateSchoolTotals, calculateSimpleTotals, generateMonthlyData, generateCategoryData,
   categoryTotals, annualAmount, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
-import { REQUEST_STATUS, CLASS_TYPE } from '../data/constants.js';
+import { REQUEST_STATUS, CLASS_TYPE, MANAGERS, OFEK_RATES } from '../data/constants.js';
 import CountUp from '../components/ui/CountUp.jsx';
 
 // breakdown: [{label, value, negative?}] — "מה כולל?" נפתח ומראה ממה המספר מורכב
@@ -123,6 +123,32 @@ function GettingStarted({ navigate, isSimpleMode, hasClasses, hasExpenses }) {
             <ArrowLeft size={15} className="text-gray-300 flex-shrink-0" />
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// שאלה קריטית: שכר אופק חדש קובע את תעריף עלות ההוראה — נשאלת עד שעונים
+function OfekQuestion({ constants, setConstants }) {
+  const answer = (yes) => setConstants({
+    ...constants,
+    ofekSalary: yes,
+    actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
+  });
+  return (
+    <div className="card p-5 border-2 border-gold-300 bg-gold-50/50">
+      <h3 className="font-bold text-gray-800 text-lg mb-1">שאלה חשובה לחישוב עלות ההוראה 💡</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        האם המורות בבית הספר מקבלות שכר לפי <strong>אופק חדש</strong>?
+        התשובה קובעת את תעריף השעה בחישוב עלות ההוראה, ואפשר לשנות אותה בכל רגע בהגדרות.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button onClick={() => answer(true)} className="btn-primary flex-1 justify-center">
+          כן — שכר אופק ({OFEK_RATES.yes} ₪ לשעה)
+        </button>
+        <button onClick={() => answer(false)} className="btn-outline flex-1 justify-center">
+          לא — ללא אופק ({OFEK_RATES.no} ₪ לשעה)
+        </button>
       </div>
     </div>
   );
@@ -271,7 +297,7 @@ export default function DashboardPage() {
 }
 
 function FullDashboard() {
-  const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, navigate } = useApp();
+  const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, setConstants, user, navigate } = useApp();
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
@@ -321,6 +347,10 @@ function FullDashboard() {
 
   return (
     <div className="space-y-6">
+      {constants.ofekSalary == null && MANAGERS.includes(user?.role) && (
+        <OfekQuestion constants={constants} setConstants={setConstants} />
+      )}
+
       {isEmpty && (
         <GettingStarted
           navigate={navigate}

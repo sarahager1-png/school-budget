@@ -3,6 +3,10 @@
 export const WEEKS_PER_MONTH = 4;
 export const PAYMENT_MONTHS = 12;
 
+// שכר אופק חדש קובע את תעריף עלות ההוראה בפועל: כן = 600 ₪/שעה, לא = 400 ₪/שעה.
+// ofekSalary === null ⇒ טרם נענתה — המערכת שואלת בדף הבית עד שעונים.
+export const OFEK_RATES = { yes: 600, no: 400 };
+
 export const DEFAULT_CONSTANTS = {
   schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
   fullClassStudentThreshold: 21,
@@ -12,6 +16,7 @@ export const DEFAULT_CONSTANTS = {
   ministryHourlyRate: 400,
   actualWeeklyHours: 29,
   actualHourlyRate: 600,
+  ofekSalary: null,
   incomePerStudent: 350,
   incomePerStudentBooks: 280,
   expensePerStudent: 1200,

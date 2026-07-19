@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, WEEKS_PER_MONTH, PAYMENT_MONTHS } from '../data/constants.js';
+import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, WEEKS_PER_MONTH, PAYMENT_MONTHS, OFEK_RATES } from '../data/constants.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
 import Picker from '../components/ui/Picker.jsx';
@@ -201,8 +201,39 @@ function FinancialTab() {
   const monthlyActual = form.actualWeeklyHours * WEEKS_PER_MONTH * form.actualHourlyRate;
   const annualActual = monthlyActual * PAYMENT_MONTHS;
 
+  const setOfek = (yes) => setForm(p => ({
+    ...p,
+    ofekSalary: yes,
+    actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
+  }));
+
   return (
     <div className="space-y-5">
+      {/* שכר אופק — קובע את תעריף עלות ההוראה */}
+      <div className="card p-4 border border-gold-200">
+        <label className="label">שכר אופק חדש?</label>
+        <p className="text-xs text-gray-400 mb-3">קובע את תעריף השעה בעלות ההוראה: כן = {OFEK_RATES.yes} ₪, לא = {OFEK_RATES.no} ₪. לא לשכוח לשמור למטה.</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setOfek(true)}
+            aria-pressed={form.ofekSalary === true}
+            className={form.ofekSalary === true ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+          >
+            כן — אופק חדש ({OFEK_RATES.yes} ₪)
+          </button>
+          <button
+            onClick={() => setOfek(false)}
+            aria-pressed={form.ofekSalary === false}
+            className={form.ofekSalary === false ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+          >
+            לא ({OFEK_RATES.no} ₪)
+          </button>
+        </div>
+        {form.ofekSalary == null && (
+          <p className="text-xs text-gold-700 mt-2">טרם נבחר — המערכת תמשיך לשאול בדף הבית</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Object.entries(CONSTANTS_LABELS).map(([key, meta]) => (
           <div key={key} className="card p-4">
