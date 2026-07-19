@@ -30,7 +30,7 @@ export const CONSTANTS_LABELS = {
   fullClassStudentThreshold: { label: 'סף כיתה מלאה (תלמידים)', unit: 'תלמידים' },
   halfClassStudentThreshold: { label: 'סף כיתה חצי (תלמידים)', unit: 'תלמידים' },
   fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות/חודש' },
-  halfClassMinistryHours: { label: 'שעות תקן חצי (משרד)', unit: 'שעות/חודש' },
+  halfClassMinistryHours: { label: 'שעות חצי תקן (משרד)', unit: 'שעות/חודש' },
   ministryHourlyRate: { label: 'תעריף שעה — משרד החינוך', unit: '₪/שעה' },
   actualWeeklyHours: { label: 'שעות בפועל לכיתה בחודש', unit: 'שעות/חודש' },
   actualHourlyRate: { label: 'תעריף שעה — עלות בפועל', unit: '₪/שעה' },
@@ -69,7 +69,7 @@ export const EXPENSE_STATUS = {
 
 export const CLASS_TYPE = {
   full: { label: 'תקן מלא', color: 'bg-teal-100 text-teal-700' },
-  half: { label: 'תקן חצי', color: 'bg-gold-100 text-gold-700' },
+  half: { label: 'חצי תקן', color: 'bg-gold-100 text-gold-700' },
   none: { label: 'ללא תקן', color: 'bg-red-100 text-red-700' },
 };
 

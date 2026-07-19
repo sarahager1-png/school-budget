@@ -146,7 +146,7 @@ export default function HelpPage() {
                   <span>{c.fullClassStudentThreshold}+ תלמידים — {c.fullClassMinistryHours} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="badge bg-gold-100 text-gold-700">תקן חצי</span>
+                  <span className="badge bg-gold-100 text-gold-700">חצי תקן</span>
                   <span>{c.halfClassStudentThreshold}–{c.fullClassStudentThreshold - 1} תלמידים — {c.halfClassMinistryHours} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">

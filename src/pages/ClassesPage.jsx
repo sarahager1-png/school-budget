@@ -139,7 +139,7 @@ export default function ClassesPage() {
   const FILTERS = [
     { key: 'all', label: 'כל הכיתות' },
     { key: 'full', label: `תקן מלא (${constants.fullClassStudentThreshold}+)` },
-    { key: 'half', label: `תקן חצי (${constants.halfClassStudentThreshold}-${constants.fullClassStudentThreshold - 1})` },
+    { key: 'half', label: `חצי תקן (${constants.halfClassStudentThreshold}-${constants.fullClassStudentThreshold - 1})` },
     { key: 'none', label: `ללא תקן (<${constants.halfClassStudentThreshold})` },
   ];
 
