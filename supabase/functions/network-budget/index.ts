@@ -47,7 +47,7 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   if (!year) return { slug: s.slug, name: s.name, url: s.url, empty: true };
 
   const [classes, income, expenses, cats, constRows] = await Promise.all([
-    get(`classes?budget_year_id=eq.${year.id}&select=name,student_count`),
+    get(`classes?budget_year_id=eq.${year.id}&select=name,student_count,extra_hours`),
     get(`income_sources?budget_year_id=eq.${year.id}&select=name,amount`),
     get(`expenses?budget_year_id=eq.${year.id}&select=name,amount,period,category_id`),
     get('expense_categories?select=id,name,kind'),
@@ -103,17 +103,19 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const studentIncome = students * perStudent;
   const talanIncome = students * talan;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
+  const extraHoursTotal = classes.reduce((t: number, x: { extra_hours?: number }) => t + Number(x.extra_hours ?? 0), 0);
+  const extraHoursCost = extraHoursTotal * actRate * PAYMENT_MONTHS;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
-  const totalExpenses = teaching + studentExp + profDevExp + manualTotal;
+  const totalExpenses = teaching + extraHoursCost + studentExp + profDevExp + manualTotal;
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
     students, classCount: classes.length,
     ofek: c.ofek_salary ?? null,
     income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
-    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
+    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, extraHours: extraHoursTotal, extraHoursCost, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
     balance: totalIncome - totalExpenses,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,

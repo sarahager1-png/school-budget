@@ -42,10 +42,13 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
 
   const actualMonthlyCost = actualWeeklyHours * actualHourlyRate;
   const actualOperatingCost = actualMonthlyCost * PAYMENT_MONTHS;
+  // שעות בודדות פר כיתה — עלות בלבד (× תעריף האופק), לא משפיעות על הכנסת המשרד
+  const extraHours = Number(classItem.extraHours || 0);
+  const extraHoursCost = extraHours * actualHourlyRate * PAYMENT_MONTHS;
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
   const profDevExpense = professionalDevPerClass;
-  const totalExpenses = actualOperatingCost + studentExpenses + caharonExpense + profDevExpense;
+  const totalExpenses = actualOperatingCost + extraHoursCost + studentExpenses + caharonExpense + profDevExpense;
 
   const balance = totalIncome - totalExpenses;
 
@@ -61,6 +64,8 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
     caharonIncome,
     totalIncome,
     actualOperatingCost,
+    extraHours,
+    extraHoursCost,
     studentExpenses,
     caharonExpense,
     profDevExpense,
@@ -93,6 +98,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalIncome = totalMinistryIncome + totalMinistryGrantIncome + totalStudentIncome + totalTalanIncome + additionalIncome;
 
   const totalClassActualCost = classBreakdowns.reduce((sum, c) => sum + c.budget.actualOperatingCost, 0);
+  const totalExtraHoursCost = classBreakdowns.reduce((sum, c) => sum + c.budget.extraHoursCost, 0);
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);
   const totalProfDev = classBreakdowns.reduce((sum, c) => sum + c.budget.profDevExpense, 0);
 
@@ -111,7 +117,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const miscExpenses = sumKind('other');
 
   const otherExpenses = salaryExpenses + buildingExpenses + operationExpenses + summerExpenses + miscExpenses;
-  const totalExpenses = totalClassActualCost + totalStudentExpenses + totalProfDev + otherExpenses;
+  const totalExpenses = totalClassActualCost + totalExtraHoursCost + totalStudentExpenses + totalProfDev + otherExpenses;
   const balance = totalIncome - totalExpenses;
   const ministryGap = totalClassActualCost - totalMinistryIncome;
 
@@ -125,6 +131,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
     additionalIncome,
     totalIncome,
     totalClassActualCost,
+    totalExtraHoursCost,
     totalStudentExpenses,
     totalProfDev,
     salaryExpenses,
@@ -182,11 +189,13 @@ export function categoryColor(cat, i = 0) {
 // profdev-kind categories are skipped (already computed per class).
 export function generateCategoryData(expenses, classes, constants = DEFAULT_CONSTANTS, categories = []) {
   const totalClassActualCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).actualOperatingCost, 0);
+  const totalExtraHoursCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).extraHoursCost, 0);
   const totalStudentExpenses = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).studentExpenses, 0);
   const totalProfDev = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).profDevExpense, 0);
 
   const rows = [
     { name: 'עלות הוראה', value: totalClassActualCost, fill: '#00B4CC' },
+    { name: 'שעות בודדות', value: totalExtraHoursCost, fill: '#F5C518' },
     { name: 'הוצאות תלמידים', value: totalStudentExpenses, fill: '#4B2E83' },
     { name: 'פיתוח מקצועי', value: totalProfDev, fill: '#6366F1' },
     ...categoryTotals(expenses, categories).filter(c => c.kind !== 'profdev'),

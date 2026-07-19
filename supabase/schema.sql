@@ -71,6 +71,7 @@ CREATE TABLE classes (
   grade_level TEXT,
   section TEXT,
   student_count INTEGER NOT NULL DEFAULT 0 CHECK (student_count >= 0),
+  extra_hours NUMERIC DEFAULT 0, -- שעות בודדות בחודש: עלות בלבד, לא הכנסה
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

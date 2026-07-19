@@ -369,6 +369,7 @@ export default function ReportsPage() {
                     { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },
                     { label: null },
                     { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost, type: 'expense' },
+                    ...(totals.totalExtraHoursCost > 0 ? [{ label: 'שעות בודדות', value: totals.totalExtraHoursCost, type: 'expense' }] : []),
                     { label: 'הוצאות לתלמיד (אירועים, ערבי הורים, פיתוח מקצועי, שכפולים)', value: totals.totalStudentExpenses, type: 'expense' },
                     ...(totals.totalProfDev > 0 ? [{ label: 'פיתוח מקצועי', value: totals.totalProfDev, type: 'expense' }] : []),
                     { label: 'שכר', value: totals.salaryExpenses, type: 'expense' },

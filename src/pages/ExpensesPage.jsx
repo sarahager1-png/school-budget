@@ -194,15 +194,18 @@ function AutoExpensesCard({ classes, constants }) {
   const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
   const budgets = classes.map(c => calculateClassBudget(c, constants));
   const teaching = budgets.reduce((s, b) => s + b.actualOperatingCost, 0);
+  const extraHours = classes.reduce((s, c) => s + (c.extraHours || 0), 0);
+  const extraCost = budgets.reduce((s, b) => s + b.extraHoursCost, 0);
   const students = budgets.reduce((s, b) => s + b.studentExpenses, 0);
   const profDev = budgets.reduce((s, b) => s + b.profDevExpense, 0);
 
   const rows = [
     { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: teaching / 12, annual: teaching },
+    { name: 'שעות בודדות', hint: `${extraHours} שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳ — לפי מה שהוזן בכיתות`, monthly: extraCost / 12, annual: extraCost },
     { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} — אירועים, ערבי הורים, פיתוח מקצועי ושכפולים`, annual: students },
     { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
   ].filter(r => r.annual > 0);
-  const total = teaching + students + profDev;
+  const total = teaching + extraCost + students + profDev;
 
   return (
     <div className="card p-5">
@@ -274,7 +277,7 @@ export default function ExpensesPage() {
     if (isSimpleMode) return 0;
     return classes.reduce((s, c) => {
       const b = calculateClassBudget(c, constants);
-      return s + b.actualOperatingCost + b.studentExpenses + b.profDevExpense;
+      return s + b.actualOperatingCost + b.extraHoursCost + b.studentExpenses + b.profDevExpense;
     }, 0);
   }, [classes, constants, isSimpleMode]);
 

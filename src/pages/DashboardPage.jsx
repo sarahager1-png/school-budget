@@ -326,6 +326,7 @@ function FullDashboard() {
   const principalAnnual = principalLine ? annualAmount(principalLine) : 0;
   const expenseBreakdown = [
     { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
+    { label: 'שעות בודדות', value: totals.totalExtraHoursCost },
     { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
     { label: 'פיתוח מקצועי', value: totals.totalProfDev },
     ...(principalAnnual > 0 ? [{ label: 'שכר מנהלת', value: principalAnnual }] : []),

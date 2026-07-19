@@ -13,6 +13,7 @@ function ClassModal({ cls, onSave, onClose }) {
     gradeLevel: cls?.gradeLevel || '',
     section: cls?.section || '',
     studentCount: cls?.studentCount || '',
+    extraHours: cls?.extraHours || '',
     notes: cls?.notes || '',
   });
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ function ClassModal({ cls, onSave, onClose }) {
   const handleSave = () => {
     if (!form.name.trim()) return setError('חסר שם כיתה — למשל: כיתה א\'1');
     if (!form.studentCount || Number(form.studentCount) < 1) return setError('חסר מספר תלמידים');
-    onSave({ ...form, studentCount: Number(form.studentCount) });
+    onSave({ ...form, studentCount: Number(form.studentCount), extraHours: Number(form.extraHours) || 0 });
     onClose();
   };
 
@@ -46,9 +47,16 @@ function ClassModal({ cls, onSave, onClose }) {
             <input className="input" value={form.section} onChange={e => set('section', e.target.value)} placeholder="1" />
           </div>
         </div>
-        <div>
-          <label className="label">מספר תלמידים</label>
-          <input className="input" type="number" inputMode="numeric" min="1" max="50" value={form.studentCount} onChange={e => set('studentCount', e.target.value)} placeholder="20" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">מספר תלמידים</label>
+            <input className="input" type="number" inputMode="numeric" min="1" max="50" value={form.studentCount} onChange={e => set('studentCount', e.target.value)} placeholder="20" />
+          </div>
+          <div>
+            <label className="label">שעות בודדות בחודש</label>
+            <input className="input" type="number" inputMode="numeric" min="0" max="100" value={form.extraHours} onChange={e => set('extraHours', e.target.value)} placeholder="0" />
+            <p className="text-xs text-gray-400 mt-1">מתווספות לעלות ההוראה בלבד</p>
+          </div>
         </div>
         <div>
           <label className="label">הערות</label>
@@ -75,6 +83,7 @@ function BudgetBreakdown({ budget }) {
     { label: 'סה״כ הכנסות', value: formatCurrency(budget.totalIncome), bold: true, positive: true },
     null,
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
+    ...(budget.extraHoursCost > 0 ? [{ label: `שעות בודדות (${budget.extraHours} בחודש)`, value: formatCurrency(budget.extraHoursCost), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
     ...(budget.caharonExpense > 0 ? [{ label: 'הוצאות צהרון', value: formatCurrency(budget.caharonExpense), negative: true }] : []),
     ...(budget.profDevExpense > 0 ? [{ label: 'פיתוח מקצועי', value: formatCurrency(budget.profDevExpense), negative: true }] : []),

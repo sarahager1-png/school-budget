@@ -94,7 +94,8 @@ export function AppProvider({ children }) {
 
     setClasses((classesRes.data ?? []).map(c => ({
       id: c.id, name: c.name, gradeLevel: c.grade_level,
-      section: c.section, studentCount: c.student_count, notes: c.notes,
+      section: c.section, studentCount: c.student_count,
+      extraHours: Number(c.extra_hours ?? 0), notes: c.notes,
     })));
     setIncomeSources((incomeRes.data ?? []).map(s => ({
       id: s.id, name: s.name, amount: Number(s.amount), type: s.type, notes: s.notes,
@@ -252,12 +253,14 @@ export function AppProvider({ children }) {
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
       name: cls.name, grade_level: cls.gradeLevel,
-      section: cls.section, student_count: cls.studentCount, notes: cls.notes,
+      section: cls.section, student_count: cls.studentCount,
+      extra_hours: cls.extraHours || 0, notes: cls.notes,
     }).select().single();
     if (error || !data) return saveFailed(error);
     setClasses(prev => [...prev, {
       id: data.id, name: data.name, gradeLevel: data.grade_level,
-      section: data.section, studentCount: data.student_count, notes: data.notes,
+      section: data.section, studentCount: data.student_count,
+      extraHours: Number(data.extra_hours ?? 0), notes: data.notes,
     }]);
     notify('הכיתה נוספה ✓');
   };
@@ -265,7 +268,8 @@ export function AppProvider({ children }) {
   const updateClass = async (id, cls) => {
     const { error } = await supabase.from('classes').update({
       name: cls.name, grade_level: cls.gradeLevel,
-      section: cls.section, student_count: cls.studentCount, notes: cls.notes,
+      section: cls.section, student_count: cls.studentCount,
+      extra_hours: cls.extraHours || 0, notes: cls.notes,
     }).eq('id', id);
     if (error) return saveFailed(error);
     setClasses(prev => prev.map(c => c.id === id ? { ...c, ...cls } : c));
