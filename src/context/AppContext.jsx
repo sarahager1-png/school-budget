@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
-import { DEFAULT_CONSTANTS } from '../data/constants.js';
+import { DEFAULT_CONSTANTS, MANAGERS } from '../data/constants.js';
 import { withKind } from '../lib/categoryKinds.js';
 
 const AppContext = createContext(null);
@@ -417,6 +417,22 @@ export function AppProvider({ children }) {
       });
     }
   };
+
+  // ריפוי עצמי: הסכום נזרע ב-DB בהקמת בית הספר, אבל ההוצאה נרשמה עד כה רק
+  // בשמירת קבועים בהגדרות — בתי ספר שלא שמרו מעולם לא ראו שכר מנהלת בהוצאות.
+  // לביטול: מאפסים את שכר המנהלת בהגדרות (0), ואז לא נרשם דבר.
+  const salaryHealed = useRef(null);
+  useEffect(() => {
+    if (!user || !currentYear || school?.mode === 'simple') return;
+    if (!MANAGERS.includes(user.role)) return;
+    if (salaryHealed.current === currentYear.id) return;
+    if (expenseCategories.length === 0) return;
+    if (!(constants.principalMonthlySalary > 0)) return;
+    salaryHealed.current = currentYear.id;
+    if (expenses.some(e => e.name === 'שכר מנהלת')) return;
+    if (!expenseCategories.some(c => c.kind === 'salary')) return;
+    syncPrincipalSalaryExpense(constants.principalMonthlySalary);
+  }, [user, currentYear, school, constants, expenses, expenseCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setConstants = async (newConstants) => {
     setConstantsState(newConstants);

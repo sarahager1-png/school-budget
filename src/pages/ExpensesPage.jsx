@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Send, AlertTriangle, CheckCircle, CreditCard } from 'lucide-react';
+import { Plus, Edit2, Trash2, Send, AlertTriangle, CheckCircle, CreditCard, Calculator } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { annualAmount, formatCurrency, categoryColor } from '../lib/calculations.js';
+import { annualAmount, formatCurrency, categoryColor, calculateClassBudget } from '../lib/calculations.js';
 import { EXPENSE_STATUS, EVENTS_CAP_PER_STUDENT, MANAGERS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
@@ -188,8 +188,55 @@ function EventsBudgetBanner({ expenses, classes, categories }) {
   );
 }
 
+// ההוצאות שהמערכת מחשבת לבד מהכיתות והקבועים — מוצגות כאן כדי שכל תמונת
+// ההוצאות תהיה במסך אחד; הן לא רשומות כשורות הוצאה ולכן אין עליהן עריכה.
+function AutoExpensesCard({ classes, constants }) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+  const budgets = classes.map(c => calculateClassBudget(c, constants));
+  const teaching = budgets.reduce((s, b) => s + b.actualOperatingCost, 0);
+  const students = budgets.reduce((s, b) => s + b.studentExpenses, 0);
+  const profDev = budgets.reduce((s, b) => s + b.profDevExpense, 0);
+
+  const rows = [
+    { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours * 4} שעות בחודש × ${constants.actualHourlyRate} ₪`, monthly: teaching / 12, annual: teaching },
+    { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} לשנה`, annual: students },
+    { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
+  ];
+  const total = teaching + students + profDev;
+
+  return (
+    <div className="card p-5">
+      <h3 className="font-bold text-gray-700 text-sm mb-1 flex items-center gap-2">
+        <Calculator size={15} className="text-purple-500" />
+        הוצאות אוטומטיות — מחושבות מהכיתות
+      </h3>
+      <p className="text-xs text-gray-400 mb-3">נספרות בסך ההוצאות בלי להזין אותן — משנים אותן דרך מסך הכיתות וההגדרות</p>
+      <div className="space-y-2">
+        {rows.map(row => (
+          <div key={row.name} className="flex items-center justify-between gap-3 text-sm">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-700">{row.name}</p>
+              <p className="text-xs text-gray-400">{row.hint}</p>
+            </div>
+            <div className="text-left flex-shrink-0">
+              <p className="font-black text-gray-800">{formatCurrency(row.annual)}</p>
+              {row.monthly !== undefined && (
+                <p className="text-xs text-gray-400">{formatCurrency(row.monthly)} לחודש</p>
+              )}
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-between items-center border-t border-gray-100 pt-2 text-sm">
+          <span className="font-bold text-gray-700">סה״כ אוטומטיות</span>
+          <span className="font-black text-purple-700">{formatCurrency(total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ExpensesPage() {
-  const { expenses, expenseCategories, classes, addExpense, updateExpense, deleteExpense, addExpenseRequest, isSimpleMode, user } = useApp();
+  const { expenses, expenseCategories, classes, constants, addExpense, updateExpense, deleteExpense, addExpenseRequest, isSimpleMode, user } = useApp();
   const canEdit = MANAGERS.includes(user?.role);
   const [activeCategory, setActiveCategory] = useState('all');
   const [modal, setModal] = useState(null);
@@ -222,6 +269,15 @@ export default function ExpensesPage() {
 
   const grandTotal = Object.values(totalsByCategory).reduce((s, v) => s + v, 0);
 
+  // ההוצאות המחושבות (עלות הוראה, הוצאות תלמיד, פיתוח מקצועי) — חלק מסך ההוצאות האמיתי
+  const autoTotal = useMemo(() => {
+    if (isSimpleMode) return 0;
+    return classes.reduce((s, c) => {
+      const b = calculateClassBudget(c, constants);
+      return s + b.actualOperatingCost + b.studentExpenses + b.profDevExpense;
+    }, 0);
+  }, [classes, constants, isSimpleMode]);
+
   const TABS = [
     { key: 'all', label: 'הכל', amount: grandTotal },
     ...expenseCategories.map(c => ({ key: c.id, label: c.name, amount: totalsByCategory[c.id] })),
@@ -235,7 +291,10 @@ export default function ExpensesPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-gray-800">ניהול הוצאות</h2>
-          <p className="text-gray-500 text-sm mt-0.5">סה״כ שנתי: {formatCurrency(grandTotal)}</p>
+          <p className="text-gray-500 text-sm mt-0.5">
+            סה״כ שנתי: {formatCurrency(grandTotal + autoTotal)}
+            {autoTotal > 0 && <span className="text-gray-400"> · מזה {formatCurrency(autoTotal)} אוטומטיות</span>}
+          </p>
         </div>
         {canEdit && (
           <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
@@ -248,6 +307,11 @@ export default function ExpensesPage() {
       {/* Events Budget Banner */}
       {showEventsBanner && (
         <EventsBudgetBanner expenses={expenses} classes={classes} categories={expenseCategories} />
+      )}
+
+      {/* Auto-computed expenses — teaching cost, per-student, prof-dev */}
+      {!isSimpleMode && classes.length > 0 && (
+        <AutoExpensesCard classes={classes} constants={constants} />
       )}
 
       {/* Category Tab Bar */}
