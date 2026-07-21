@@ -87,7 +87,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
   const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
   const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
   for (const m of dualMerges) {
-    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} ש׳ בחודש)`, saving: m.delta });
+    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות)`, saving: m.delta });
   }
   const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
   const extraClasses = [
@@ -108,7 +108,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
   const tuition = tuitionReport(classes);
   if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
   const supplement = tuitionSupplementReport(classes);
-  if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${formatCurrency(supplement.amountPerStudent)} × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
+  if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${formatCurrency(supplement.amountPerStudent)} × ${supplement.collectionRatePct}% × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
   const parents = parentContributionReport(classes);
   if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
   const partaniyot = partaniyotReport(classes, constants);
@@ -191,8 +191,8 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   ${isSimpleMode ? '' : `
   ${row('שעות תקן — משרד החינוך', formatCurrency(totals.totalMinistryIncome))}
   ${row(`תוספת כללית לתלמיד — משרד החינוך (${totals.totalStudents} × ${formatCurrency(constants.ministryGrantPerStudent)})`, formatCurrency(totals.totalMinistryGrantIncome))}
-  ${row(`שכר לימוד — הכנסה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudent)})`, formatCurrency(totals.totalStudentIncome))}
-  ${row(`תל"ן — תשלומי הורים (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudentTalan)})`, formatCurrency(totals.totalTalanIncome))}`}
+  ${row(`שכר לימוד — הכנסה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudent)} × 80% גבייה)`, formatCurrency(totals.totalStudentIncome))}
+  ${row(`תל"ן — תשלומי הורים (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudentTalan)} × 80% גבייה)`, formatCurrency(totals.totalTalanIncome))}`}
   ${incomeSources.map(s => row(s.name, formatCurrency(s.amount))).join('')}
   ${row('סה"כ הכנסות', formatCurrency(totals.totalIncome), 'total')}
 
@@ -201,6 +201,7 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   ${row(`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`, formatCurrency(totals.totalClassActualCost))}
   ${row('שעות בודדות', formatCurrency(totals.totalExtraHoursCost))}
   ${row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost))}
+  ${row(`תוספת 2 חוגים לכיתה (${classes.length} כיתות × 600 ₪ שבועי)`, formatCurrency(totals.totalClubsExpense))}
   ${row(`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, formatCurrency(totals.totalStudentExpenses))}
   ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}
   ${row('שכר מנהלת', formatCurrency(principalAnnual))}`}

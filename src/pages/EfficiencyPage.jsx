@@ -378,13 +378,13 @@ export default function EfficiencyPage() {
           title={m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
             : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות בחודש לכיתה המחוברת`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות (שעות בודדות) לכיתה המחוברת`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
             { label: 'הכנסות אחרי החיבור', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
-            { label: `תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
+            { label: `תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
             { label: 'עלות אחרי החיבור — כיתה אחת + התוספת', value: formatCurrency(m.costAfter), tone: 'green' },
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
@@ -590,12 +590,12 @@ export default function EfficiencyPage() {
           tone="purple"
           index={++cardIndex}
           title="תוספת שכר לימוד"
-          subtitle={`תוספת חד-פעמית מעל שכר הלימוד הקיים — ${formatCurrency(supplement.amountPerStudent)} לתלמיד לשנה, ${supplement.totalStudents} תלמידים.`}
+          subtitle={`תוספת מעל שכר הלימוד הקיים — ${formatCurrency(supplement.amountPerStudent)} לתלמיד לשנה, ${supplement.totalStudents} תלמידים, לפי ${supplement.collectionRatePct}% גבייה ריאלית.`}
           saving={supplement.gain}
           savingLabel="תוספת הכנסה בשנה"
           details={[
             { label: 'תלמידים בבית הספר', value: `${supplement.totalStudents}` },
-            { label: `${supplement.totalStudents} × ${formatCurrency(supplement.amountPerStudent)}`, value: `+${formatCurrency(supplement.gain)}`, tone: 'green' },
+            { label: `${supplement.totalStudents} × ${formatCurrency(supplement.amountPerStudent)} × ${supplement.collectionRatePct}%`, value: `+${formatCurrency(supplement.gain)}`, tone: 'green' },
           ]}
           action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
           selected={isSelected('tuition-supplement')}

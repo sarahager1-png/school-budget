@@ -102,17 +102,20 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   });
   const ministry = classRows.reduce((t, x) => t + x.ministryAnnual, 0);
   const grantIncome = students * grant;
-  const studentIncome = students * perStudent;
-  const talanIncome = students * talan;
+  // שכר לימוד ותל"ן — 80% גבייה ריאלית (TUITION_COLLECTION_RATE בקוד הראשי)
+  const studentIncome = students * perStudent * 0.8;
+  const talanIncome = students * talan * 0.8;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
   const extraHoursTotal = classes.reduce((t: number, x: { extra_hours?: number }) => t + Number(x.extra_hours ?? 0), 0);
   const extraHoursCost = extraHoursTotal * actRate * PAYMENT_MONTHS;
   // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
   const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
+  // תוספת חוגים — 600 ₪ שבועי לכיתה, ×4 לחודש ×12 (ר' CLUBS_WEEKLY_EXPENSE_PER_CLASS בקוד הראשי)
+  const clubsExpense = classes.length * 600 * 4 * PAYMENT_MONTHS;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
-  const totalExpenses = teaching + extraHoursCost + counselingCost + studentExp + profDevExp + manualTotal;
+  const totalExpenses = teaching + extraHoursCost + counselingCost + clubsExpense + studentExp + profDevExp + manualTotal;
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,

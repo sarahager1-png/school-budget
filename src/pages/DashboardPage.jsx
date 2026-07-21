@@ -370,6 +370,7 @@ function FullDashboard() {
     { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
     { label: 'שעות בודדות', value: totals.totalExtraHoursCost },
     { label: 'ייעוץ (2 ש׳ לכיתה)', value: totals.totalCounselingCost },
+    { label: 'תוספת 2 חוגים לכיתה (600 ₪ שבועי)', value: totals.totalClubsExpense },
     { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
     { label: 'פיתוח מקצועי', value: totals.totalProfDev },
     ...(principalAnnual > 0 ? [{ label: 'שכר מנהלת', value: principalAnnual }] : []),

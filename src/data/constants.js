@@ -10,9 +10,18 @@ export const OFEK_RATES = { yes: 700, no: 450 };
 // אין עמודת DB (ערך רשתי אחיד); מוחזק כברירת מחדל בקבועים ולא נשמר ב-DB.
 export const COUNSELING_HOURS_PER_CLASS = 2;
 
+// אחוז גבייה ריאלי על תשלומי הורים — שכר לימוד ותל"ן נספרים ב-80%
+// (לא כל ההורים משלמים במלואם; הנחיית שרה 21/7)
+export const TUITION_COLLECTION_RATE = 0.8;
+
+// תוספת הוצאות חוגים — 600 ₪ לכיתה לשבוע (שבועי ×4 = חודשי, ×12 = שנתי),
+// מרכיב קבוע בתחשיב (כמו ייעוץ)
+export const CLUBS_WEEKLY_EXPENSE_PER_CLASS = 600;
+
 export const DEFAULT_CONSTANTS = {
   schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
   counselingHoursPerClass: COUNSELING_HOURS_PER_CLASS,
+  clubsWeeklyExpensePerClass: CLUBS_WEEKLY_EXPENSE_PER_CLASS,
   fullClassStudentThreshold: 21,
   halfClassStudentThreshold: 11,
   fullClassMinistryHours: 22,

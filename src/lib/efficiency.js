@@ -94,8 +94,9 @@ export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS
 }
 
 // ─── חיבור כיתות בשכבות סמוכות (דו-גילאי) ──────────────────────
-// כל חיבור מוסיף לכיתה המחוברת תוספת קבועה של 12 שעות בחודש — זהו
-// (הנחיית שרה 21/7; החליף את מודל ההקבצה 3 מקצועות × 8 שעות)
+// כל חיבור מוסיף לכיתה המחוברת 12 שעות שבועיות — שעות בודדות שמתווספות
+// רק באיחוד כיתות, זהו (הנחיית שרה). במודל: 12 × תעריף × 12 חודשים,
+// באותן יחידות כמו שעות הכיתה (22/34).
 export const DUAL_AGE_EXTRA_MONTHLY_HOURS = 12;
 
 const GRADE_ORDER = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
@@ -295,15 +296,17 @@ export function tuitionReport(classes, amountPerStudent = DEFAULT_TUITION_AMOUNT
 }
 
 // ─── תוספת שכר לימוד ────────────────────────────────────────────
-// הוספה חד-פעמית מעל שכר הלימוד הקיים — לא קשורה לאחוזי הגבייה
+// הוספה מעל שכר הלימוד הקיים — נספרת ב-80% גבייה ריאלית כמו כל תשלומי ההורים
 export const DEFAULT_TUITION_SUPPLEMENT = 3000; // ₪ לתלמיד לשנה
+export const SUPPLEMENT_COLLECTION_RATE = 80; // % גבייה
 
 export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUITION_SUPPLEMENT) {
   const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
   return {
     totalStudents,
     amountPerStudent,
-    gain: totalStudents > 0 ? totalStudents * amountPerStudent : 0,
+    collectionRatePct: SUPPLEMENT_COLLECTION_RATE,
+    gain: totalStudents > 0 ? totalStudents * amountPerStudent * (SUPPLEMENT_COLLECTION_RATE / 100) : 0,
   };
 }
 
