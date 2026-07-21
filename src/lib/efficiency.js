@@ -167,6 +167,9 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
     // חוצה סף, זו גם "יצירת תקן" (מסומן ב-createsStandard לניסוח הכרטיס)
     const typeA = getClassType(a.studentCount, constants);
     const typeB = getClassType(partner.studentCount, constants);
+    // כיתה א נשארת לבד — מצטרפת לחיבור רק במקרה קריטי, כשהיא עצמה ללא
+    // תקן בכלל (הנחיית שרה 22/7); אחרת החיבורים מתחילים מ-ב+ג
+    if (idx === 0 && typeA !== 'none') continue;
     const merged = mergedClass([a, partner]);
     const createsStandard = (typeA === 'none' || typeB === 'none')
       && getClassType(merged.studentCount, constants) !== 'none';
