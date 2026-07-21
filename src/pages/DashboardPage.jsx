@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, ArrowLeft,
-  School, CreditCard, Settings, Package, ChevronDown,
+  School, CreditCard, Settings, Package, ChevronDown, FileSignature, Copy,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
@@ -219,6 +219,8 @@ function SimpleDashboard() {
         <GettingStarted navigate={navigate} isSimpleMode hasClasses={false} hasExpenses={expenses.length > 0} />
       )}
 
+      {!isEmpty && <SummaryDocCard />}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={0} label="סה״כ הכנסות שנתיות" rawValue={totals.totalIncome} format={formatCurrency} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false}
           breakdown={incomeSources.map(s => ({ label: s.name, value: s.amount || 0 }))} />
@@ -296,6 +298,46 @@ export default function DashboardPage() {
   return isSimpleMode ? <SimpleDashboard /> : <FullDashboard />;
 }
 
+// כרטיס גישה מהירה למסמך הסיכום — כולל קישור ישיר שנפתח על #summary
+function SummaryDocCard() {
+  const { navigate, notify } = useApp();
+
+  const copyLink = async () => {
+    const url = `${window.location.origin}/#summary`;
+    try {
+      await navigator.clipboard.writeText(url);
+      notify('הקישור למסמך הועתק ✓ — אפשר לשלוח בוואטסאפ');
+    } catch {
+      window.prompt('העתיקי את הקישור:', url);
+    }
+  };
+
+  return (
+    <div className="card overflow-hidden spring-enter">
+      <div className="h-1 bg-gradient-to-l from-purple-500 to-teal-500" />
+      <div className="p-4 flex items-center gap-3 flex-wrap">
+        <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+          <FileSignature size={21} />
+        </div>
+        <div className="flex-1 min-w-44">
+          <p className="font-bold text-gray-800">מסמך סיכום ואישור תקציב</p>
+          <p className="text-sm text-gray-500 mt-0.5">הכנסות, הוצאות, הצעות הייעול שנבחרו והערות — לחתימת המנהלת והשליח</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button type="button" onClick={() => navigate('summary')} className="btn-primary btn-sm">
+            פתיחת המסמך
+            <ArrowLeft size={13} />
+          </button>
+          <button type="button" onClick={copyLink} className="btn-outline btn-sm">
+            <Copy size={13} />
+            העתקת קישור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FullDashboard() {
   const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, setConstants, user, navigate } = useApp();
 
@@ -352,6 +394,8 @@ function FullDashboard() {
       {constants.ofekSalary == null && MANAGERS.includes(user?.role) && (
         <OfekQuestion constants={constants} setConstants={setConstants} />
       )}
+
+      {!isEmpty && <SummaryDocCard />}
 
       {isEmpty && (
         <GettingStarted

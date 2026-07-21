@@ -1,9 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
-import { DEFAULT_CONSTANTS, MANAGERS } from '../data/constants.js';
+import { DEFAULT_CONSTANTS, MANAGERS, NAV_ITEMS } from '../data/constants.js';
 import { withKind } from '../lib/categoryKinds.js';
 
 const AppContext = createContext(null);
+
+// קישור ישיר למסך: https://.../#summary פותח את סיכום ואישור וכו'
+function pageFromHash() {
+  const h = window.location.hash.replace('#', '');
+  return NAV_ITEMS.some(i => i.id === h) ? h : null;
+}
 
 function mapConstantsFromDB(row) {
   return {
@@ -52,7 +58,7 @@ function mapConstantsToDB(c) {
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState(() => pageFromHash() || 'dashboard');
   const [school, setSchoolState] = useState(null);
   const [budgetYears, setBudgetYears] = useState([]);
   const [currentYear, setCurrentYear] = useState(null);
@@ -136,8 +142,8 @@ export function AppProvider({ children }) {
       schoolId: profile.school_id,
       initials: profile.initials,
     });
-    // couriers land on their own screen
-    if (profile.role === 'courier') setCurrentPage('courier');
+    // couriers land on their own screen — except when a direct link (#page) was opened
+    if (profile.role === 'courier' && !pageFromHash()) setCurrentPage('courier');
 
     const [schoolRes, yearsRes, catsRes, usersRes] = await Promise.all([
       supabase.from('schools').select('*').eq('id', profile.school_id).single(),
@@ -244,7 +250,17 @@ export function AppProvider({ children }) {
     setCurrentPage('dashboard');
   };
 
-  const navigate = (page) => setCurrentPage(page);
+  const navigate = (page) => {
+    setCurrentPage(page);
+    try { window.history.replaceState(null, '', `#${page}`); } catch { /* לא קריטי */ }
+  };
+
+  // תמיכה בכפתור אחורה/קדימה ובקישורים ישירים בזמן שהאפליקציה פתוחה
+  useEffect(() => {
+    const onHash = () => { const p = pageFromHash(); if (p) setCurrentPage(p); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // ── Classes ──────────────────────────────────────────────────
 
