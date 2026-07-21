@@ -459,6 +459,7 @@ export default function SummaryPage() {
                 className="input w-36 text-left no-print"
                 value={networkAmount}
                 onChange={e => { selectionDirty.current = true; setNetworkAmount(e.target.value.replace(/[^0-9]/g, '')); }}
+                onBlur={() => { if (selectionDirty.current) saveSelection(); }}
                 placeholder="₪ לשנה"
                 aria-label='השתתפות רשת חינוך חב"ד בשקלים לשנה'
               />
@@ -510,8 +511,15 @@ export default function SummaryPage() {
               rows={3}
               value={notes}
               onChange={e => { selectionDirty.current = true; setNotes(e.target.value); }}
+              onBlur={() => { if (selectionDirty.current) saveSelection(); }}
               placeholder="הערות לתקציב — הקשר, החלטות, מה נדחה להמשך..."
             />
+            <div className="flex justify-end mt-2 no-print">
+              <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm">
+                <Save size={14} />
+                שמירת ההערות
+              </button>
+            </div>
           </div>
         )}
 
