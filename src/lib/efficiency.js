@@ -6,7 +6,8 @@ import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 export const MAX_MERGED_STUDENTS = 32;
 
 // ─── צירוף כיתות ──────────────────────────────────────────────
-// כיתה מאוחדת: סכום התלמידים; שומרת את תוכנית השעות הבודדות הגדולה מבין המקורות
+// כיתה מאוחדת: סכום התלמידים + סכום השעות הבודדות של כל הכיתות —
+// בחיבור כיתות השעות הבודדות מצטרפות, הן לא נעלמות (הנחיית שרה 21/7).
 // המזהה ממוין — סדר השליפה מה-DB אינו מובטח, ומפתח הצעה חייב להיות זהה
 // בכל מסך ובכל ריצה כדי שבחירה שנשמרה תמשיך להתאים
 export function mergedClass(members) {
@@ -14,7 +15,7 @@ export function mergedClass(members) {
     id: members.map(m => m.id).sort().join('+'),
     name: members.map(m => m.name).join(' + '),
     studentCount: members.reduce((s, m) => s + m.studentCount, 0),
-    extraHours: Math.max(...members.map(m => Number(m.extraHours || 0))),
+    extraHours: members.reduce((s, m) => s + Number(m.extraHours || 0), 0),
   };
 }
 

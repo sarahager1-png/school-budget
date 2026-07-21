@@ -168,9 +168,8 @@ export default function SummaryPage() {
       rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
     }
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
-    // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
-    // נחסכות בתוך ה-delta של הצירוף עצמו — לא סופרים אותן שוב; נשארות רק
-    // שעות הכיתה המאוחדת עצמה.
+    // כיתות שצורפו: הכיתה המאוחדת נושאת את סכום השעות הבודדות של חברותיה,
+    // לכן סופרים אותה במקום החברות — כל שעה נספרת פעם אחת בדיוק.
     const extraClasses = [
       ...classes.filter(c => !allMergedIds.has(c.id)),
       ...merges.map(m => m.merged),

@@ -154,9 +154,8 @@ export default function EfficiencyPage() {
     const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
-    // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
-    // נחסכות בתוך ה-delta של הצירוף עצמו (mergedClass לוקח מקסימום, לא סכום)
-    // — לא סופרים אותן שוב; נשארות רק השעות של הכיתה המאוחדת עצמה.
+    // כיתות שצורפו: הכיתה המאוחדת נושאת את סכום השעות הבודדות של חברותיה,
+    // לכן סופרים אותה במקום החברות — כל שעה נספרת פעם אחת בדיוק.
     const extraClasses = [
       ...classes.filter(c => !allMergedIds.has(c.id)),
       ...merges.map(m => m.merged),
