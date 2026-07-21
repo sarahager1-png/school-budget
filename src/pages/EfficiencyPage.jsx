@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Lightbulb, Merge, Timer, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
-  GraduationCap, UserCog, Wallet, Banknote,
+  GraduationCap, UserCog, Wallet, Banknote, Save,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
+import { supabase } from '../lib/supabase.js';
 import { calculateSchoolTotals, getClassType, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
 import {
   findMerges, extraHoursReport, hoursCutReport, thresholdReport,
@@ -55,11 +56,20 @@ const TONES = {
   green: 'bg-green-100 text-green-600',
 };
 
-function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, savingLabel = 'חיסכון בשנה', details, children, action, index = 0 }) {
+function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, savingLabel = 'חיסכון בשנה', details, children, action, index = 0, selected, onToggle }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="card p-5 spring-enter" style={{ animationDelay: `${Math.min(index, 6) * 70}ms` }}>
+    <div className={`card p-5 spring-enter transition-opacity ${onToggle && !selected ? 'opacity-50' : ''}`} style={{ animationDelay: `${Math.min(index, 6) * 70}ms` }}>
       <div className="flex items-start gap-3 flex-wrap">
+        {onToggle && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggle}
+            aria-label={`בחירת ההצעה: ${title}`}
+            className="w-5 h-5 accent-purple-600 flex-shrink-0 mt-3 cursor-pointer"
+          />
+        )}
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${TONES[tone]}`}>
           <Icon size={21} />
         </div>
@@ -115,8 +125,15 @@ function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, sa
   );
 }
 
+// זיהוי "הטבלה עוד לא הוקמה" (מיגרציה לא רצה) לעומת תקלה חולפת
+function isMissingTableError(error) {
+  if (!error) return false;
+  if (error.code === '42P01' || error.code === 'PGRST205') return true;
+  return /does not exist|schema cache/i.test(error.message || '');
+}
+
 export default function EfficiencyPage() {
-  const { classes, incomeSources, expenses, expenseCategories, constants, navigate } = useApp();
+  const { classes, incomeSources, expenses, expenseCategories, constants, navigate, user, currentYear, notify, saveFailed } = useApp();
 
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
@@ -171,21 +188,88 @@ export default function EfficiencyPage() {
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
+  // ── בחירת הצעות: ✓ על כל כרטיס. null = הכל נבחר (ברירת מחדל).
+  // נשמר ב-budget_approvals — אותה בחירה בדיוק שמופיעה בסיכום ואישור ובמסמך.
+  const [selectedKeys, setSelectedKeys] = useState(null);
+  const [savingSelection, setSavingSelection] = useState(false);
+
+  const allKeys = useMemo(() => [
+    ...merges.map(m => `merge:${m.merged.id}`),
+    ...dualMerges.map(m => `dual:${m.merged.id}`),
+    ...(hours.maxCut > 0 ? ['hours-cut'] : []),
+    ...(partaniyot.saving > 0 ? ['partaniyot'] : []),
+    ...(principal.saving > 0 ? ['principal-teaching'] : []),
+    ...(shabbat.saving > 0 ? ['shabbat'] : []),
+    ...(extra.rows.length > 0 ? ['extra-hours'] : []),
+    ...thresholds.rows.map(r => `threshold:${r.cls.id}`),
+    ...(tuition.gain > 0 ? ['tuition'] : []),
+    ...(supplement.gain > 0 ? ['tuition-supplement'] : []),
+    ...(parents.totalStudents > 0 ? ['parents'] : []),
+    ...(caharon.gap > 0 ? ['caharon'] : []),
+    ...(events.excess > 0 ? ['events-cap'] : []),
+    ...(top.rows.length > 0 ? ['trim'] : []),
+  ], [report]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isSelected = (key) => selectedKeys == null || selectedKeys.has(key);
+  const toggleKey = (key) => setSelectedKeys(prev => {
+    const base = prev == null ? new Set(allKeys) : new Set(prev);
+    if (base.has(key)) base.delete(key); else base.add(key);
+    return base;
+  });
+
+  // כרטיס סף-התקן מציג כמה כיתות יחד — הסימון שולט על כולן כאחת
+  const thKeys = thresholds.rows.map(r => `threshold:${r.cls.id}`);
+  const thChecked = thKeys.length > 0 && thKeys.every(k => isSelected(k));
+  const toggleThresholds = () => setSelectedKeys(prev => {
+    const base = prev == null ? new Set(allKeys) : new Set(prev);
+    if (thChecked) thKeys.forEach(k => base.delete(k));
+    else thKeys.forEach(k => base.add(k));
+    return base;
+  });
+
+  useEffect(() => {
+    setSelectedKeys(null);
+    if (!user?.schoolId || !currentYear?.id) return;
+    supabase.from('budget_approvals')
+      .select('selected_suggestion_keys')
+      .eq('school_id', user.schoolId)
+      .eq('budget_year_id', currentYear.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) console.error(error);
+        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys));
+      });
+  }, [user?.schoolId, currentYear?.id]);
+
+  const saveSelection = async () => {
+    setSavingSelection(true);
+    const { data, error } = await supabase.from('budget_approvals').upsert({
+      school_id: user.schoolId,
+      budget_year_id: currentYear.id,
+      selected_suggestion_keys: selectedKeys == null ? allKeys : [...selectedKeys],
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'school_id,budget_year_id' }).select().single();
+    setSavingSelection(false);
+    if (isMissingTableError(error)) return notify('שמירת הבחירה עדיין לא הופעלה במוסד זה — יש לפנות לתמיכה', 'error');
+    if (error || !data) return saveFailed(error);
+    notify('הבחירה נשמרה ✓ — מופיעה גם בסיכום ואישור ובמסמך');
+  };
+
   const totalPotential =
-    merges.reduce((s, m) => s + m.delta, 0) +
-    dualMerges.reduce((s, m) => s + m.delta, 0) +
-    extra.totalCost +
-    (hours.maxCut > 0 ? hoursSaving : 0) +
-    events.excess +
-    (top.rows.length > 0 ? trimSaving : 0) +
-    thresholds.totalGain +
-    shabbat.saving +
-    caharon.gap +
-    parents.gain +
-    partaniyot.saving +
-    principal.saving +
-    tuition.gain +
-    supplement.gain;
+    merges.reduce((s, m) => s + (isSelected(`merge:${m.merged.id}`) ? m.delta : 0), 0) +
+    dualMerges.reduce((s, m) => s + (isSelected(`dual:${m.merged.id}`) ? m.delta : 0), 0) +
+    (isSelected('extra-hours') ? extra.totalCost : 0) +
+    (hours.maxCut > 0 && isSelected('hours-cut') ? hoursSaving : 0) +
+    (isSelected('events-cap') ? events.excess : 0) +
+    (top.rows.length > 0 && isSelected('trim') ? trimSaving : 0) +
+    thresholds.rows.reduce((s, r) => s + (isSelected(`threshold:${r.cls.id}`) ? r.gain : 0), 0) +
+    (isSelected('shabbat') ? shabbat.saving : 0) +
+    (isSelected('caharon') ? caharon.gap : 0) +
+    (isSelected('parents') ? parents.gain : 0) +
+    (isSelected('partaniyot') ? partaniyot.saving : 0) +
+    (isSelected('principal-teaching') ? principal.saving : 0) +
+    (isSelected('tuition') ? tuition.gain : 0) +
+    (isSelected('tuition-supplement') ? supplement.gain : 0);
 
   const deficit = totals.isDeficit ? Math.abs(totals.balance) : 0;
   const coverage = deficit > 0 ? Math.min(100, Math.round(totalPotential / deficit * 100)) : null;
@@ -210,11 +294,17 @@ export default function EfficiencyPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-gray-800">הצעות ייעול</h2>
-        <p className="text-gray-500 text-sm mt-0.5">
-          המערכת סרקה את הנתונים שלך ומצאה איפה אפשר לחסוך — כל הצעה עם הסכום המדויק
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">הצעות ייעול</h2>
+          <p className="text-gray-500 text-sm mt-0.5">
+            המערכת מציעה — את בוחרת: סמני ✓ על ההצעות שמאמצים, והסכומים יתעדכנו מיד
+          </p>
+        </div>
+        <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
+          <Save size={14} />
+          שמירת הבחירה
+        </button>
       </div>
 
       {/* Summary */}
@@ -229,7 +319,7 @@ export default function EfficiencyPage() {
             <p className="text-sm text-gray-500 mt-0.5">{totals.isDeficit ? 'גירעון שנתי' : 'עודף שנתי'}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">פוטנציאל ההצעות שבמסך</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">פוטנציאל ההצעות הנבחרות</p>
             <p className="text-2xl font-black bg-gradient-to-l from-purple-600 to-teal-500 bg-clip-text text-transparent">
               {formatCurrency(totalPotential)}
             </p>
@@ -240,7 +330,7 @@ export default function EfficiencyPage() {
             <p className={`text-2xl font-black ${projectedBalance < 0 ? 'text-red-500' : 'text-green-600'}`}>
               {formatCurrencyFull(projectedBalance)}
             </p>
-            <p className="text-sm text-gray-500 mt-0.5">התחשיב הסופי אם מיישמים הכל</p>
+            <p className="text-sm text-gray-500 mt-0.5">התחשיב הסופי לפי ההצעות שסימנת</p>
           </div>
         </div>
         {coverage != null && (
@@ -274,6 +364,8 @@ export default function EfficiencyPage() {
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
+          selected={isSelected(`merge:${m.merged.id}`)}
+          onToggle={() => toggleKey(`merge:${m.merged.id}`)}
         />
       ))}
 
@@ -296,6 +388,8 @@ export default function EfficiencyPage() {
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
+          selected={isSelected(`dual:${m.merged.id}`)}
+          onToggle={() => toggleKey(`dual:${m.merged.id}`)}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">שעות הקבצה לחודש, לכל מקצוע</span>
@@ -319,6 +413,8 @@ export default function EfficiencyPage() {
             { label: `הורדה של ${hoursCut} שעות × ${hours.classCount} כיתות`, value: formatCurrencyFull(hoursSaving), tone: 'green' },
           ]}
           action={{ label: 'לבדיקה בשערוך תקציב', onClick: () => navigate('simulations') }}
+          selected={isSelected('hours-cut')}
+          onToggle={() => toggleKey('hours-cut')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-teal-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">כמה שעות להוריד מכל כיתה?</span>
@@ -341,6 +437,8 @@ export default function EfficiencyPage() {
             { label: `חיסכון לכיתה — ${partaniyot.hoursPerClass} ש׳ בחודש × ${formatCurrency(partaniyot.hourlyRate)} × 12`, value: formatCurrency(partaniyot.perClassAnnual), tone: 'green' },
             { label: `${partaniyot.classCount} כיתות יחד`, value: formatCurrencyFull(partaniyot.saving), tone: 'green' },
           ]}
+          selected={isSelected('partaniyot')}
+          onToggle={() => toggleKey('partaniyot')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-teal-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">שעות פרטניות שנלמדות פרונטלית, לכיתה</span>
@@ -361,6 +459,8 @@ export default function EfficiencyPage() {
           details={[
             { label: `${principal.hours} ש׳ בחודש × ${formatCurrency(principal.hourlyRate)} × 12`, value: formatCurrencyFull(principal.saving), tone: 'green' },
           ]}
+          selected={isSelected('principal-teaching')}
+          onToggle={() => toggleKey('principal-teaching')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">כמה שעות המנהלת מלמדת בחודש?</span>
@@ -383,6 +483,8 @@ export default function EfficiencyPage() {
             { label: `חיסכון לכיתה — ${shabbat.monthlyHoursPerClass} ש׳ בחודש × ${formatCurrency(shabbat.hourlyRate)} × 12`, value: formatCurrency(shabbat.perClassAnnual), tone: 'green' },
             { label: `${shabbat.classCount} כיתות יחד`, value: formatCurrencyFull(shabbat.saving), tone: 'green' },
           ]}
+          selected={isSelected('shabbat')}
+          onToggle={() => toggleKey('shabbat')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-gold-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">כמה שעות חודשיות נחסכות לכיתה?</span>
@@ -406,6 +508,8 @@ export default function EfficiencyPage() {
             value: formatCurrency(r.annualCost),
           }))}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
+          selected={isSelected('extra-hours')}
+          onToggle={() => toggleKey('extra-hours')}
         />
       )}
 
@@ -425,6 +529,8 @@ export default function EfficiencyPage() {
             tone: 'green',
           }))}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
+          selected={thChecked}
+          onToggle={toggleThresholds}
         />
       )}
 
@@ -444,6 +550,8 @@ export default function EfficiencyPage() {
             { label: `${caharon.totalStudents} תלמידים × ${formatCurrency(caharon.perStudentGap)}`, value: formatCurrencyFull(caharon.gap), tone: 'green' },
           ]}
           action={{ label: 'לעדכון בהגדרות', onClick: () => navigate('settings') }}
+          selected={isSelected('caharon')}
+          onToggle={() => toggleKey('caharon')}
         />
       )}
 
@@ -462,6 +570,8 @@ export default function EfficiencyPage() {
             { label: `${tuition.totalStudents} × ${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}%`, value: `+${formatCurrency(tuition.gain)}`, tone: 'green' },
           ]}
           action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
+          selected={isSelected('tuition')}
+          onToggle={() => toggleKey('tuition')}
         >
           <div className="flex flex-col gap-3 bg-teal-50/60 rounded-xl p-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -491,6 +601,8 @@ export default function EfficiencyPage() {
             { label: `${supplement.totalStudents} × ${formatCurrency(supplement.amountPerStudent)}`, value: `+${formatCurrency(supplement.gain)}`, tone: 'green' },
           ]}
           action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
+          selected={isSelected('tuition-supplement')}
+          onToggle={() => toggleKey('tuition-supplement')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">תוספת שכר לימוד לתלמיד לשנה</span>
@@ -515,6 +627,8 @@ export default function EfficiencyPage() {
             { label: `${parents.totalStudents} × ${formatCurrency(parents.amountPerStudent)}`, value: `+${formatCurrency(parents.gain)}`, tone: 'green' },
           ]}
           action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
+          selected={isSelected('parents')}
+          onToggle={() => toggleKey('parents')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-green-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">השתתפות לתלמיד לשנה</span>
@@ -534,6 +648,8 @@ export default function EfficiencyPage() {
           saving={events.excess}
           savingLabel="חזרה לתקרה"
           action={{ label: 'למסך ההוצאות', onClick: () => navigate('expenses') }}
+          selected={isSelected('events-cap')}
+          onToggle={() => toggleKey('events-cap')}
         />
       )}
 
@@ -552,6 +668,8 @@ export default function EfficiencyPage() {
             value: `${formatCurrency(r.annual)} ← חיסכון ${formatCurrency(Math.round(r.annual * trimPct / 100))}`,
           }))}
           action={{ label: 'למסך ההוצאות', onClick: () => navigate('expenses') }}
+          selected={isSelected('trim')}
+          onToggle={() => toggleKey('trim')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
             <span className="text-sm font-medium text-gray-700">אחוז קיצוץ לבדיקה</span>

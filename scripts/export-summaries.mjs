@@ -20,6 +20,7 @@ import {
   findMerges, extraHoursReport, thresholdReport, eventsCapReport,
   dualAgeMergeReport, jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
+  hoursCutReport, topExpensesReport,
   DEFAULT_PARENT_CONTRIBUTION, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
 } from '../src/lib/efficiency.js';
 import { withKind } from '../src/lib/categoryKinds.js';
@@ -95,6 +96,10 @@ function buildSuggestions(classes, expenses, categories, constants) {
   ];
   const extra = extraHoursReport(extraClasses, constants);
   if (extra.totalCost > 0) rows.push({ key: 'extra-hours', label: `צמצום ${extra.totalHours} שעות בודדות בחודש`, saving: extra.totalCost });
+  const hoursR = hoursCutReport(classes, constants, 1);
+  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });
+  const topR = topExpensesReport(expenses, categories);
+  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ 10% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * 0.1) });
   const shabbat = jointShabbatReport(classes, constants);
   if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
   const caharon = caharonReport(classes, constants);
