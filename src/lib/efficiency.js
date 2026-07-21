@@ -256,15 +256,19 @@ export function partaniyotReport(classes, constants, hoursPerClass = DEFAULT_PAR
 }
 
 // ─── שעות הוראה של המנהלת ─────────────────────────────────────
-// המנהלת מלמדת בפועל 6-8 שעות — שכרה כבר משולם בנפרד, וכל שעה
-// שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית בתעריף מלא.
-export const DEFAULT_PRINCIPAL_TEACHING_HOURS = 6;
+// המנהלת מלמדת בפועל 6-8 שעות שבועיות — שכרה כבר משולם בנפרד, וכל
+// שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית בתעריף מלא.
+// שעה שבועית = 4 שעות חודשיות במודל המערכת.
+export const DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS = 6;
+export const WEEKS_PER_MONTH_FACTOR = 4;
 
-export function principalTeachingReport(classes, constants, hours = DEFAULT_PRINCIPAL_TEACHING_HOURS) {
+export function principalTeachingReport(classes, constants, weeklyHours = DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS) {
+  const monthlyHours = weeklyHours * WEEKS_PER_MONTH_FACTOR;
   return {
-    hours,
+    weeklyHours,
+    monthlyHours,
     hourlyRate: constants.actualHourlyRate,
-    saving: classes.length > 0 ? hours * constants.actualHourlyRate * PAYMENT_MONTHS : 0,
+    saving: classes.length > 0 ? monthlyHours * constants.actualHourlyRate * PAYMENT_MONTHS : 0,
   };
 }
 

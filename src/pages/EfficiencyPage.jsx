@@ -14,7 +14,7 @@ import {
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   DUAL_AGE_SUBJECTS, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
   DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
-  DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_HOURS, TEACHER_POSITION_HOURS,
+  DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
 } from '../lib/efficiency.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -141,7 +141,7 @@ export default function EfficiencyPage() {
   const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_MONTHLY_HOURS);
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
   const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
-  const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_HOURS);
+  const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS);
   const [tuitionAmount, setTuitionAmount] = useState(DEFAULT_TUITION_AMOUNT);
   const [tuitionRate, setTuitionRate] = useState(DEFAULT_TUITION_COLLECTION_RATE);
   const [supplementAmount, setSupplementAmount] = useState(DEFAULT_TUITION_SUPPLEMENT);
@@ -454,16 +454,17 @@ export default function EfficiencyPage() {
           tone="purple"
           index={++cardIndex}
           title="שעות הוראה של המנהלת"
-          subtitle={`מנהלת מלמדת בבית הספר בין 6 ל-8 שעות בפועל. שכרה כבר משולם — כל שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית ב-${formatCurrency(principal.hourlyRate)} לשעה.`}
+          subtitle={`מנהלת מלמדת בבית הספר בין 6 ל-8 שעות שבועיות בפועל. שכרה כבר משולם — כל שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית ב-${formatCurrency(principal.hourlyRate)} לשעה.`}
           saving={principal.saving}
           details={[
-            { label: `${principal.hours} ש׳ בחודש × ${formatCurrency(principal.hourlyRate)} × 12`, value: formatCurrencyFull(principal.saving), tone: 'green' },
+            { label: `${principal.weeklyHours} ש׳ שבועיות = ${principal.monthlyHours} ש׳ בחודש`, value: '' },
+            { label: `${principal.monthlyHours} ש׳ בחודש × ${formatCurrency(principal.hourlyRate)} × 12`, value: formatCurrencyFull(principal.saving), tone: 'green' },
           ]}
           selected={isSelected('principal-teaching')}
           onToggle={() => toggleKey('principal-teaching')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
-            <span className="text-sm font-medium text-gray-700">כמה שעות המנהלת מלמדת בחודש?</span>
+            <span className="text-sm font-medium text-gray-700">כמה שעות שבועיות המנהלת מלמדת?</span>
             <Stepper value={principalHours} onChange={setPrincipalHours} min={1} max={10} unit="שעות" />
           </div>
         </SuggestionCard>

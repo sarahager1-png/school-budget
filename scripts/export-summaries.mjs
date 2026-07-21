@@ -113,7 +113,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
   const partaniyot = partaniyotReport(classes, constants);
   if (partaniyot.saving > 0) rows.push({ key: 'partaniyot', label: `שעות פרטניות מהמשרה כשעה פרונטלית (${partaniyot.hoursPerClass} ש׳ × ${partaniyot.classCount} כיתות)`, saving: partaniyot.saving });
   const principal = principalTeachingReport(classes, constants);
-  if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.hours} ש׳ בחודש)`, saving: principal.saving });
+  if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.weeklyHours} ש׳ שבועיות)`, saving: principal.saving });
   const events = eventsCapReport(expenses, categories, classes);
   if (events.excess > 0) rows.push({ key: 'events-cap', label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
   const th = thresholdReport(classes, constants, 4, allMergedIds);
