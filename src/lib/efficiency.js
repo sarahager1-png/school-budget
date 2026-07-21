@@ -83,9 +83,10 @@ export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS
 }
 
 // ─── איחוד לכיתה דו-גילאית ──────────────────────────────────────
-// לכיתה בודדת בשכבה (אין עם מי לצרף באותה שכבה — findMerges לא ימצא לה
-// זוגית) יש עוד אפשרות: לאחד עם השכבה הסמוכה לכיתה אחת פיזית, עם שעות
-// הקבצה נפרדות לפי שכבה בשלושת המקצועות שדורשים רמה נפרדת.
+// המטרה: כיתה ללא תקן בכלל (מתחת לסף המימון, type='none') שאין לה עם מי
+// להתאחד באותה שכבה — לא עניין של גודל חדר. מאחדים עם השכבה הסמוכה כדי
+// לחצות את סף המימון וליצור תקן שלא היה קיים, עם שעות הקבצה נפרדות לפי
+// שכבה בשלושת המקצועות שדורשים רמה נפרדת.
 export const DUAL_AGE_SUBJECTS = ['אנגלית', 'מתמטיקה', 'שפה'];
 export const DEFAULT_HAKVATZA_HOURS_PER_SUBJECT = 8;
 
@@ -124,7 +125,7 @@ export function normalizeGrade(raw) {
 
 // hakvatzaHoursPerSubjectMonth: שעות חודשיות נוספות לכל מקצוע (× 3 המקצועות)
 // כדי ללמד כל שכבה בנפרד באנגלית/מתמטיקה/שפה גם אחרי האיחוד הפיזי
-export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), hakvatzaHoursPerSubjectMonth = DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, maxStudents = MAX_MERGED_STUDENTS) {
+export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), hakvatzaHoursPerSubjectMonth = DEFAULT_HAKVATZA_HOURS_PER_SUBJECT) {
   // רק כיתה שהיא היחידה בשכבה שלה — אם יש עוד כיתה באותה שכבה, צירוף
   // רגיל (findMerges) הוא האפשרות הזולה יותר ועדיפה
   const byGrade = new Map();
@@ -150,8 +151,13 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
     const div = divisionOf(idx);
     if (div !== 0 || divisionOf(idx + 1) !== div) continue;
     const a = singles.get(idx);
+    // התנאי המרכזי: לא עניין של גודל חדר — רק כשלפחות אחת מהכיתות ללא
+    // תקן בכלל, וההתאחדות בפועל חוצה סף וממש יוצרת תקן שלא היה קיים
+    const typeA = getClassType(a.studentCount, constants);
+    const typeB = getClassType(partner.studentCount, constants);
+    if (typeA !== 'none' && typeB !== 'none') continue;
     const merged = mergedClass([a, partner]);
-    if (merged.studentCount > maxStudents) continue;
+    if (getClassType(merged.studentCount, constants) === 'none') continue;
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
     const mergedBudget = calculateClassBudget(merged, constants);
@@ -180,6 +186,86 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
     picked.push(cand);
   }
   return picked;
+}
+
+// ─── קבלת שבת משותפת ──────────────────────────────────────────
+// כל הכיתות יחד בקבלת שבת אחת במקום קבלת שבת נפרדת בכל כיתה —
+// נחסכת שעה שבועית (= 4 שעות חודשיות) לכל כיתה
+export const DEFAULT_SHABBAT_MONTHLY_HOURS = 4;
+
+export function jointShabbatReport(classes, constants, monthlyHoursPerClass = DEFAULT_SHABBAT_MONTHLY_HOURS) {
+  const classCount = classes.length;
+  const perClassAnnual = monthlyHoursPerClass * constants.actualHourlyRate * PAYMENT_MONTHS;
+  return {
+    classCount,
+    monthlyHoursPerClass,
+    hourlyRate: constants.actualHourlyRate,
+    perClassAnnual,
+    saving: classCount >= 2 ? classCount * perClassAnnual : 0,
+  };
+}
+
+// ─── צהרון מסובסד ─────────────────────────────────────────────
+// כשההוצאה לתלמיד בצהרון גבוהה מהגבייה לתלמיד — כל תלמיד מגדיל את הגירעון.
+// התאמת המחיר לעלות סוגרת את הפער בלי לפגוע בפעילות.
+export function caharonReport(classes, constants) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+  const income = Number(constants.incomePerStudentCaharon || 0);
+  const expense = Number(constants.expensePerStudentCaharon || 0);
+  const perStudentGap = expense - income;
+  return {
+    totalStudents,
+    income,
+    expense,
+    perStudentGap,
+    gap: perStudentGap > 0 && expense > 0 ? perStudentGap * totalStudents : 0,
+  };
+}
+
+// ─── השתתפות הורים שנתית ──────────────────────────────────────
+// גביית השתתפות שנתית מההורים (מעבר לשכר הלימוד ולתל"ן) —
+// כל סכום לתלמיד מוכפל בכל תלמידי בית הספר
+export const DEFAULT_PARENT_CONTRIBUTION = 100; // ₪ לתלמיד לשנה
+
+export function parentContributionReport(classes, amountPerStudent = DEFAULT_PARENT_CONTRIBUTION) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+  return {
+    totalStudents,
+    amountPerStudent,
+    gain: totalStudents > 0 ? totalStudents * amountPerStudent : 0,
+  };
+}
+
+// ─── שעות פרטניות ממשרת המורה ─────────────────────────────────
+// ממשרה מלאה של 21 שעות, 3 שעות פרטניות יכולות להילמד בכיתה כשעה
+// פרונטלית — שעות שכבר משולמות במשרה ולא צריך לקנות בנפרד.
+export const TEACHER_POSITION_HOURS = 21;
+export const DEFAULT_PARTANIYOT_HOURS = 3;
+
+export function partaniyotReport(classes, constants, hoursPerClass = DEFAULT_PARTANIYOT_HOURS) {
+  const classCount = classes.length;
+  const perClassAnnual = hoursPerClass * constants.actualHourlyRate * PAYMENT_MONTHS;
+  return {
+    classCount,
+    hoursPerClass,
+    positionHours: TEACHER_POSITION_HOURS,
+    hourlyRate: constants.actualHourlyRate,
+    perClassAnnual,
+    saving: classCount > 0 ? classCount * perClassAnnual : 0,
+  };
+}
+
+// ─── שעות הוראה של המנהלת ─────────────────────────────────────
+// המנהלת מלמדת בפועל 6-8 שעות — שכרה כבר משולם בנפרד, וכל שעה
+// שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית בתעריף מלא.
+export const DEFAULT_PRINCIPAL_TEACHING_HOURS = 6;
+
+export function principalTeachingReport(classes, constants, hours = DEFAULT_PRINCIPAL_TEACHING_HOURS) {
+  return {
+    hours,
+    hourlyRate: constants.actualHourlyRate,
+    saving: classes.length > 0 ? hours * constants.actualHourlyRate * PAYMENT_MONTHS : 0,
+  };
 }
 
 // ─── שעות בודדות ──────────────────────────────────────────────

@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
 import {
   Lightbulb, Merge, Timer, Clock, UserPlus, PartyPopper, Scissors,
-  AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers,
+  AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
+  GraduationCap, UserCog,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { calculateSchoolTotals, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
+import { calculateSchoolTotals, getClassType, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
 import {
   findMerges, extraHoursReport, hoursCutReport, thresholdReport,
   noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
+  jointShabbatReport, caharonReport, parentContributionReport,
+  partaniyotReport, principalTeachingReport,
   DUAL_AGE_SUBJECTS, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
+  DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
+  DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_HOURS, TEACHER_POSITION_HOURS,
 } from '../lib/efficiency.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
@@ -115,6 +120,10 @@ export default function EfficiencyPage() {
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
   const [hakvatzaHours, setHakvatzaHours] = useState(DEFAULT_HAKVATZA_HOURS_PER_SUBJECT);
+  const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_MONTHLY_HOURS);
+  const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
+  const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
+  const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_HOURS);
 
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
@@ -139,15 +148,20 @@ export default function EfficiencyPage() {
       noStd: noStandardReport(classes, constants, allMergedIds),
       events: eventsCapReport(expenses, expenseCategories, classes),
       top: topExpensesReport(expenses, expenseCategories),
+      shabbat: jointShabbatReport(classes, constants, shabbatHours),
+      caharon: caharonReport(classes, constants),
+      parents: parentContributionReport(classes, parentAmount),
+      partaniyot: partaniyotReport(classes, constants, partaniyotHours),
+      principal: principalTeachingReport(classes, constants, principalHours),
     };
-  }, [classes, expenses, expenseCategories, constants, hakvatzaHours]);
+  }, [classes, expenses, expenseCategories, constants, hakvatzaHours, shabbatHours, parentAmount, partaniyotHours, principalHours]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top } = report;
+  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal } = report;
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
@@ -158,7 +172,12 @@ export default function EfficiencyPage() {
     (hours.maxCut > 0 ? hoursSaving : 0) +
     events.excess +
     (top.rows.length > 0 ? trimSaving : 0) +
-    thresholds.totalGain;
+    thresholds.totalGain +
+    shabbat.saving +
+    caharon.gap +
+    parents.gain +
+    partaniyot.saving +
+    principal.saving;
 
   const deficit = totals.isDeficit ? Math.abs(totals.balance) : 0;
   const coverage = deficit > 0 ? Math.min(100, Math.round(totalPotential / deficit * 100)) : null;
@@ -257,8 +276,8 @@ export default function EfficiencyPage() {
           icon={Layers}
           tone="purple"
           index={++cardIndex}
-          title={`איחוד לכיתה דו-גילאית: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳)`).join(' + ')} ← כיתה פיזית אחת של ${m.merged.studentCount} תלמידים, עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
+          title={`יצירת תקן — איחוד ${m.members.map(x => x.name).join(' + ')}`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים שכן מקבלת תקן (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
@@ -300,6 +319,70 @@ export default function EfficiencyPage() {
         </SuggestionCard>
       )}
 
+      {/* Partaniyot hours from teacher position */}
+      {partaniyot.saving > 0 && (
+        <SuggestionCard
+          icon={GraduationCap}
+          tone="teal"
+          index={++cardIndex}
+          title="שעות פרטניות מהמשרה — במקום שעות קנויות"
+          subtitle={`ממשרה מלאה של ${TEACHER_POSITION_HOURS} שעות, ${partaniyot.hoursPerClass} שעות פרטניות יכולות להילמד בכיתה כשעה פרונטלית. השעות האלה כבר משולמות במשרת המורה — כל שעה כזו חוסכת שעה שנקנית בנפרד ב-${formatCurrency(partaniyot.hourlyRate)}.`}
+          saving={partaniyot.saving}
+          details={[
+            { label: 'כיתות במערכת', value: `${partaniyot.classCount}` },
+            { label: `חיסכון לכיתה — ${partaniyot.hoursPerClass} ש׳ בחודש × ${formatCurrency(partaniyot.hourlyRate)} × 12`, value: formatCurrency(partaniyot.perClassAnnual), tone: 'green' },
+            { label: `${partaniyot.classCount} כיתות יחד`, value: formatCurrencyFull(partaniyot.saving), tone: 'green' },
+          ]}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-teal-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">שעות פרטניות שנלמדות פרונטלית, לכיתה</span>
+            <Stepper value={partaniyotHours} onChange={setPartaniyotHours} min={1} max={5} unit="שעות" />
+          </div>
+        </SuggestionCard>
+      )}
+
+      {/* Principal teaching hours */}
+      {principal.saving > 0 && (
+        <SuggestionCard
+          icon={UserCog}
+          tone="purple"
+          index={++cardIndex}
+          title="שעות הוראה של המנהלת"
+          subtitle={`מנהלת מלמדת בבית הספר בין 6 ל-8 שעות בפועל. שכרה כבר משולם — כל שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית ב-${formatCurrency(principal.hourlyRate)} לשעה.`}
+          saving={principal.saving}
+          details={[
+            { label: `${principal.hours} ש׳ בחודש × ${formatCurrency(principal.hourlyRate)} × 12`, value: formatCurrencyFull(principal.saving), tone: 'green' },
+          ]}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">כמה שעות המנהלת מלמדת בחודש?</span>
+            <Stepper value={principalHours} onChange={setPrincipalHours} min={1} max={10} unit="שעות" />
+          </div>
+        </SuggestionCard>
+      )}
+
+      {/* Joint Kabbalat Shabbat */}
+      {shabbat.saving > 0 && (
+        <SuggestionCard
+          icon={Flame}
+          tone="gold"
+          index={++cardIndex}
+          title="קבלת שבת משותפת לכל הכיתות"
+          subtitle={`במקום קבלת שבת נפרדת בכל כיתה — כולם יחד במליאה אחת. נחסכת שעה שבועית לכל כיתה (${shabbat.monthlyHoursPerClass} ש׳ בחודש), וגם חוויה קהילתית. עובד גם למליאות נוספות: ראש חודש, תפילה, מסיבות.`}
+          saving={shabbat.saving}
+          details={[
+            { label: 'כיתות במערכת', value: `${shabbat.classCount}` },
+            { label: `חיסכון לכיתה — ${shabbat.monthlyHoursPerClass} ש׳ בחודש × ${formatCurrency(shabbat.hourlyRate)} × 12`, value: formatCurrency(shabbat.perClassAnnual), tone: 'green' },
+            { label: `${shabbat.classCount} כיתות יחד`, value: formatCurrencyFull(shabbat.saving), tone: 'green' },
+          ]}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-gold-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">כמה שעות חודשיות נחסכות לכיתה?</span>
+            <Stepper value={shabbatHours} onChange={setShabbatHours} min={1} max={12} unit="שעות" />
+          </div>
+        </SuggestionCard>
+      )}
+
       {/* Extra hours */}
       {extra.rows.length > 0 && (
         <SuggestionCard
@@ -335,6 +418,49 @@ export default function EfficiencyPage() {
           }))}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
         />
+      )}
+
+      {/* Caharon subsidized */}
+      {caharon.gap > 0 && (
+        <SuggestionCard
+          icon={Sun}
+          tone="teal"
+          index={++cardIndex}
+          title="הצהרון מסובסד — התאמת מחיר לעלות"
+          subtitle={`כל תלמיד בצהרון עולה ${formatCurrency(caharon.expense)} בשנה ומשלם ${formatCurrency(caharon.income)} — פער של ${formatCurrency(caharon.perStudentGap)} לתלמיד שיוצא מהתקציב. התאמת המחיר לעלות סוגרת את הפער בלי לצמצם את הפעילות.`}
+          saving={caharon.gap}
+          savingLabel="בהתאמת מחיר מלאה"
+          details={[
+            { label: 'תלמידים', value: `${caharon.totalStudents}` },
+            { label: 'פער לתלמיד בשנה', value: formatCurrency(caharon.perStudentGap), tone: 'red' },
+            { label: `${caharon.totalStudents} תלמידים × ${formatCurrency(caharon.perStudentGap)}`, value: formatCurrencyFull(caharon.gap), tone: 'green' },
+          ]}
+          action={{ label: 'לעדכון בהגדרות', onClick: () => navigate('settings') }}
+        />
+      )}
+
+      {/* Parent contribution */}
+      {parents.totalStudents > 0 && (
+        <SuggestionCard
+          icon={HandCoins}
+          tone="green"
+          index={++cardIndex}
+          title="השתתפות הורים שנתית"
+          subtitle={`גביית השתתפות שנתית מההורים — מעבר לשכר הלימוד ולתל"ן. כל סכום צנוע לתלמיד מצטבר לתוספת משמעותית: ${parents.totalStudents} תלמידים × ${formatCurrency(parents.amountPerStudent)}.`}
+          saving={parents.gain}
+          savingLabel="תוספת הכנסה בשנה"
+          details={[
+            { label: 'תלמידים בבית הספר', value: `${parents.totalStudents}` },
+            { label: 'השתתפות לתלמיד בשנה', value: formatCurrency(parents.amountPerStudent) },
+            { label: `${parents.totalStudents} × ${formatCurrency(parents.amountPerStudent)}`, value: `+${formatCurrency(parents.gain)}`, tone: 'green' },
+          ]}
+          action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-green-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">השתתפות לתלמיד לשנה</span>
+            <Stepper value={parentAmount} onChange={setParentAmount} min={50} max={1000} step={50} unit="₪" />
+          </div>
+        </SuggestionCard>
       )}
 
       {/* Events cap */}

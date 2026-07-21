@@ -1,10 +1,10 @@
-// מבט רשת — אגרגטור קריאה-בלבד של כל 10 מערכות התקציב עבור הפורטל
+// מבט רשת — אגרגטור קריאה-בלבד של כל 12 מערכות התקציב עבור הפורטל
 // chabad-budget-hub.surge.sh. מאובטח בקוד גישה (HUB_ACCESS_CODE) ומחזיק את
 // מפתחות השירות בסוד SCHOOL_KEYS = {"<ref>":"<service key>", ...}.
 // החישוב משקף אחד-לאחד את src/lib/calculations.js (שעות חודשיות × תעריף × 12).
 
 const SCHOOLS = [
-  { slug: 'raanana', name: 'בית חינוך רעננה', ref: 'jhtajcejwxfcksvjzkzx', url: 'https://chabad-raanana-budget.surge.sh' },
+  { slug: 'raanana', name: 'בית חינוך רעננה - בנים', ref: 'jhtajcejwxfcksvjzkzx', url: 'https://chabad-raanana-budget.surge.sh' },
   { slug: 'mazkeret', name: 'שלהבות מזכרת בתיה', ref: 'njsanabfbmnaqvwraqdh', url: 'https://chabad-mazkeret-budget.surge.sh' },
   { slug: 'ashkelon', name: 'שלהבות אשקלון', ref: 'ogkwvrerolofujhydhsl', url: 'https://chabad-ashkelon-budget.surge.sh' },
   { slug: 'or-akiva', name: 'שלהבות אור עקיבא', ref: 'fqzyouwodkorgrhoulnf', url: 'https://chabad-or-akiva-budget.surge.sh' },
@@ -14,6 +14,8 @@ const SCHOOLS = [
   { slug: 'ramat-yishai', name: 'שלהבות רמת ישי', ref: 'bvxoywkqefpnyxvjydpz', url: 'https://chabad-ramat-yishai-budget.surge.sh' },
   { slug: 'afula', name: 'בית חינוך עפולה', ref: 'inwiirkalzcbpnxngqpi', url: 'https://chabad-afula-budget.surge.sh' },
   { slug: 'herzliya', name: 'שלהבות הרצליה', ref: 'qawlduxrovrodmxpehvv', url: 'https://chabad-herzliya-budget.surge.sh' },
+  { slug: 'haifa', name: 'שלהבות חיפה', ref: 'ygmwcdxthcmvrdrbtwuy', url: 'https://chabad-haifa-budget.surge.sh' },
+  { slug: 'raanana-girls', name: 'בית חינוך רעננה - בנות', ref: 'dqxwsovaryixondmhgyz', url: 'https://chabad-raanana-girls-budget.surge.sh' },
 ];
 
 const PAYMENT_MONTHS = 12;
@@ -105,17 +107,19 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
   const extraHoursTotal = classes.reduce((t: number, x: { extra_hours?: number }) => t + Number(x.extra_hours ?? 0), 0);
   const extraHoursCost = extraHoursTotal * actRate * PAYMENT_MONTHS;
+  // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
+  const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
-  const totalExpenses = teaching + extraHoursCost + studentExp + profDevExp + manualTotal;
+  const totalExpenses = teaching + extraHoursCost + counselingCost + studentExp + profDevExp + manualTotal;
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
     students, classCount: classes.length,
     ofek: c.ofek_salary ?? null,
     income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
-    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, extraHours: extraHoursTotal, extraHoursCost, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
+    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, extraHours: extraHoursTotal, extraHoursCost, counselingCost, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
     balance: totalIncome - totalExpenses,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,

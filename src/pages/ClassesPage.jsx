@@ -84,6 +84,7 @@ function BudgetBreakdown({ budget }) {
     null,
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
     ...(budget.extraHoursCost > 0 ? [{ label: `שעות בודדות (${budget.extraHours} בחודש)`, value: formatCurrency(budget.extraHoursCost), negative: true }] : []),
+    ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ בחודש)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
     ...(budget.caharonExpense > 0 ? [{ label: 'הוצאות צהרון', value: formatCurrency(budget.caharonExpense), negative: true }] : []),
     ...(budget.profDevExpense > 0 ? [{ label: 'פיתוח מקצועי', value: formatCurrency(budget.profDevExpense), negative: true }] : []),

@@ -6,8 +6,13 @@ export const PAYMENT_MONTHS = 12;
 // ofekSalary === null ⇒ טרם נענתה — המערכת שואלת בדף הבית עד שעונים.
 export const OFEK_RATES = { yes: 700, no: 450 };
 
+// מרכיב ייעוץ: 2 שעות ייעוץ לכיתה בחודש — עלות קבועה בתחשיב כל כיתה.
+// אין עמודת DB (ערך רשתי אחיד); מוחזק כברירת מחדל בקבועים ולא נשמר ב-DB.
+export const COUNSELING_HOURS_PER_CLASS = 2;
+
 export const DEFAULT_CONSTANTS = {
   schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
+  counselingHoursPerClass: COUNSELING_HOURS_PER_CLASS,
   fullClassStudentThreshold: 21,
   halfClassStudentThreshold: 11,
   fullClassMinistryHours: 22,

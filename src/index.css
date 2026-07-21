@@ -85,8 +85,10 @@
 ::-webkit-scrollbar-thumb:hover { background: #A794D0; }
 
 /* Print styles */
+.print-only { display: none; }
 @media print {
   .no-print, aside, nav, header { display: none !important; }
+  .print-only { display: block !important; }
   .card { box-shadow: none; border: 1px solid #E2DCF0; }
   /* המסמך המודפס צריך לזרום על פני כמה עמודים — משחררים את נעילת הגובה של האפליקציה */
   .h-screen { height: auto !important; }

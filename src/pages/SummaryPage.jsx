@@ -1,12 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import {
   calculateSchoolTotals, calculateSimpleTotals, categoryTotals,
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
-import { findMerges, extraHoursReport, thresholdReport, eventsCapReport, dualAgeMergeReport, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT } from '../lib/efficiency.js';
+import {
+  findMerges, extraHoursReport, thresholdReport, eventsCapReport, dualAgeMergeReport,
+  jointShabbatReport, caharonReport, parentContributionReport,
+  partaniyotReport, principalTeachingReport,
+  DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, DEFAULT_PARENT_CONTRIBUTION,
+} from '../lib/efficiency.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 
@@ -26,6 +31,22 @@ function Row({ label, value, bold, tone }) {
         {value}
       </span>
     </div>
+  );
+}
+
+// שורת הצעת ייעול עם checkbox לבחירה — לא נבחרת = לא נספרת ולא מודפסת
+function SuggestionRow({ label, value, selected, onToggle }) {
+  return (
+    <label className={`flex items-center gap-2.5 py-1.5 text-sm cursor-pointer ${selected ? '' : 'no-print opacity-40'}`}>
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        className="w-4 h-4 accent-purple-600 flex-shrink-0 no-print"
+      />
+      <span className="flex-1 text-gray-600">{label}</span>
+      <span className="whitespace-nowrap font-bold text-green-600">{value}</span>
+    </label>
   );
 }
 
@@ -125,12 +146,12 @@ export default function SummaryPage() {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
     for (const m of merges) {
-      rows.push({ label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
+      rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
     }
     const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     for (const m of dualMerges) {
-      rows.push({ label: `איחוד דו-גילאי: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
+      rows.push({ key: `dual:${m.merged.id}`, label: `איחוד דו-גילאי: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
     }
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
@@ -142,21 +163,52 @@ export default function SummaryPage() {
       ...dualMerges.map(m => m.merged),
     ];
     const extra = extraHoursReport(extraClasses, constants);
-    if (extra.totalCost > 0) rows.push({ label: `צמצום ${extra.totalHours} שעות בודדות בחודש`, saving: extra.totalCost });
+    if (extra.totalCost > 0) rows.push({ key: 'extra-hours', label: `צמצום ${extra.totalHours} שעות בודדות בחודש`, saving: extra.totalCost });
+    const shabbat = jointShabbatReport(classes, constants);
+    if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
+    const caharon = caharonReport(classes, constants);
+    if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
+    const parents = parentContributionReport(classes);
+    if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
+    const partaniyot = partaniyotReport(classes, constants);
+    if (partaniyot.saving > 0) rows.push({ key: 'partaniyot', label: `שעות פרטניות מהמשרה כשעה פרונטלית (${partaniyot.hoursPerClass} ש׳ × ${partaniyot.classCount} כיתות)`, saving: partaniyot.saving });
+    const principal = principalTeachingReport(classes, constants);
+    if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.hours} ש׳ בחודש)`, saving: principal.saving });
     const events = eventsCapReport(expenses, expenseCategories, classes);
-    if (events.excess > 0) rows.push({ label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
+    if (events.excess > 0) rows.push({ key: 'events-cap', label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
     const th = thresholdReport(classes, constants, 4, allMergedIds);
     for (const r of th.rows) {
-      rows.push({ label: `${r.cls.name}: עוד ${r.gap} תלמידים ל${r.nextType === 'full' ? 'תקן מלא' : 'חצי תקן'}`, saving: r.gain });
+      rows.push({ key: `threshold:${r.cls.id}`, label: `${r.cls.name}: עוד ${r.gap} תלמידים ל${r.nextType === 'full' ? 'תקן מלא' : 'חצי תקן'}`, saving: r.gain });
     }
     return rows.sort((a, b) => b.saving - a.saving);
   }, [isSimpleMode, classes, expenses, expenseCategories, constants]);
 
-  const suggestionsTotal = suggestions.reduce((s, r) => s + r.saving, 0);
+  // בחירה: אילו הצעות המנהלת בפועל מאמצת. null = עוד לא נטען/נשמר —
+  // ברירת מחדל היא הכל נבחר, עד שתבטלי סימון ותשמרי.
+  const [selectedKeys, setSelectedKeys] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [savingSelection, setSavingSelection] = useState(false);
+  const selectionDirty = useRef(false);
+
+  const isSelected = (key) => selectedKeys == null || selectedKeys.has(key);
+  const toggleSuggestion = (key) => {
+    selectionDirty.current = true;
+    setSelectedKeys(prev => {
+      const base = prev == null ? new Set(suggestions.map(s => s.key)) : new Set(prev);
+      if (base.has(key)) base.delete(key); else base.add(key);
+      return base;
+    });
+  };
+
+  const selectedSuggestions = suggestions.filter(s => isSelected(s.key));
+  const suggestionsTotal = selectedSuggestions.reduce((s, r) => s + r.saving, 0);
   const projectedBalance = totals.balance + suggestionsTotal;
 
   useEffect(() => {
     setApproval(null);
+    setSelectedKeys(null);
+    setNotes('');
+    selectionDirty.current = false;
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
       .select('*')
@@ -169,8 +221,31 @@ export default function SummaryPage() {
           if (isMissingTableError(error)) setTableReady(false);
         }
         setApproval(data ?? null);
+        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys));
+        if (data?.notes) setNotes(data.notes);
       });
   }, [user?.schoolId, currentYear?.id]);
+
+  const saveSelection = async () => {
+    setSavingSelection(true);
+    const payload = {
+      school_id: user.schoolId,
+      budget_year_id: currentYear.id,
+      selected_suggestion_keys: selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys],
+      notes: notes.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('budget_approvals')
+      .upsert(payload, { onConflict: 'school_id,budget_year_id' })
+      .select()
+      .single();
+    setSavingSelection(false);
+    if (isMissingTableError(error)) { setTableReady(false); return notify('שמירת ההצעות וההערות עדיין לא הופעלה במוסד זה', 'error'); }
+    if (error || !data) return saveFailed(error);
+    setApproval(data);
+    selectionDirty.current = false;
+    notify('הבחירה וההערות נשמרו ✓');
+  };
 
   const saveSignature = async (slot, name, dataUrl) => {
     const now = new Date().toISOString();
@@ -287,6 +362,7 @@ export default function SummaryPage() {
             <>
               <Row label={`עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש)`} value={formatCurrency(totals.totalClassActualCost)} />
               {totals.totalExtraHoursCost > 0 && <Row label="שעות בודדות" value={formatCurrency(totals.totalExtraHoursCost)} />}
+              {totals.totalCounselingCost > 0 && <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />}
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}
             </>
@@ -300,20 +376,60 @@ export default function SummaryPage() {
           <div className="mb-6">
             <h3 className="font-bold text-gray-800 text-sm border-b-2 border-purple-200 pb-1.5 mb-2 flex items-center gap-1.5">
               <Lightbulb size={15} className="text-purple-500" />
-              הצעות ייעול — פוטנציאל חיסכון
+              הצעות ייעול — לסמן אילו לאמץ
             </h3>
-            {suggestions.map((s, i) => <Row key={i} label={s.label} value={`+${formatCurrency(s.saving)}`} tone="green" />)}
-            <Row label='סה"כ פוטנציאל שנתי' value={`+${formatCurrency(suggestionsTotal)}`} bold tone="green" />
+            <p className="text-xs text-gray-400 mb-1 no-print">המערכת מציעה את כל האפשרויות — סמני מה בוחרים בפועל; מה שלא מסומן לא נספר ולא יודפס.</p>
+            {suggestions.map(s => (
+              <SuggestionRow
+                key={s.key}
+                label={s.label}
+                value={`+${formatCurrency(s.saving)}`}
+                selected={isSelected(s.key)}
+                onToggle={() => toggleSuggestion(s.key)}
+              />
+            ))}
+            <Row label='סה"כ הצעות נבחרות' value={`+${formatCurrency(suggestionsTotal)}`} bold tone="green" />
             <div className={`rounded-xl border p-3 mt-3 flex justify-between items-center gap-3 ${projectedBalance < 0 ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
               <span className="text-sm font-bold text-gray-700">מצב תקציב לאחר יישום ההצעות</span>
               <span className={`text-lg font-black ${projectedBalance < 0 ? 'text-red-500' : 'text-teal-600'}`}>
                 {formatCurrencyFull(projectedBalance)}
               </span>
             </div>
-            <button type="button" onClick={() => navigate('efficiency')} className="btn-ghost btn-sm mt-2 no-print">
-              לכל ההצעות והפירוט
-              <ArrowLeft size={13} />
-            </button>
+            {/* שורת מילוי ידני — נקבעת בשיחה מול הרשת, לא מחושבת */}
+            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3 mt-2 flex justify-between items-center gap-3">
+              <span className="text-sm font-bold text-gray-700">השתתפות רשת חינוך חב"ד</span>
+              <span className="text-base font-medium text-gray-500 tracking-wider">₪ ____________</span>
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-2 no-print">
+              <button type="button" onClick={() => navigate('efficiency')} className="btn-ghost btn-sm">
+                לכל ההצעות והפירוט
+                <ArrowLeft size={13} />
+              </button>
+              <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm">
+                <Save size={14} />
+                שמירת הבחירה
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        {!isSimpleMode && (
+          <div className="mb-6">
+            <h3 className="font-bold text-gray-800 text-sm border-b-2 border-gray-200 pb-1.5 mb-2 flex items-center gap-1.5">
+              <StickyNote size={15} className="text-gray-500" />
+              הערות
+            </h3>
+            {notes
+              ? <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed print-only">{notes}</p>
+              : <p className="text-sm text-gray-300 print-only">אין הערות</p>}
+            <textarea
+              className="input no-print"
+              rows={3}
+              value={notes}
+              onChange={e => { selectionDirty.current = true; setNotes(e.target.value); }}
+              placeholder="הערות לתקציב — הקשר, החלטות, מה נדחה להמשך..."
+            />
           </div>
         )}
 

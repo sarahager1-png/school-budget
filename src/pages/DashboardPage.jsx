@@ -327,6 +327,7 @@ function FullDashboard() {
   const expenseBreakdown = [
     { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
     { label: 'שעות בודדות', value: totals.totalExtraHoursCost },
+    { label: 'ייעוץ (2 ש׳ לכיתה)', value: totals.totalCounselingCost },
     { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
     { label: 'פיתוח מקצועי', value: totals.totalProfDev },
     ...(principalAnnual > 0 ? [{ label: 'שכר מנהלת', value: principalAnnual }] : []),

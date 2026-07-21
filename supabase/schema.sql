@@ -267,3 +267,8 @@ CREATE POLICY "budget_approvals_update" ON budget_approvals
 
 CREATE INDEX IF NOT EXISTS idx_budget_approvals_school_year
   ON budget_approvals(school_id, budget_year_id);
+
+-- Efficiency suggestion selection + notes (which suggestions were
+-- actually chosen, not just computed) — lives on budget_approvals
+ALTER TABLE budget_approvals ADD COLUMN IF NOT EXISTS selected_suggestion_keys TEXT[];
+ALTER TABLE budget_approvals ADD COLUMN IF NOT EXISTS notes TEXT;
