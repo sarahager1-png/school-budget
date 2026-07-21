@@ -7,7 +7,7 @@ import {
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import {
-  findMerges, extraHoursReport, thresholdReport, eventsCapReport, dualAgeMergeReport,
+  findMerges, closeClassReport, thresholdReport, eventsCapReport, dualAgeMergeReport,
   jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
@@ -168,15 +168,9 @@ export default function SummaryPage() {
       rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות)`, saving: m.delta });
     }
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
-    // כיתות שצורפו: הכיתה המאוחדת נושאת את סכום השעות הבודדות של חברותיה,
-    // לכן סופרים אותה במקום החברות — כל שעה נספרת פעם אחת בדיוק.
-    const extraClasses = [
-      ...classes.filter(c => !allMergedIds.has(c.id)),
-      ...merges.map(m => m.merged),
-      ...dualMerges.map(m => m.merged),
-    ];
-    const extra = extraHoursReport(extraClasses, constants);
-    if (extra.totalCost > 0) rows.push({ key: 'extra-hours', label: `צמצום ${extra.totalHours} שעות בודדות בחודש`, saving: extra.totalCost });
+    for (const r of closeClassReport(classes, constants, allMergedIds)) {
+      rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} (${r.cls.studentCount} תל׳) — חיסכון נטו`, saving: r.saving });
+    }
     const hoursR = hoursCutReport(classes, constants, 1);
     if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });
     const topR = topExpensesReport(expenses, expenseCategories);
@@ -404,7 +398,6 @@ export default function SummaryPage() {
           {!isSimpleMode && (
             <>
               <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
-              <Row label="שעות בודדות" value={formatCurrency(totals.totalExtraHoursCost)} />
               <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />
               <Row label={`תוספת 2 חוגים לכיתה (${classes.length} כיתות × 600 ₪ שבועי)`} value={formatCurrency(totals.totalClubsExpense)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />

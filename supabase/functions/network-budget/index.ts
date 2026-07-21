@@ -106,8 +106,7 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const studentIncome = students * perStudent * 0.8;
   const talanIncome = students * talan * 0.8;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
-  const extraHoursTotal = classes.reduce((t: number, x: { extra_hours?: number }) => t + Number(x.extra_hours ?? 0), 0);
-  const extraHoursCost = extraHoursTotal * actRate * PAYMENT_MONTHS;
+  // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
   // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
   const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
   // תוספת חוגים — 600 ₪ שבועי לכיתה, ×4 לחודש ×12 (ר' CLUBS_WEEKLY_EXPENSE_PER_CLASS בקוד הראשי)
@@ -115,14 +114,14 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
-  const totalExpenses = teaching + extraHoursCost + counselingCost + clubsExpense + studentExp + profDevExp + manualTotal;
+  const totalExpenses = teaching + counselingCost + clubsExpense + studentExp + profDevExp + manualTotal;
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
     students, classCount: classes.length,
     ofek: c.ofek_salary ?? null,
     income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
-    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, extraHours: extraHoursTotal, extraHoursCost, counselingCost, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
+    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
     balance: totalIncome - totalExpenses,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,

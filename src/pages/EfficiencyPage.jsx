@@ -1,14 +1,14 @@
 import { useMemo, useState, useEffect } from 'react';
 import {
-  Lightbulb, Merge, Timer, Clock, UserPlus, PartyPopper, Scissors,
+  Lightbulb, Merge, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
-  GraduationCap, UserCog, Wallet, Banknote, Save,
+  GraduationCap, UserCog, Wallet, Banknote, Save, DoorClosed,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import { calculateSchoolTotals, getClassType, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
 import {
-  findMerges, extraHoursReport, hoursCutReport, thresholdReport,
+  findMerges, closeClassReport, hoursCutReport, thresholdReport,
   noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
   jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
@@ -152,17 +152,10 @@ export default function EfficiencyPage() {
     const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
-    // כיתות שצורפו: הכיתה המאוחדת נושאת את סכום השעות הבודדות של חברותיה,
-    // לכן סופרים אותה במקום החברות — כל שעה נספרת פעם אחת בדיוק.
-    const extraClasses = [
-      ...classes.filter(c => !allMergedIds.has(c.id)),
-      ...merges.map(m => m.merged),
-      ...dualMerges.map(m => m.merged),
-    ];
     return {
       merges,
       dualMerges,
-      extra: extraHoursReport(extraClasses, constants),
+      closes: closeClassReport(classes, constants, allMergedIds),
       hours: hoursCutReport(classes, constants, 1),
       thresholds: thresholdReport(classes, constants, 4, allMergedIds),
       noStd: noStandardReport(classes, constants, allMergedIds),
@@ -183,7 +176,7 @@ export default function EfficiencyPage() {
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal, tuition, supplement } = report;
+  const { merges, dualMerges, closes, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal, tuition, supplement } = report;
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
@@ -199,7 +192,7 @@ export default function EfficiencyPage() {
     ...(partaniyot.saving > 0 ? ['partaniyot'] : []),
     ...(principal.saving > 0 ? ['principal-teaching'] : []),
     ...(shabbat.saving > 0 ? ['shabbat'] : []),
-    ...(extra.rows.length > 0 ? ['extra-hours'] : []),
+    ...closes.map(r => `close:${r.cls.id}`),
     ...thresholds.rows.map(r => `threshold:${r.cls.id}`),
     ...(tuition.gain > 0 ? ['tuition'] : []),
     ...(supplement.gain > 0 ? ['tuition-supplement'] : []),
@@ -257,7 +250,7 @@ export default function EfficiencyPage() {
   const totalPotential =
     merges.reduce((s, m) => s + (isSelected(`merge:${m.merged.id}`) ? m.delta : 0), 0) +
     dualMerges.reduce((s, m) => s + (isSelected(`dual:${m.merged.id}`) ? m.delta : 0), 0) +
-    (isSelected('extra-hours') ? extra.totalCost : 0) +
+    closes.reduce((s, r) => s + (isSelected(`close:${r.cls.id}`) ? r.saving : 0), 0) +
     (hours.maxCut > 0 && isSelected('hours-cut') ? hoursSaving : 0) +
     (isSelected('events-cap') ? events.excess : 0) +
     (top.rows.length > 0 && isSelected('trim') ? trimSaving : 0) +
@@ -490,25 +483,27 @@ export default function EfficiencyPage() {
         </SuggestionCard>
       )}
 
-      {/* Extra hours */}
-      {extra.rows.length > 0 && (
+      {/* Close a losing class — one card per candidate, she picks which */}
+      {closes.map(r => (
         <SuggestionCard
-          icon={Timer}
-          tone="gold"
+          key={`close-${r.cls.id}`}
+          icon={DoorClosed}
+          tone="coral"
           index={++cardIndex}
-          title="צמצום שעות בודדות"
-          subtitle={`${extra.totalHours} שעות בודדות בחודש עולות ${formatCurrency(extra.totalCost)} בשנה — בלי מימון מהמשרד. כל שעה שמורידים חוסכת ${formatCurrency(extra.perHour)} בשנה.`}
-          saving={extra.totalCost}
-          savingLabel="אם מורידים הכל"
-          details={extra.rows.map(r => ({
-            label: `${r.cls.name} — ${r.hours} שעות בחודש`,
-            value: formatCurrency(r.annualCost),
-          }))}
+          title={`סגירת כיתה ${r.cls.name}`}
+          subtitle={`הכיתה (${r.cls.studentCount} תל׳, ${CLASS_TYPE[r.budget.type].label}) עולה יותר ממה שהיא מכניסה — סגירתה חוסכת את ההפרש נטו. סמני ✓ רק אם זו הכיתה שבוחרים לסגור.`}
+          saving={r.saving}
+          savingLabel="חיסכון נטו בשנה"
+          details={[
+            { label: 'הוצאות שנחסכות', value: formatCurrency(r.budget.totalExpenses), tone: 'green' },
+            { label: 'הכנסות שיירדו (משרד + תלמידים)', value: formatCurrency(r.budget.totalIncome), tone: 'red' },
+            { label: 'חיסכון נטו', value: formatCurrencyFull(r.saving), tone: 'green' },
+          ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
-          selected={isSelected('extra-hours')}
-          onToggle={() => toggleKey('extra-hours')}
+          selected={isSelected(`close:${r.cls.id}`)}
+          onToggle={() => toggleKey(`close:${r.cls.id}`)}
         />
-      )}
+      ))}
 
       {/* Threshold opportunities */}
       {thresholds.rows.length > 0 && (
@@ -693,7 +688,7 @@ export default function EfficiencyPage() {
       )}
 
       {/* Nothing found */}
-      {merges.length === 0 && dualMerges.length === 0 && extra.rows.length === 0 && hours.maxCut === 0 &&
+      {merges.length === 0 && dualMerges.length === 0 && closes.length === 0 && hours.maxCut === 0 &&
         thresholds.rows.length === 0 && events.excess === 0 && top.rows.length === 0 && noStd.rows.length === 0 && (
         <EmptyState
           icon={Sparkles}

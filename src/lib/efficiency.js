@@ -310,23 +310,16 @@ export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUIT
   };
 }
 
-// ─── שעות בודדות ──────────────────────────────────────────────
-export function extraHoursReport(classes, constants) {
-  const perHour = constants.actualHourlyRate * PAYMENT_MONTHS;
-  const rows = classes
-    .filter(c => Number(c.extraHours || 0) > 0)
-    .map(c => ({
-      cls: c,
-      hours: Number(c.extraHours),
-      annualCost: Number(c.extraHours) * perHour,
-    }))
-    .sort((a, b) => b.annualCost - a.annualCost);
-  return {
-    rows,
-    perHour,
-    totalHours: rows.reduce((s, r) => s + r.hours, 0),
-    totalCost: rows.reduce((s, r) => s + r.annualCost, 0),
-  };
+// ─── סגירת כיתה ───────────────────────────────────────────────
+// כיתה שההוצאות עליה גבוהות מההכנסות שלה — סגירתה חוסכת את ההפרש נטו.
+// ההנחה: התלמידים אינם נשארים במוסד (גם ההכנסות שלהם יורדות).
+export function closeClassReport(classes, constants, excludeIds = new Set()) {
+  return classes
+    .filter(c => !excludeIds.has(c.id))
+    .map(c => ({ cls: c, budget: calculateClassBudget(c, constants) }))
+    .filter(r => r.budget.balance < -1000)
+    .map(r => ({ ...r, saving: -r.budget.balance }))
+    .sort((a, b) => b.saving - a.saving);
 }
 
 // ─── הורדת שעות בפועל לכל הכיתות ──────────────────────────────

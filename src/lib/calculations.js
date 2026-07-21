@@ -43,9 +43,8 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
 
   const actualMonthlyCost = actualWeeklyHours * actualHourlyRate;
   const actualOperatingCost = actualMonthlyCost * PAYMENT_MONTHS;
-  // שעות בודדות פר כיתה — עלות בלבד (× תעריף האופק), לא משפיעות על הכנסת המשרד
-  const extraHours = Number(classItem.extraHours || 0);
-  const extraHoursCost = extraHours * actualHourlyRate * PAYMENT_MONTHS;
+  // שעות בודדות הוסרו מהתחשיב (הנחיית שרה 21/7) — קיימות רק כתוספת
+  // ה-12 שעות של חיבור כיתות (ר' dualAgeMergeReport); השדה בכיתה נשמר כמידע בלבד
   // מרכיב ייעוץ — 2 שעות חודשיות לכל כיתה (ערך רשתי אחיד, לא נערך ב-DB)
   const counselingHours = Number(constants.counselingHoursPerClass ?? DEFAULT_CONSTANTS.counselingHoursPerClass);
   const counselingCost = counselingHours * actualHourlyRate * PAYMENT_MONTHS;
@@ -54,7 +53,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
   const profDevExpense = professionalDevPerClass;
-  const totalExpenses = actualOperatingCost + extraHoursCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + profDevExpense;
+  const totalExpenses = actualOperatingCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + profDevExpense;
 
   const balance = totalIncome - totalExpenses;
 
@@ -70,8 +69,6 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
     caharonIncome,
     totalIncome,
     actualOperatingCost,
-    extraHours,
-    extraHoursCost,
     counselingHours,
     counselingCost,
     clubsExpense,
@@ -107,7 +104,6 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalIncome = totalMinistryIncome + totalMinistryGrantIncome + totalStudentIncome + totalTalanIncome + additionalIncome;
 
   const totalClassActualCost = classBreakdowns.reduce((sum, c) => sum + c.budget.actualOperatingCost, 0);
-  const totalExtraHoursCost = classBreakdowns.reduce((sum, c) => sum + c.budget.extraHoursCost, 0);
   const totalCounselingCost = classBreakdowns.reduce((sum, c) => sum + c.budget.counselingCost, 0);
   const totalClubsExpense = classBreakdowns.reduce((sum, c) => sum + c.budget.clubsExpense, 0);
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);
@@ -128,7 +124,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const miscExpenses = sumKind('other');
 
   const otherExpenses = salaryExpenses + buildingExpenses + operationExpenses + summerExpenses + miscExpenses;
-  const totalExpenses = totalClassActualCost + totalExtraHoursCost + totalCounselingCost + totalClubsExpense + totalStudentExpenses + totalProfDev + otherExpenses;
+  const totalExpenses = totalClassActualCost + totalCounselingCost + totalClubsExpense + totalStudentExpenses + totalProfDev + otherExpenses;
   const balance = totalIncome - totalExpenses;
   const ministryGap = totalClassActualCost - totalMinistryIncome;
 
@@ -142,7 +138,6 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
     additionalIncome,
     totalIncome,
     totalClassActualCost,
-    totalExtraHoursCost,
     totalCounselingCost,
     totalClubsExpense,
     totalStudentExpenses,
@@ -202,7 +197,6 @@ export function categoryColor(cat, i = 0) {
 // profdev-kind categories are skipped (already computed per class).
 export function generateCategoryData(expenses, classes, constants = DEFAULT_CONSTANTS, categories = []) {
   const totalClassActualCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).actualOperatingCost, 0);
-  const totalExtraHoursCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).extraHoursCost, 0);
   const totalCounselingCost = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).counselingCost, 0);
   const totalClubsExpense = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).clubsExpense, 0);
   const totalStudentExpenses = classes.reduce((sum, c) => sum + calculateClassBudget(c, constants).studentExpenses, 0);
@@ -210,7 +204,6 @@ export function generateCategoryData(expenses, classes, constants = DEFAULT_CONS
 
   const rows = [
     { name: 'עלות הוראה', value: totalClassActualCost, fill: '#00B4CC' },
-    { name: 'שעות בודדות', value: totalExtraHoursCost, fill: '#F5C518' },
     { name: 'ייעוץ', value: totalCounselingCost, fill: '#0EA5E9' },
     { name: 'חוגים', value: totalClubsExpense, fill: '#EC4899' },
     { name: 'הוצאות תלמידים', value: totalStudentExpenses, fill: '#4B2E83' },
