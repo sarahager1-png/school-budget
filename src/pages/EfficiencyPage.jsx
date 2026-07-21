@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import {
   Lightbulb, Merge, Timer, Clock, UserPlus, PartyPopper, Scissors,
-  AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles,
+  AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateSchoolTotals, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
 import {
   findMerges, extraHoursReport, hoursCutReport, thresholdReport,
-  noStandardReport, eventsCapReport, topExpensesReport, MAX_MERGED_STUDENTS,
+  noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
+  DUAL_AGE_SUBJECTS, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
 } from '../lib/efficiency.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
@@ -113,39 +114,46 @@ export default function EfficiencyPage() {
 
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
+  const [hakvatzaHours, setHakvatzaHours] = useState(DEFAULT_HAKVATZA_HOURS_PER_SUBJECT);
 
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
-    // כיתות שצורפו: השעות הבודדות של החברות הקטנות כבר נחסכות בתוך ה-delta
-    // של הצירוף עצמו (mergedClass לוקח מקסימום, לא סכום) — לא סופרים אותן שוב;
-    // נשארות רק השעות של הכיתה המאוחדת עצמה (שווה למקסימום מבין החברות).
+    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, hakvatzaHours);
+    const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
+    const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
+    // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
+    // נחסכות בתוך ה-delta של הצירוף עצמו (mergedClass לוקח מקסימום, לא סכום)
+    // — לא סופרים אותן שוב; נשארות רק השעות של הכיתה המאוחדת עצמה.
     const extraClasses = [
-      ...classes.filter(c => !mergedIds.has(c.id)),
+      ...classes.filter(c => !allMergedIds.has(c.id)),
       ...merges.map(m => m.merged),
+      ...dualMerges.map(m => m.merged),
     ];
     return {
       merges,
+      dualMerges,
       extra: extraHoursReport(extraClasses, constants),
       hours: hoursCutReport(classes, constants, 1),
-      thresholds: thresholdReport(classes, constants, 4, mergedIds),
-      noStd: noStandardReport(classes, constants, mergedIds),
+      thresholds: thresholdReport(classes, constants, 4, allMergedIds),
+      noStd: noStandardReport(classes, constants, allMergedIds),
       events: eventsCapReport(expenses, expenseCategories, classes),
       top: topExpensesReport(expenses, expenseCategories),
     };
-  }, [classes, expenses, expenseCategories, constants]);
+  }, [classes, expenses, expenseCategories, constants, hakvatzaHours]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const { merges, extra, hours, thresholds, noStd, events, top } = report;
+  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top } = report;
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
   const totalPotential =
     merges.reduce((s, m) => s + m.delta, 0) +
+    dualMerges.reduce((s, m) => s + m.delta, 0) +
     extra.totalCost +
     (hours.maxCut > 0 ? hoursSaving : 0) +
     events.excess +
@@ -154,6 +162,7 @@ export default function EfficiencyPage() {
 
   const deficit = totals.isDeficit ? Math.abs(totals.balance) : 0;
   const coverage = deficit > 0 ? Math.min(100, Math.round(totalPotential / deficit * 100)) : null;
+  const projectedBalance = totals.balance + totalPotential;
 
   if (classes.length === 0) {
     return (
@@ -199,16 +208,25 @@ export default function EfficiencyPage() {
             </p>
             <p className="text-sm text-gray-500 mt-0.5">שיפור אפשרי בשנה</p>
           </div>
-          {coverage != null && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">כמה מהגירעון זה סוגר</p>
-              <p className="text-2xl font-black text-gray-800">{coverage}%</p>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden mt-2" role="progressbar" aria-label="כמה מהגירעון זה סוגר" aria-valuenow={coverage} aria-valuemin={0} aria-valuemax={100}>
-                <div className="h-full bg-gradient-to-l from-purple-500 to-teal-400 rounded-full transition-all duration-700" style={{ width: `${coverage}%` }} />
-              </div>
-            </div>
-          )}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">מצב אחרי יישום ההצעות</p>
+            <p className={`text-2xl font-black ${projectedBalance < 0 ? 'text-red-500' : 'text-green-600'}`}>
+              {formatCurrencyFull(projectedBalance)}
+            </p>
+            <p className="text-sm text-gray-500 mt-0.5">התחשיב הסופי אם מיישמים הכל</p>
+          </div>
         </div>
+        {coverage != null && (
+          <div className="px-5 pb-5">
+            <div className="flex justify-between items-baseline mb-1.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">כמה מהגירעון זה סוגר</p>
+              <p className="text-sm font-black text-gray-800">{coverage}%</p>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-label="כמה מהגירעון זה סוגר" aria-valuenow={coverage} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full bg-gradient-to-l from-purple-500 to-teal-400 rounded-full transition-all duration-700" style={{ width: `${coverage}%` }} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Merges */}
@@ -230,6 +248,33 @@ export default function EfficiencyPage() {
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
         />
+      ))}
+
+      {/* Dual-age merges */}
+      {dualMerges.map(m => (
+        <SuggestionCard
+          key={`dual-${m.merged.id}`}
+          icon={Layers}
+          tone="purple"
+          index={++cardIndex}
+          title={`איחוד לכיתה דו-גילאית: ${m.members.map(x => x.name).join(' + ')}`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳)`).join(' + ')} ← כיתה פיזית אחת של ${m.merged.studentCount} תלמידים, עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
+          saving={m.delta}
+          details={[
+            { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
+            { label: 'הכנסות אחרי האיחוד', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
+            { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
+            { label: `שעות הקבצה — ${DUAL_AGE_SUBJECTS.length} מקצועות × ${hakvatzaHours} ש׳ בחודש`, value: formatCurrency(m.hakvatzaAnnualCost) },
+            { label: 'עלות אחרי האיחוד — כיתה אחת + הקבצה', value: formatCurrency(m.costAfter), tone: 'green' },
+            { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
+          ]}
+          action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">שעות הקבצה לחודש, לכל מקצוע</span>
+            <Stepper value={hakvatzaHours} onChange={setHakvatzaHours} min={0} max={20} unit="שעות" />
+          </div>
+        </SuggestionCard>
       ))}
 
       {/* Hours cut */}
@@ -347,7 +392,7 @@ export default function EfficiencyPage() {
       )}
 
       {/* Nothing found */}
-      {merges.length === 0 && extra.rows.length === 0 && hours.maxCut === 0 &&
+      {merges.length === 0 && dualMerges.length === 0 && extra.rows.length === 0 && hours.maxCut === 0 &&
         thresholds.rows.length === 0 && events.excess === 0 && top.rows.length === 0 && noStd.rows.length === 0 && (
         <EmptyState
           icon={Sparkles}

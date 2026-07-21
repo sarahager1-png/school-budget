@@ -6,7 +6,7 @@ import {
   calculateSchoolTotals, calculateSimpleTotals, categoryTotals,
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
-import { findMerges, extraHoursReport, thresholdReport, eventsCapReport } from '../lib/efficiency.js';
+import { findMerges, extraHoursReport, thresholdReport, eventsCapReport, dualAgeMergeReport, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT } from '../lib/efficiency.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 
@@ -127,17 +127,25 @@ export default function SummaryPage() {
     for (const m of merges) {
       rows.push({ label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
     }
-    // כיתות שצורפו: השעות הבודדות של החברות הקטנות כבר נחסכות בתוך ה-delta
-    // של הצירוף עצמו — לא סופרים אותן שוב; נשארות רק שעות הכיתה המאוחדת עצמה.
+    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
+    const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
+    for (const m of dualMerges) {
+      rows.push({ label: `איחוד דו-גילאי: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
+    }
+    const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
+    // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
+    // נחסכות בתוך ה-delta של הצירוף עצמו — לא סופרים אותן שוב; נשארות רק
+    // שעות הכיתה המאוחדת עצמה.
     const extraClasses = [
-      ...classes.filter(c => !mergedIds.has(c.id)),
+      ...classes.filter(c => !allMergedIds.has(c.id)),
       ...merges.map(m => m.merged),
+      ...dualMerges.map(m => m.merged),
     ];
     const extra = extraHoursReport(extraClasses, constants);
     if (extra.totalCost > 0) rows.push({ label: `צמצום ${extra.totalHours} שעות בודדות בחודש`, saving: extra.totalCost });
     const events = eventsCapReport(expenses, expenseCategories, classes);
     if (events.excess > 0) rows.push({ label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
-    const th = thresholdReport(classes, constants, 4, mergedIds);
+    const th = thresholdReport(classes, constants, 4, allMergedIds);
     for (const r of th.rows) {
       rows.push({ label: `${r.cls.name}: עוד ${r.gap} תלמידים ל${r.nextType === 'full' ? 'תקן מלא' : 'חצי תקן'}`, saving: r.gain });
     }
@@ -145,6 +153,7 @@ export default function SummaryPage() {
   }, [isSimpleMode, classes, expenses, expenseCategories, constants]);
 
   const suggestionsTotal = suggestions.reduce((s, r) => s + r.saving, 0);
+  const projectedBalance = totals.balance + suggestionsTotal;
 
   useEffect(() => {
     setApproval(null);
@@ -175,6 +184,7 @@ export default function SummaryPage() {
         students: totals.totalStudents ?? null,
         classCount: classes.length,
         suggestionsTotal: Math.round(suggestionsTotal),
+        projectedBalance: Math.round(projectedBalance),
         savedAt: now,
       },
       updated_at: now,
@@ -294,6 +304,12 @@ export default function SummaryPage() {
             </h3>
             {suggestions.map((s, i) => <Row key={i} label={s.label} value={`+${formatCurrency(s.saving)}`} tone="green" />)}
             <Row label='סה"כ פוטנציאל שנתי' value={`+${formatCurrency(suggestionsTotal)}`} bold tone="green" />
+            <div className={`rounded-xl border p-3 mt-3 flex justify-between items-center gap-3 ${projectedBalance < 0 ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
+              <span className="text-sm font-bold text-gray-700">מצב תקציב לאחר יישום ההצעות</span>
+              <span className={`text-lg font-black ${projectedBalance < 0 ? 'text-red-500' : 'text-teal-600'}`}>
+                {formatCurrencyFull(projectedBalance)}
+              </span>
+            </div>
             <button type="button" onClick={() => navigate('efficiency')} className="btn-ghost btn-sm mt-2 no-print">
               לכל ההצעות והפירוט
               <ArrowLeft size={13} />

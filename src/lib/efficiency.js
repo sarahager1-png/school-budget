@@ -38,15 +38,21 @@ export function mergeDelta(members, constants) {
 export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS) {
   const groups = new Map();
   for (const c of classes) {
-    const key = (c.gradeLevel ?? '').toString().trim();
-    if (!key) continue;
+    const raw = (c.gradeLevel ?? '').toString().trim();
+    if (!raw) continue;
+    // מקבצים לפי שכבה מנורמלת (כמו dualAgeMergeReport) כדי ש"א"/"א'"/"כיתה א"
+    // ייחשבו לאותה שכבה גם אם הוקלדו בפורמט חופשי שונה; טקסט חופשי שלא
+    // מזוהה (למשל "גן חובה") ממשיך להתקבץ לפי השוואת מחרוזת כבעבר
+    const idx = normalizeGrade(raw);
+    const key = idx != null ? `n${idx}` : `r:${raw}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(c);
   }
 
   const candidates = [];
-  for (const [grade, list] of groups) {
+  for (const [, list] of groups) {
     if (list.length < 2) continue;
+    const grade = list[0].gradeLevel;
     const subsets = [];
     for (let i = 0; i < list.length; i++) {
       for (let j = i + 1; j < list.length; j++) {
@@ -62,6 +68,106 @@ export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS
       const result = mergeDelta(members, constants);
       // רק חיסכון משמעותי — מתחת לאלף ₪ בשנה לא שווה את הטלטלה
       if (result.delta >= 1000) candidates.push({ grade, members, ...result });
+    }
+  }
+
+  candidates.sort((a, b) => b.delta - a.delta);
+  const used = new Set();
+  const picked = [];
+  for (const cand of candidates) {
+    if (cand.members.some(m => used.has(m.id))) continue;
+    cand.members.forEach(m => used.add(m.id));
+    picked.push(cand);
+  }
+  return picked;
+}
+
+// ─── איחוד לכיתה דו-גילאית ──────────────────────────────────────
+// לכיתה בודדת בשכבה (אין עם מי לצרף באותה שכבה — findMerges לא ימצא לה
+// זוגית) יש עוד אפשרות: לאחד עם השכבה הסמוכה לכיתה אחת פיזית, עם שעות
+// הקבצה נפרדות לפי שכבה בשלושת המקצועות שדורשים רמה נפרדת.
+export const DUAL_AGE_SUBJECTS = ['אנגלית', 'מתמטיקה', 'שפה'];
+export const DEFAULT_HAKVATZA_HOURS_PER_SUBJECT = 8;
+
+const GRADE_ORDER = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
+
+// חלוקה למסגרות חינוך — מודל האיחוד הדו-גילאי (חדר פיזי משותף + הקבצה
+// בשלושה מקצועות ליבה סביב מחנך/ת אחד/ת) משקף יום לימודים יסודי בלבד.
+// אסור להציע איחוד שחוצה גבול מסגרת (למשל ו+ז) או בתוך חט"ב/תיכון (למשל יא+יב),
+// ששם אין מבנה מחנך יחיד וסט המקצועות/השעות שונה לגמרי.
+const SCHOOL_DIVISIONS = [
+  ['א', 'ב', 'ג', 'ד', 'ה', 'ו'], // יסודי — היחיד שהמודל הזה תקף בו
+  ['ז', 'ח', 'ט'], // חטיבת ביניים
+  ['י', 'יא', 'יב'], // תיכון
+];
+
+function divisionOf(idx) {
+  const grade = GRADE_ORDER[idx];
+  return SCHOOL_DIVISIONS.findIndex(d => d.includes(grade));
+}
+
+export function normalizeGrade(raw) {
+  if (!raw) return null;
+  const s = raw.toString().trim().replace(/^כיתה\s*/, '').replace(/["'׳״]/g, '').replace(/\s+/g, '');
+  if (!s) return null;
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10);
+    return n >= 1 && n <= GRADE_ORDER.length ? n - 1 : null;
+  }
+  // בודקים אסימונים ארוכים קודם — "יא"/"יב" לפני "י"/"א" כדי לא לפגוע בהם
+  const byLength = [...GRADE_ORDER].sort((a, b) => b.length - a.length);
+  for (const token of byLength) {
+    if (s.startsWith(token)) return GRADE_ORDER.indexOf(token);
+  }
+  return null;
+}
+
+// hakvatzaHoursPerSubjectMonth: שעות חודשיות נוספות לכל מקצוע (× 3 המקצועות)
+// כדי ללמד כל שכבה בנפרד באנגלית/מתמטיקה/שפה גם אחרי האיחוד הפיזי
+export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), hakvatzaHoursPerSubjectMonth = DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, maxStudents = MAX_MERGED_STUDENTS) {
+  // רק כיתה שהיא היחידה בשכבה שלה — אם יש עוד כיתה באותה שכבה, צירוף
+  // רגיל (findMerges) הוא האפשרות הזולה יותר ועדיפה
+  const byGrade = new Map();
+  for (const c of classes) {
+    if (excludeIds.has(c.id)) continue;
+    const idx = normalizeGrade(c.gradeLevel);
+    if (idx == null) continue;
+    if (!byGrade.has(idx)) byGrade.set(idx, []);
+    byGrade.get(idx).push(c);
+  }
+  const singles = new Map();
+  for (const [idx, list] of byGrade) {
+    if (list.length === 1) singles.set(idx, list[0]);
+  }
+
+  const hakvatzaAnnualCost = DUAL_AGE_SUBJECTS.length * hakvatzaHoursPerSubjectMonth * constants.actualHourlyRate * PAYMENT_MONTHS;
+
+  const candidates = [];
+  for (const idx of [...singles.keys()].sort((a, b) => a - b)) {
+    const partner = singles.get(idx + 1);
+    if (!partner) continue;
+    // רק בתוך היסודי — לא לחצות מסגרת (ו+ז) ולא בתוך חט"ב/תיכון (יא+יב)
+    const div = divisionOf(idx);
+    if (div !== 0 || divisionOf(idx + 1) !== div) continue;
+    const a = singles.get(idx);
+    const merged = mergedClass([a, partner]);
+    if (merged.studentCount > maxStudents) continue;
+    const budgetA = calculateClassBudget(a, constants);
+    const budgetB = calculateClassBudget(partner, constants);
+    const mergedBudget = calculateClassBudget(merged, constants);
+    const costAfter = mergedBudget.totalExpenses + hakvatzaAnnualCost;
+    const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
+    if (delta >= 1000) {
+      candidates.push({
+        members: [a, partner],
+        merged,
+        hakvatzaAnnualCost,
+        incomeBefore: budgetA.totalIncome + budgetB.totalIncome,
+        incomeAfter: mergedBudget.totalIncome,
+        costBefore: budgetA.totalExpenses + budgetB.totalExpenses,
+        costAfter,
+        delta,
+      });
     }
   }
 
