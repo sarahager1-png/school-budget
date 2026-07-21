@@ -208,7 +208,6 @@ export default function SummaryPage() {
   // ברירת מחדל היא הכל נבחר, עד שתבטלי סימון ותשמרי.
   const [selectedKeys, setSelectedKeys] = useState(null);
   const [notes, setNotes] = useState('');
-  const [networkAmount, setNetworkAmount] = useState('');
   const [savingSelection, setSavingSelection] = useState(false);
   const selectionDirty = useRef(false);
 
@@ -230,7 +229,6 @@ export default function SummaryPage() {
     setApproval(null);
     setSelectedKeys(null);
     setNotes('');
-    setNetworkAmount('');
     selectionDirty.current = false;
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
@@ -246,7 +244,6 @@ export default function SummaryPage() {
         setApproval(data ?? null);
         if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys.map(normalizeSuggestionKey)));
         if (data?.notes) setNotes(data.notes);
-        if (data?.network_support != null) setNetworkAmount(String(data.network_support));
       });
   }, [user?.schoolId, currentYear?.id]);
 
@@ -259,22 +256,10 @@ export default function SummaryPage() {
       notes: notes.trim() || null,
       updated_at: new Date().toISOString(),
     };
-    // עמודת סכום הרשת נשלחת רק כשבאמת הוקלד ערך — כך בתי"ס שעוד לא הריצו
-    // את המיגרציה שומרים בחירה+הערות נקי, בלי כשל ובלי הודעת שווא
-    const netValue = networkAmount === '' ? null : Math.max(0, Number(networkAmount) || 0);
-    if (networkAmount !== '') payload.network_support = netValue;
-    let { data, error } = await supabase.from('budget_approvals')
+    const { data, error } = await supabase.from('budget_approvals')
       .upsert(payload, { onConflict: 'school_id,budget_year_id' })
       .select()
       .single();
-    if (error && /network_support/.test(error.message || '')) {
-      const { network_support, ...rest } = payload;
-      ({ data, error } = await supabase.from('budget_approvals')
-        .upsert(rest, { onConflict: 'school_id,budget_year_id' })
-        .select()
-        .single());
-      if (!error && data) notify('הבחירה וההערות נשמרו, אבל סכום הרשת עוד לא — דרוש עדכון קטן ב-DB (פני לתמיכה)', 'error');
-    }
     setSavingSelection(false);
     if (isMissingTableError(error)) { setTableReady(false); return notify('שמירת ההצעות וההערות עדיין לא הופעלה במוסד זה', 'error'); }
     if (error || !data) return saveFailed(error);
@@ -454,32 +439,6 @@ export default function SummaryPage() {
                 {formatCurrencyFull(projectedBalance)}
               </span>
             </div>
-            {/* סכום הרשת — מוקלד כאן, נשמר עם "שמירת הבחירה" ונספר בתחשיב הסופי */}
-            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3 mt-2 flex justify-between items-center gap-3 flex-wrap">
-              <span className="text-sm font-bold text-gray-700">השתתפות רשת חינוך חב"ד</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                className="input w-36 text-left no-print"
-                value={networkAmount}
-                onChange={e => { selectionDirty.current = true; setNetworkAmount(e.target.value.replace(/[^0-9]/g, '')); }}
-                onBlur={() => { if (selectionDirty.current) saveSelection(); }}
-                placeholder="₪ לשנה"
-                aria-label='השתתפות רשת חינוך חב"ד בשקלים לשנה'
-              />
-              <span className="print-only text-base font-black text-purple-700">
-                {Number(networkAmount) > 0 ? `+${formatCurrency(Number(networkAmount))}` : '₪ ____________'}
-              </span>
-            </div>
-            {networkAmount !== '' && Number(networkAmount) > 0 && (
-              <div className={`rounded-xl border-2 p-3 mt-2 flex justify-between items-center gap-3 ${projectedBalance + Number(networkAmount) < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                <span className="text-sm font-black text-gray-800">מצב סופי — כולל השתתפות הרשת</span>
-                <span className={`text-lg font-black ${projectedBalance + Number(networkAmount) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {formatCurrencyFull(projectedBalance + Number(networkAmount))}
-                </span>
-              </div>
-            )}
             <div className="flex items-center justify-between gap-2 mt-2 no-print">
               <button
                 type="button"
