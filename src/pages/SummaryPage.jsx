@@ -321,7 +321,7 @@ export default function SummaryPage() {
       </div>
 
       {/* The document */}
-      <div className="card p-6 md:p-8">
+      <div className="card p-4 sm:p-6 md:p-8">
         {/* Document header */}
         {/* ב"ה תמיד בימין למעלה (RTL: הילד הראשון ב-flex מתחיל מימין) */}
         <div className="flex justify-between items-start mb-1">
@@ -341,18 +341,18 @@ export default function SummaryPage() {
           {SUMMARY_DISCLAIMER}
         </p>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl bg-green-50 border border-green-100 p-3 text-center">
-            <p className="text-xs text-gray-500 mb-1">סה"כ הכנסות</p>
+        {/* KPIs — בנייד: שורות מלאות רוחב; בדסקטופ: שלוש קוביות */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-6">
+          <div className="rounded-xl bg-green-50 border border-green-100 p-3 flex items-center justify-between sm:block sm:text-center">
+            <p className="text-xs text-gray-500 sm:mb-1">סה"כ הכנסות</p>
             <p className="text-lg md:text-xl font-black text-green-600">{formatCurrency(totals.totalIncome)}</p>
           </div>
-          <div className="rounded-xl bg-red-50 border border-red-100 p-3 text-center">
-            <p className="text-xs text-gray-500 mb-1">סה"כ הוצאות</p>
+          <div className="rounded-xl bg-red-50 border border-red-100 p-3 flex items-center justify-between sm:block sm:text-center">
+            <p className="text-xs text-gray-500 sm:mb-1">סה"כ הוצאות</p>
             <p className="text-lg md:text-xl font-black text-red-500">{formatCurrency(totals.totalExpenses)}</p>
           </div>
-          <div className={`rounded-xl border p-3 text-center ${totals.isDeficit ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
-            <p className="text-xs text-gray-500 mb-1">{totals.isDeficit ? 'גירעון' : 'עודף'}</p>
+          <div className={`rounded-xl border p-3 flex items-center justify-between sm:block sm:text-center ${totals.isDeficit ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
+            <p className="text-xs text-gray-500 sm:mb-1">{totals.isDeficit ? 'גירעון' : 'עודף'}</p>
             <p className={`text-lg md:text-xl font-black ${totals.isDeficit ? 'text-red-500' : 'text-teal-600'}`}>
               {formatCurrencyFull(totals.balance)}
             </p>
@@ -361,7 +361,7 @@ export default function SummaryPage() {
 
         {/* Income breakdown */}
         <div className="mb-6">
-          <div className="flex items-center justify-between border-b-2 border-teal-200 pb-1.5 mb-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap border-b-2 border-teal-200 pb-1.5 mb-2">
             <h3 className="font-bold text-gray-800 text-sm">הכנסות — ממה זה מורכב</h3>
             {canEdit && (
               <button type="button" onClick={() => setQuickModal('income')} className="btn-ghost btn-sm no-print">
@@ -388,7 +388,7 @@ export default function SummaryPage() {
 
         {/* Expense breakdown */}
         <div className="mb-6">
-          <div className="flex items-center justify-between border-b-2 border-red-200 pb-1.5 mb-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap border-b-2 border-red-200 pb-1.5 mb-2">
             <h3 className="font-bold text-gray-800 text-sm">הוצאות — על מה זה יוצא</h3>
             {canEdit && (
               <button type="button" onClick={() => setQuickModal('expense')} className="btn-ghost btn-sm no-print">
@@ -429,13 +429,13 @@ export default function SummaryPage() {
               />
             ))}
             <Row label='סה"כ הצעות נבחרות' value={`+${formatCurrency(suggestionsTotal)}`} bold tone="green" />
-            <div className={`rounded-xl border p-3 mt-3 flex justify-between items-center gap-3 ${projectedBalance < 0 ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
+            <div className={`rounded-xl border p-3 mt-3 flex justify-between items-center gap-x-3 gap-y-1 flex-wrap ${projectedBalance < 0 ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'}`}>
               <span className="text-sm font-bold text-gray-700">מצב תקציב לאחר יישום ההצעות</span>
               <span className={`text-lg font-black ${projectedBalance < 0 ? 'text-red-500' : 'text-teal-600'}`}>
                 {formatCurrencyFull(projectedBalance)}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-2 mt-2 no-print">
+            <div className="flex items-center justify-between gap-2 mt-2 flex-wrap no-print">
               <button
                 type="button"
                 onClick={() => {
