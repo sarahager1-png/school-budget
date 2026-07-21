@@ -585,7 +585,7 @@ export default function EfficiencyPage() {
           tone="purple"
           index={++cardIndex}
           title="תוספת שכר לימוד"
-          subtitle={`תוספת מעל שכר הלימוד הקיים — ${formatCurrency(supplement.amountPerStudent)} לתלמיד לשנה, ${supplement.totalStudents} תלמידים, לפי ${supplement.collectionRatePct}% גבייה ריאלית.`}
+          subtitle={`תוספת מעל שכר הלימוד הקיים — עד 3,000 ₪ לתלמיד לשנה (כרגע ${formatCurrency(supplement.amountPerStudent)}), ${supplement.totalStudents} תלמידים, לפי ${supplement.collectionRatePct}% גבייה ריאלית.`}
           saving={supplement.gain}
           savingLabel="תוספת הכנסה בשנה"
           details={[
@@ -597,8 +597,8 @@ export default function EfficiencyPage() {
           onToggle={() => toggleKey('tuition-supplement')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
-            <span className="text-sm font-medium text-gray-700">תוספת שכר לימוד לתלמיד לשנה</span>
-            <Stepper value={supplementAmount} onChange={setSupplementAmount} min={500} max={10000} step={500} unit="₪" />
+            <span className="text-sm font-medium text-gray-700">תוספת שכר לימוד לתלמיד לשנה (עד 3,000 ₪)</span>
+            <Stepper value={supplementAmount} onChange={setSupplementAmount} min={500} max={3000} step={500} unit="₪" />
           </div>
         </SuggestionCard>
       )}
