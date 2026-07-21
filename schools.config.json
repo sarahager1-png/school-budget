@@ -5,7 +5,7 @@
   "schools": [
     {
       "slug": "raanana",
-      "name": "בית חינוך רעננה",
+      "name": "בית חינוך רעננה - בנים",
       "ref": "jhtajcejwxfcksvjzkzx",
       "surge": "chabad-raanana-budget.surge.sh",
       "mode": "full"
@@ -78,6 +78,13 @@
       "name": "שלהבות חיפה",
       "ref": "ygmwcdxthcmvrdrbtwuy",
       "surge": "chabad-haifa-budget.surge.sh",
+      "mode": "full"
+    },
+    {
+      "slug": "raanana-girls",
+      "name": "בית חינוך רעננה - בנות",
+      "ref": "dqxwsovaryixondmhgyz",
+      "surge": "chabad-raanana-girls-budget.surge.sh",
       "mode": "full"
     }
   ]
