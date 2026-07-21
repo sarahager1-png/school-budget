@@ -202,6 +202,7 @@ export default function SummaryPage() {
   // ברירת מחדל היא הכל נבחר, עד שתבטלי סימון ותשמרי.
   const [selectedKeys, setSelectedKeys] = useState(null);
   const [notes, setNotes] = useState('');
+  const [networkAmount, setNetworkAmount] = useState('');
   const [savingSelection, setSavingSelection] = useState(false);
   const selectionDirty = useRef(false);
 
@@ -223,6 +224,7 @@ export default function SummaryPage() {
     setApproval(null);
     setSelectedKeys(null);
     setNotes('');
+    setNetworkAmount('');
     selectionDirty.current = false;
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
@@ -238,6 +240,7 @@ export default function SummaryPage() {
         setApproval(data ?? null);
         if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys));
         if (data?.notes) setNotes(data.notes);
+        if (data?.network_support != null) setNetworkAmount(String(data.network_support));
       });
   }, [user?.schoolId, currentYear?.id]);
 
@@ -248,18 +251,28 @@ export default function SummaryPage() {
       budget_year_id: currentYear.id,
       selected_suggestion_keys: selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys],
       notes: notes.trim() || null,
+      network_support: networkAmount === '' ? null : Number(networkAmount),
       updated_at: new Date().toISOString(),
     };
-    const { data, error } = await supabase.from('budget_approvals')
+    let { data, error } = await supabase.from('budget_approvals')
       .upsert(payload, { onConflict: 'school_id,budget_year_id' })
       .select()
       .single();
+    // בתי"ס שעוד לא הריצו את מיגרציית עמודת הרשת — שומרים את השאר בלי לאבד כלום
+    if (error && /network_support/.test(error.message || '')) {
+      const { network_support, ...rest } = payload;
+      ({ data, error } = await supabase.from('budget_approvals')
+        .upsert(rest, { onConflict: 'school_id,budget_year_id' })
+        .select()
+        .single());
+      if (!error && data) notify('נשמר — אבל סכום הרשת דורש עדכון קטן ב-DB (פני לתמיכה)', 'error');
+    }
     setSavingSelection(false);
     if (isMissingTableError(error)) { setTableReady(false); return notify('שמירת ההצעות וההערות עדיין לא הופעלה במוסד זה', 'error'); }
     if (error || !data) return saveFailed(error);
     setApproval(data);
     selectionDirty.current = false;
-    notify('הבחירה וההערות נשמרו ✓');
+    notify('הבחירה, ההערות וסכום הרשת נשמרו ✓');
   };
 
   const saveSignature = async (slot, name, dataUrl) => {
@@ -426,11 +439,31 @@ export default function SummaryPage() {
                 {formatCurrencyFull(projectedBalance)}
               </span>
             </div>
-            {/* שורת מילוי ידני — נקבעת בשיחה מול הרשת, לא מחושבת */}
-            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3 mt-2 flex justify-between items-center gap-3">
+            {/* סכום הרשת — מוקלד כאן, נשמר עם "שמירת הבחירה" ונספר בתחשיב הסופי */}
+            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3 mt-2 flex justify-between items-center gap-3 flex-wrap">
               <span className="text-sm font-bold text-gray-700">השתתפות רשת חינוך חב"ד</span>
-              <span className="text-base font-medium text-gray-500 tracking-wider">₪ ____________</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                className="input w-36 text-left no-print"
+                value={networkAmount}
+                onChange={e => { selectionDirty.current = true; setNetworkAmount(e.target.value); }}
+                placeholder="₪ לשנה"
+                aria-label='השתתפות רשת חינוך חב"ד בשקלים לשנה'
+              />
+              <span className="print-only text-base font-black text-purple-700">
+                {networkAmount !== '' ? `+${formatCurrency(Number(networkAmount))}` : '₪ ____________'}
+              </span>
             </div>
+            {networkAmount !== '' && Number(networkAmount) > 0 && (
+              <div className={`rounded-xl border-2 p-3 mt-2 flex justify-between items-center gap-3 ${projectedBalance + Number(networkAmount) < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                <span className="text-sm font-black text-gray-800">מצב סופי — כולל השתתפות הרשת</span>
+                <span className={`text-lg font-black ${projectedBalance + Number(networkAmount) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {formatCurrencyFull(projectedBalance + Number(networkAmount))}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 mt-2 no-print">
               <button type="button" onClick={() => navigate('efficiency')} className="btn-ghost btn-sm">
                 לכל ההצעות והפירוט

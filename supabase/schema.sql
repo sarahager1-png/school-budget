@@ -272,3 +272,6 @@ CREATE INDEX IF NOT EXISTS idx_budget_approvals_school_year
 -- actually chosen, not just computed) — lives on budget_approvals
 ALTER TABLE budget_approvals ADD COLUMN IF NOT EXISTS selected_suggestion_keys TEXT[];
 ALTER TABLE budget_approvals ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- Network support amount typed into the summary document
+ALTER TABLE budget_approvals ADD COLUMN IF NOT EXISTS network_support NUMERIC;

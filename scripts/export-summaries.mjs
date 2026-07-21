@@ -125,9 +125,10 @@ function buildSuggestions(classes, expenses, categories, constants) {
 
 const esc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes }) {
+function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport }) {
   const suggestionsTotal = suggestions.reduce((s, r) => s + r.saving, 0);
   const projected = totals.balance + suggestionsTotal;
+  const finalWithNetwork = projected + (networkSupport || 0);
   const today = new Date().toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
   const row = (label, value, cls = '') => `<div class="row ${cls}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
 
@@ -204,8 +205,15 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
 
   <div class="fill">
     <span>השתתפות רשת חינוך חב"ד</span>
-    <span class="line">₪ ______________</span>
+    ${networkSupport != null && networkSupport > 0
+      ? `<span class="green" style="font-weight:800">+${formatCurrency(networkSupport)}</span>`
+      : '<span class="line">₪ ______________</span>'}
   </div>
+  ${networkSupport != null && networkSupport > 0 ? `
+  <div class="box ${finalWithNetwork < 0 ? 'deficit' : ''}">
+    <span>מצב סופי — כולל השתתפות הרשת</span>
+    <span class="amount ${finalWithNetwork < 0 ? 'red' : 'teal'}">${formatCurrencyFull(finalWithNetwork)}</span>
+  </div>` : ''}
 
   ${!isSimpleMode ? `
   <h2>הערות</h2>
@@ -264,18 +272,24 @@ async function exportSchool(school) {
   const catRows = categoryTotals(expenses, categories).filter(c => c.kind !== 'profdev' && c.value > 0);
   const allSuggestions = isSimpleMode ? [] : buildSuggestions(classes, expenses, categories, constants);
 
-  // בחירת ההצעות + ההערות שנשמרו במסך "סיכום ואישור" — אם עוד לא נשמרה
-  // בחירה, ברירת המחדל היא הכל (תואם את התנהגות המסך)
-  const { data: approval } = await supabase.from('budget_approvals')
-    .select('selected_suggestion_keys, notes')
+  // בחירת ההצעות + ההערות + סכום הרשת שנשמרו במסך "סיכום ואישור" —
+  // אם עוד לא נשמרה בחירה, ברירת המחדל היא הכל (תואם את התנהגות המסך)
+  let { data: approval, error: apprErr } = await supabase.from('budget_approvals')
+    .select('selected_suggestion_keys, notes, network_support')
     .eq('school_id', schoolRow.id).eq('budget_year_id', year.id).maybeSingle();
+  if (apprErr && /network_support/.test(apprErr.message || '')) {
+    ({ data: approval } = await supabase.from('budget_approvals')
+      .select('selected_suggestion_keys, notes')
+      .eq('school_id', schoolRow.id).eq('budget_year_id', year.id).maybeSingle());
+  }
   const selectedKeys = approval?.selected_suggestion_keys ? new Set(approval.selected_suggestion_keys) : null;
   const suggestions = selectedKeys == null ? allSuggestions : allSuggestions.filter(s => selectedKeys.has(s.key));
   const notes = approval?.notes ?? '';
+  const networkSupport = approval?.network_support != null ? Number(approval.network_support) : null;
 
   const html = renderHtml({
     school: { name: schoolRow?.name || school.name },
-    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes,
+    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport,
   });
 
   const base = path.join(outDir, `סיכום תקציב - ${schoolRow?.name || school.name}`);
