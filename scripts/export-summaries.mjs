@@ -21,11 +21,11 @@ import {
   dualAgeMergeReport, jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
-  DEFAULT_PARENT_CONTRIBUTION, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
+  DEFAULT_PARENT_CONTRIBUTION, DUAL_AGE_EXTRA_MONTHLY_HOURS,
   normalizeSuggestionKey,
 } from '../src/lib/efficiency.js';
 import { withKind } from '../src/lib/categoryKinds.js';
-import { DEFAULT_CONSTANTS } from '../src/data/constants.js';
+import { DEFAULT_CONSTANTS, SUMMARY_DISCLAIMER } from '../src/data/constants.js';
 
 const root = process.cwd();
 const config = JSON.parse(fs.readFileSync(path.join(root, 'schools.config.json'), 'utf8'));
@@ -87,7 +87,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
   const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
   const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
   for (const m of dualMerges) {
-    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
+    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} ש׳ בחודש)`, saving: m.delta });
   }
   const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
   const extraClasses = [
@@ -180,6 +180,7 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   <h1>סיכום תקציב שנתי והצעות ייעול</h1>
   <p class="sub">${esc(school.name)} · ${esc(yearLabel)}</p>
   <p class="meta">${isSimpleMode ? '' : `${classes.length} כיתות · ${totals.totalStudents} תלמידים`}</p>
+  <p style="color:#666; font-size:10.5px; line-height:1.5; background:#F7F7FA; border:1px solid #EDEDF2; border-radius:8px; padding:6px 10px; margin-bottom:12px;">${esc(SUMMARY_DISCLAIMER)}</p>
 
   <div class="kpis">
     <div class="kpi"><p>סה"כ הכנסות</p><b class="green">${formatCurrency(totals.totalIncome)}</b></div>

@@ -93,13 +93,10 @@ export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS
   return picked;
 }
 
-// ─── איחוד לכיתה דו-גילאית ──────────────────────────────────────
-// המטרה: כיתה ללא תקן בכלל (מתחת לסף המימון, type='none') שאין לה עם מי
-// להתאחד באותה שכבה — לא עניין של גודל חדר. מאחדים עם השכבה הסמוכה כדי
-// לחצות את סף המימון וליצור תקן שלא היה קיים, עם שעות הקבצה נפרדות לפי
-// שכבה בשלושת המקצועות שדורשים רמה נפרדת.
-export const DUAL_AGE_SUBJECTS = ['אנגלית', 'מתמטיקה', 'שפה'];
-export const DEFAULT_HAKVATZA_HOURS_PER_SUBJECT = 8;
+// ─── חיבור כיתות בשכבות סמוכות (דו-גילאי) ──────────────────────
+// כל חיבור מוסיף לכיתה המחוברת תוספת קבועה של 12 שעות בחודש — זהו
+// (הנחיית שרה 21/7; החליף את מודל ההקבצה 3 מקצועות × 8 שעות)
+export const DUAL_AGE_EXTRA_MONTHLY_HOURS = 12;
 
 const GRADE_ORDER = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
 
@@ -134,9 +131,7 @@ export function normalizeGrade(raw) {
   return null;
 }
 
-// hakvatzaHoursPerSubjectMonth: שעות חודשיות נוספות לכל מקצוע (× 3 המקצועות)
-// כדי ללמד כל שכבה בנפרד באנגלית/מתמטיקה/שפה גם אחרי האיחוד הפיזי
-export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), hakvatzaHoursPerSubjectMonth = DEFAULT_HAKVATZA_HOURS_PER_SUBJECT) {
+export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
   // רק כיתה שהיא היחידה בשכבה שלה — אם יש עוד כיתה באותה שכבה, צירוף
   // רגיל (findMerges) הוא האפשרות הזולה יותר ועדיפה
   const byGrade = new Map();
@@ -152,7 +147,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
     if (list.length === 1) singles.set(idx, list[0]);
   }
 
-  const hakvatzaAnnualCost = DUAL_AGE_SUBJECTS.length * hakvatzaHoursPerSubjectMonth * constants.actualHourlyRate * PAYMENT_MONTHS;
+  const joinExtraCost = DUAL_AGE_EXTRA_MONTHLY_HOURS * constants.actualHourlyRate * PAYMENT_MONTHS;
 
   const candidates = [];
   for (const idx of [...singles.keys()].sort((a, b) => a - b)) {
@@ -172,14 +167,14 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
     const mergedBudget = calculateClassBudget(merged, constants);
-    const costAfter = mergedBudget.totalExpenses + hakvatzaAnnualCost;
+    const costAfter = mergedBudget.totalExpenses + joinExtraCost;
     const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
     if (delta >= 1000) {
       candidates.push({
         members: [a, partner],
         merged,
         createsStandard,
-        hakvatzaAnnualCost,
+        joinExtraCost,
         incomeBefore: budgetA.totalIncome + budgetB.totalIncome,
         incomeAfter: mergedBudget.totalIncome,
         costBefore: budgetA.totalExpenses + budgetB.totalExpenses,

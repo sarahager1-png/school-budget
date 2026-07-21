@@ -11,10 +11,10 @@ import {
   jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
-  DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, DEFAULT_PARENT_CONTRIBUTION,
+  DUAL_AGE_EXTRA_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   normalizeSuggestionKey,
 } from '../lib/efficiency.js';
-import { MANAGERS } from '../data/constants.js';
+import { MANAGERS, SUMMARY_DISCLAIMER } from '../data/constants.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import { IncomeModal } from './IncomePage.jsx';
@@ -165,7 +165,7 @@ export default function SummaryPage() {
     const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     for (const m of dualMerges) {
-      rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
+      rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} ש׳ בחודש)`, saving: m.delta });
     }
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     // כיתות שצורפו: הכיתה המאוחדת נושאת את סכום השעות הבודדות של חברותיה,
@@ -354,6 +354,11 @@ export default function SummaryPage() {
             <p className="text-xs text-gray-400 mt-1">{classes.length} כיתות · {totals.totalStudents} תלמידים</p>
           )}
         </div>
+
+        {/* הערה קבועה — מופיעה על כל סיכום, במסך ובהדפסה */}
+        <p className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 mb-5">
+          {SUMMARY_DISCLAIMER}
+        </p>
 
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-3 mb-6">

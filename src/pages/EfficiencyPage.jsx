@@ -12,7 +12,7 @@ import {
   noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
   jointShabbatReport, caharonReport, parentContributionReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
-  DUAL_AGE_SUBJECTS, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
+  DUAL_AGE_EXTRA_MONTHLY_HOURS,
   DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
@@ -138,8 +138,6 @@ export default function EfficiencyPage() {
 
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
-  // שעות הקבצה קבועות (8) — ערך מתכוונן היה גורם לרשימת הצעות שונה בין
-  // מסך זה לסיכום ולמסמך, ובחירה שנשמרה הייתה מפסיקה להתאים
   const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_MONTHLY_HOURS);
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
   const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
@@ -380,14 +378,14 @@ export default function EfficiencyPage() {
           title={m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
             : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות בחודש לכיתה המחוברת`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
-            { label: 'הכנסות אחרי האיחוד', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
+            { label: 'הכנסות אחרי החיבור', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
-            { label: `שעות הקבצה — ${DUAL_AGE_SUBJECTS.length} מקצועות × ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ בחודש`, value: formatCurrency(m.hakvatzaAnnualCost) },
-            { label: 'עלות אחרי האיחוד — כיתה אחת + הקבצה', value: formatCurrency(m.costAfter), tone: 'green' },
+            { label: `תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
+            { label: 'עלות אחרי החיבור — כיתה אחת + התוספת', value: formatCurrency(m.costAfter), tone: 'green' },
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}

@@ -58,6 +58,11 @@ export const HEBREW_MONTHS = [
 // כלל רשת: הוצאות פעילויות ואירועים עד 1,400 ₪ לתלמיד לשנה
 export const EVENTS_CAP_PER_STUDENT = 1400;
 
+// הערה קבועה שמופיעה על כל סיכום תקציב (מסך + מסמך מודפס)
+export const SUMMARY_DISCLAIMER =
+  'בתנאי מוכש"ר. אינו כולל עלויות שכר לעובדי צהרונים, מזכירות, אב בית וניקיון; ' +
+  'אינו כולל אחזקת מבנה, שיפוצים ותיקונים וכד׳, ריהוט וציוד קבוע.';
+
 export const REQUEST_STATUS = {
   pending: { label: 'ממתין', color: 'bg-gold-100 text-gold-700', dot: 'bg-gold-500' },
   in_progress: { label: 'בביצוע', color: 'bg-teal-100 text-teal-700', dot: 'bg-teal-500' },
