@@ -311,15 +311,25 @@ export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUIT
 }
 
 // ─── סגירת כיתה ───────────────────────────────────────────────
-// כיתה שההוצאות עליה גבוהות מההכנסות שלה — סגירתה חוסכת את ההפרש נטו.
-// ההנחה: התלמידים אינם נשארים במוסד (גם ההכנסות שלהם יורדות).
+// מוצעת רק על הכיתה הגבוהה ביותר בבית הספר, וכשמספר התלמידים בה נמוך
+// (מתחת לסף כיתה מלאה) — התרחיש הריאלי לסגירה. החיסכון = הגירעון נטו
+// של הכיתה, בהנחה שהתלמידים אינם נשארים במוסד.
 export function closeClassReport(classes, constants, excludeIds = new Set()) {
-  return classes
+  const graded = classes
     .filter(c => !excludeIds.has(c.id))
-    .map(c => ({ cls: c, budget: calculateClassBudget(c, constants) }))
-    .filter(r => r.budget.balance < -1000)
-    .map(r => ({ ...r, saving: -r.budget.balance }))
-    .sort((a, b) => b.saving - a.saving);
+    .map(c => ({ c, idx: normalizeGrade(c.gradeLevel) }))
+    .filter(x => x.idx != null);
+  if (graded.length === 0) return [];
+  const topIdx = Math.max(...graded.map(x => x.idx));
+  const topClasses = graded
+    .filter(x => x.idx === topIdx)
+    .map(x => x.c)
+    .sort((a, b) => a.studentCount - b.studentCount);
+  const cand = topClasses[0];
+  if (!cand || cand.studentCount >= constants.fullClassStudentThreshold) return [];
+  const budget = calculateClassBudget(cand, constants);
+  if (budget.balance >= -1000) return [];
+  return [{ cls: cand, budget, saving: -budget.balance }];
 }
 
 // ─── הורדת שעות בפועל לכל הכיתות ──────────────────────────────

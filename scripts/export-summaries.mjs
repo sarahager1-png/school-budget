@@ -91,7 +91,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
   }
   const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
   for (const r of closeClassReport(classes, constants, allMergedIds)) {
-    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} (${r.cls.studentCount} תל׳) — חיסכון נטו`, saving: r.saving });
+    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving });
   }
   const hoursR = hoursCutReport(classes, constants, 1);
   if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });

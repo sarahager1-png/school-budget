@@ -491,7 +491,7 @@ export default function EfficiencyPage() {
           tone="coral"
           index={++cardIndex}
           title={`סגירת כיתה ${r.cls.name}`}
-          subtitle={`הכיתה (${r.cls.studentCount} תל׳, ${CLASS_TYPE[r.budget.type].label}) עולה יותר ממה שהיא מכניסה — סגירתה חוסכת את ההפרש נטו. סמני ✓ רק אם זו הכיתה שבוחרים לסגור.`}
+          subtitle={`הכיתה הגבוהה ביותר בבית הספר, עם מספר תלמידים נמוך (${r.cls.studentCount} תל׳, ${CLASS_TYPE[r.budget.type].label}) — סגירתה חוסכת את ההפרש נטו בין העלות להכנסות. סמני ✓ רק אם מחליטים לסגור.`}
           saving={r.saving}
           savingLabel="חיסכון נטו בשנה"
           details={[
