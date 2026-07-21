@@ -18,7 +18,7 @@ import {
 } from '../src/lib/calculations.js';
 import {
   findMerges, closeClassReport, thresholdReport, eventsCapReport,
-  dualAgeMergeReport, jointShabbatReport, caharonReport, parentContributionReport,
+  dualAgeMergeReport, jointShabbatReport, caharonReport, parentContributionReport, transportParentsReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
   DEFAULT_PARENT_CONTRIBUTION, DUAL_AGE_EXTRA_MONTHLY_HOURS,
@@ -99,6 +99,8 @@ function buildSuggestions(classes, expenses, categories, constants) {
   if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ 10% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * 0.1) });
   const shabbat = jointShabbatReport(classes, constants);
   if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
+  const transport = transportParentsReport(expenses);
+  if (transport.total > 0) rows.push({ key: 'transport-parents', label: 'הסעות בגביית הורים — הסרת העלות מהתקציב', saving: transport.total });
   const caharon = caharonReport(classes, constants);
   if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
   const tuition = tuitionReport(classes);

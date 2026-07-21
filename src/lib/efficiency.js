@@ -210,6 +210,17 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
   return [...prev1.chosen].sort((a, b) => a.lowIdx - b.lowIdx);
 }
 
+// ─── הסעות בגביית הורים ───────────────────────────────────────
+// סעיפי הסעות שממומנים היום מהתקציב — העברת המימון לגביית הורים
+// מסירה את העלות מהגירעון (למשל עפולה: 25,000 ₪ לחודש)
+export function transportParentsReport(expenses) {
+  const rows = (expenses || [])
+    .filter(e => /הסע/.test(e.name || ''))
+    .map(e => ({ e, annual: annualAmount(e) }))
+    .filter(r => r.annual > 0);
+  return { rows, total: rows.reduce((s, r) => s + r.annual, 0) };
+}
+
 // ─── קבלת שבת משותפת ──────────────────────────────────────────
 // כל הכיתות יחד בקבלת שבת אחת במקום קבלת שבת נפרדת בכל כיתה —
 // נחסכת שעה שבועית (= 4 שעות חודשיות) לכל כיתה
@@ -420,11 +431,12 @@ export function eventsCapReport(expenses, categories, classes) {
 // בלי סעיפי שכר — קיצוץ שכר אינו הצעת ייעול שמציעים ממסך
 // בלי סעיפי אירועים — אלו כבר נספרים בתקרת האירועים (eventsCapReport), כדי למנוע ספירה כפולה
 // בלי סעיפי פיתוח מקצועי — אלה לא נכללים בסה"כ ההוצאות (ר' calculateSchoolTotals), אז "חיסכון" בהם לא באמת סוגר גירעון
+// בלי סעיפי הסעות — מכוסים בהצעת "הסעות בגביית הורים" (transportParentsReport)
 export function topExpensesReport(expenses, categories, count = 3) {
   const kinds = kindMap(categories);
   const catName = Object.fromEntries(categories.map(c => [c.id, c.name]));
   const rows = expenses
-    .filter(e => kinds[e.categoryId] !== 'salary' && kinds[e.categoryId] !== 'events' && kinds[e.categoryId] !== 'profdev')
+    .filter(e => kinds[e.categoryId] !== 'salary' && kinds[e.categoryId] !== 'events' && kinds[e.categoryId] !== 'profdev' && !/הסע/.test(e.name || ''))
     .map(e => ({ e, annual: annualAmount(e), category: catName[e.categoryId] || '' }))
     .filter(r => r.annual > 0)
     .sort((a, b) => b.annual - a.annual)

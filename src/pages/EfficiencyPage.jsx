@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import {
   Lightbulb, Merge, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
-  GraduationCap, UserCog, Wallet, Banknote, Save, DoorClosed,
+  GraduationCap, UserCog, Wallet, Banknote, Save, DoorClosed, Bus,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
@@ -10,7 +10,7 @@ import { calculateSchoolTotals, getClassType, formatCurrency, formatCurrencyFull
 import {
   findMerges, closeClassReport, hoursCutReport, thresholdReport,
   noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
-  jointShabbatReport, caharonReport, parentContributionReport,
+  jointShabbatReport, caharonReport, parentContributionReport, transportParentsReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   DUAL_AGE_EXTRA_MONTHLY_HOURS,
   DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
@@ -162,6 +162,7 @@ export default function EfficiencyPage() {
       events: eventsCapReport(expenses, expenseCategories, classes),
       top: topExpensesReport(expenses, expenseCategories),
       shabbat: jointShabbatReport(classes, constants, shabbatHours),
+      transport: transportParentsReport(expenses),
       caharon: caharonReport(classes, constants),
       parents: parentContributionReport(classes, parentAmount),
       partaniyot: partaniyotReport(classes, constants, partaniyotHours),
@@ -176,7 +177,7 @@ export default function EfficiencyPage() {
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const { merges, dualMerges, closes, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal, tuition, supplement } = report;
+  const { merges, dualMerges, closes, hours, thresholds, noStd, events, top, shabbat, transport, caharon, parents, partaniyot, principal, tuition, supplement } = report;
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
@@ -192,6 +193,7 @@ export default function EfficiencyPage() {
     ...(partaniyot.saving > 0 ? ['partaniyot'] : []),
     ...(principal.saving > 0 ? ['principal-teaching'] : []),
     ...(shabbat.saving > 0 ? ['shabbat'] : []),
+    ...(transport.total > 0 ? ['transport-parents'] : []),
     ...closes.map(r => `close:${r.cls.id}`),
     ...thresholds.rows.map(r => `threshold:${r.cls.id}`),
     ...(tuition.gain > 0 ? ['tuition'] : []),
@@ -256,6 +258,7 @@ export default function EfficiencyPage() {
     (top.rows.length > 0 && isSelected('trim') ? trimSaving : 0) +
     thresholds.rows.reduce((s, r) => s + (isSelected(`threshold:${r.cls.id}`) ? r.gain : 0), 0) +
     (isSelected('shabbat') ? shabbat.saving : 0) +
+    (transport.total > 0 && isSelected('transport-parents') ? transport.total : 0) +
     (isSelected('caharon') ? caharon.gap : 0) +
     (isSelected('parents') ? parents.gain : 0) +
     (isSelected('partaniyot') ? partaniyot.saving : 0) +
@@ -523,6 +526,26 @@ export default function EfficiencyPage() {
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
           selected={thChecked}
           onToggle={toggleThresholds}
+        />
+      )}
+
+      {/* Transport funded by parents */}
+      {transport.total > 0 && (
+        <SuggestionCard
+          icon={Bus}
+          tone="gold"
+          index={++cardIndex}
+          title="הסעות בגביית הורים"
+          subtitle={`סעיף ההסעות ממומן היום מתקציב בית הספר (${formatCurrency(transport.total)} בשנה) — העברת המימון לגביית הורים מסירה את העלות מהגירעון.`}
+          saving={transport.total}
+          savingLabel="חיסכון בשנה"
+          details={transport.rows.map(r => ({
+            label: `${r.e.name}${r.e.period === 'monthly' ? ` (${formatCurrency(r.e.amount)} לחודש)` : ''}`,
+            value: formatCurrency(r.annual),
+          }))}
+          action={{ label: 'למסך ההוצאות', onClick: () => navigate('expenses') }}
+          selected={isSelected('transport-parents')}
+          onToggle={() => toggleKey('transport-parents')}
         />
       )}
 
