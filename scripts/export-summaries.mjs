@@ -19,7 +19,7 @@ import {
 import {
   findMerges, extraHoursReport, thresholdReport, eventsCapReport,
   dualAgeMergeReport, jointShabbatReport, caharonReport, parentContributionReport,
-  partaniyotReport, principalTeachingReport, tuitionReport,
+  partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   DEFAULT_PARENT_CONTRIBUTION, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
 } from '../src/lib/efficiency.js';
 import { withKind } from '../src/lib/categoryKinds.js';
@@ -101,6 +101,8 @@ function buildSuggestions(classes, expenses, categories, constants) {
   if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
   const tuition = tuitionReport(classes);
   if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
+  const supplement = tuitionSupplementReport(classes);
+  if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${formatCurrency(supplement.amountPerStudent)} × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
   const parents = parentContributionReport(classes);
   if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
   const partaniyot = partaniyotReport(classes, constants);

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Lightbulb, Merge, Timer, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
-  GraduationCap, UserCog, Wallet,
+  GraduationCap, UserCog, Wallet, Banknote,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateSchoolTotals, getClassType, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
@@ -10,11 +10,11 @@ import {
   findMerges, extraHoursReport, hoursCutReport, thresholdReport,
   noStandardReport, eventsCapReport, topExpensesReport, dualAgeMergeReport,
   jointShabbatReport, caharonReport, parentContributionReport,
-  partaniyotReport, principalTeachingReport, tuitionReport,
+  partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   DUAL_AGE_SUBJECTS, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
   DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_HOURS, TEACHER_POSITION_HOURS,
-  DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE,
+  DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
 } from '../lib/efficiency.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
@@ -127,6 +127,7 @@ export default function EfficiencyPage() {
   const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_HOURS);
   const [tuitionAmount, setTuitionAmount] = useState(DEFAULT_TUITION_AMOUNT);
   const [tuitionRate, setTuitionRate] = useState(DEFAULT_TUITION_COLLECTION_RATE);
+  const [supplementAmount, setSupplementAmount] = useState(DEFAULT_TUITION_SUPPLEMENT);
 
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
@@ -157,15 +158,16 @@ export default function EfficiencyPage() {
       partaniyot: partaniyotReport(classes, constants, partaniyotHours),
       principal: principalTeachingReport(classes, constants, principalHours),
       tuition: tuitionReport(classes, tuitionAmount, tuitionRate),
+      supplement: tuitionSupplementReport(classes, supplementAmount),
     };
-  }, [classes, expenses, expenseCategories, constants, hakvatzaHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate]);
+  }, [classes, expenses, expenseCategories, constants, hakvatzaHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal, tuition } = report;
+  const { merges, dualMerges, extra, hours, thresholds, noStd, events, top, shabbat, caharon, parents, partaniyot, principal, tuition, supplement } = report;
   const hoursSaving = hours.perHourAllClasses * hoursCut;
   const trimSaving = Math.round(top.total * trimPct / 100);
 
@@ -182,7 +184,8 @@ export default function EfficiencyPage() {
     parents.gain +
     partaniyot.saving +
     principal.saving +
-    tuition.gain;
+    tuition.gain +
+    supplement.gain;
 
   const deficit = totals.isDeficit ? Math.abs(totals.balance) : 0;
   const coverage = deficit > 0 ? Math.min(100, Math.round(totalPotential / deficit * 100)) : null;
@@ -469,6 +472,29 @@ export default function EfficiencyPage() {
               <span className="text-sm font-medium text-gray-700">אחוז גבייה ריאלי</span>
               <Stepper value={tuitionRate} onChange={setTuitionRate} min={10} max={100} step={5} unit="%" />
             </div>
+          </div>
+        </SuggestionCard>
+      )}
+
+      {/* Tuition supplement */}
+      {supplement.gain > 0 && (
+        <SuggestionCard
+          icon={Banknote}
+          tone="purple"
+          index={++cardIndex}
+          title="תוספת שכר לימוד"
+          subtitle={`תוספת חד-פעמית מעל שכר הלימוד הקיים — ${formatCurrency(supplement.amountPerStudent)} לתלמיד לשנה, ${supplement.totalStudents} תלמידים.`}
+          saving={supplement.gain}
+          savingLabel="תוספת הכנסה בשנה"
+          details={[
+            { label: 'תלמידים בבית הספר', value: `${supplement.totalStudents}` },
+            { label: `${supplement.totalStudents} × ${formatCurrency(supplement.amountPerStudent)}`, value: `+${formatCurrency(supplement.gain)}`, tone: 'green' },
+          ]}
+          action={{ label: 'למסך הגבייה', onClick: () => navigate('tuition') }}
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
+            <span className="text-sm font-medium text-gray-700">תוספת שכר לימוד לתלמיד לשנה</span>
+            <Stepper value={supplementAmount} onChange={setSupplementAmount} min={500} max={10000} step={500} unit="₪" />
           </div>
         </SuggestionCard>
       )}

@@ -283,6 +283,19 @@ export function tuitionReport(classes, amountPerStudent = DEFAULT_TUITION_AMOUNT
   };
 }
 
+// ─── תוספת שכר לימוד ────────────────────────────────────────────
+// הוספה חד-פעמית מעל שכר הלימוד הקיים — לא קשורה לאחוזי הגבייה
+export const DEFAULT_TUITION_SUPPLEMENT = 3000; // ₪ לתלמיד לשנה
+
+export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUITION_SUPPLEMENT) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+  return {
+    totalStudents,
+    amountPerStudent,
+    gain: totalStudents > 0 ? totalStudents * amountPerStudent : 0,
+  };
+}
+
 // ─── שעות בודדות ──────────────────────────────────────────────
 export function extraHoursReport(classes, constants) {
   const perHour = constants.actualHourlyRate * PAYMENT_MONTHS;
