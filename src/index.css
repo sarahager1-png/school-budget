@@ -86,8 +86,20 @@
 
 /* Print styles */
 @media print {
-  .no-print { display: none !important; }
+  .no-print, aside, nav, header { display: none !important; }
   .card { box-shadow: none; border: 1px solid #E2DCF0; }
+  /* המסמך המודפס צריך לזרום על פני כמה עמודים — משחררים את נעילת הגובה של האפליקציה */
+  .h-screen { height: auto !important; }
+  .overflow-hidden, .overflow-y-auto { overflow: visible !important; }
+  main { padding: 0 !important; }
+  body { background: #fff !important; }
+  /* הגנה מפני מעבר עמוד באמצע שורה, תיבת חתימה, או מיד אחרי כותרת סעיף */
+  .flex.justify-between.items-baseline,
+  .border.border-purple-100.rounded-xl.p-4.bg-white.flex.flex-col,
+  .grid.grid-cols-1.sm\:grid-cols-2.gap-4 {
+    break-inside: avoid;
+  }
+  .card h3 { break-after: avoid; }
 }
 
 /* Animations */

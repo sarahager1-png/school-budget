@@ -13,6 +13,8 @@ import HelpPage from './pages/HelpPage.jsx';
 import SalariesPage from './pages/SalariesPage.jsx';
 import SimulationsPage from './pages/SimulationsPage.jsx';
 import TuitionPage from './pages/TuitionPage.jsx';
+import EfficiencyPage from './pages/EfficiencyPage.jsx';
+import SummaryPage from './pages/SummaryPage.jsx';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -75,9 +77,9 @@ function AppContent() {
   if (loading) return <LoadingScreen />;
   if (!user) return <LoginPage />;
 
-  // simulations are budget-model only — hidden in simple-mode schools for every role
+  // simulations + efficiency are budget-model only — hidden in simple-mode schools for every role
   // every role can otherwise navigate to every page (view-only for non-managers; writes are gated per-page + RLS)
-  let page = isSimpleMode && currentPage === 'simulations' ? 'dashboard' : currentPage;
+  let page = isSimpleMode && (currentPage === 'simulations' || currentPage === 'efficiency') ? 'dashboard' : currentPage;
 
   const pages = {
     dashboard: <DashboardPage />,
@@ -90,6 +92,8 @@ function AppContent() {
     settings: <SettingsPage />,
     salaries: <SalariesPage />,
     simulations: <SimulationsPage />,
+    efficiency: <EfficiencyPage />,
+    summary: <SummaryPage />,
     help: <HelpPage />,
   };
 

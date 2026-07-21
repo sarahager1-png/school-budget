@@ -236,3 +236,34 @@ CREATE INDEX idx_classes_school_year ON classes(school_id, budget_year_id);
 CREATE INDEX idx_expenses_school_year ON expenses(school_id, budget_year_id);
 CREATE INDEX idx_expense_requests_school ON expense_requests(school_id, status);
 CREATE INDEX idx_expense_requests_assigned ON expense_requests(assigned_to, status);
+
+-- ============================================================
+-- Budget approvals — annual summary signed by principal + courier
+-- ============================================================
+CREATE TABLE IF NOT EXISTS budget_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  budget_year_id UUID REFERENCES budget_years(id) ON DELETE CASCADE,
+  summary JSONB,
+  principal_name TEXT,
+  principal_signature TEXT,
+  principal_signed_at TIMESTAMPTZ,
+  courier_name TEXT,
+  courier_signature TEXT,
+  courier_signed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (school_id, budget_year_id)
+);
+
+ALTER TABLE budget_approvals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "budget_approvals_read" ON budget_approvals
+  FOR SELECT USING (school_id = get_user_school_id());
+CREATE POLICY "budget_approvals_insert" ON budget_approvals
+  FOR INSERT WITH CHECK (school_id = get_user_school_id());
+CREATE POLICY "budget_approvals_update" ON budget_approvals
+  FOR UPDATE USING (school_id = get_user_school_id());
+
+CREATE INDEX IF NOT EXISTS idx_budget_approvals_school_year
+  ON budget_approvals(school_id, budget_year_id);

@@ -535,7 +535,7 @@ export function AppProvider({ children }) {
       expenses, addExpense, updateExpense, deleteExpense,
       expenseRequests, addExpenseRequest, updateExpenseRequest,
       usersList, deleteUser,
-      toasts, notify,
+      toasts, notify, saveFailed,
     }}>
       {children}
     </AppContext.Provider>

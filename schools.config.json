@@ -72,6 +72,13 @@
       "ref": "qawlduxrovrodmxpehvv",
       "surge": "chabad-herzliya-budget.surge.sh",
       "mode": "full"
+    },
+    {
+      "slug": "haifa",
+      "name": "שלהבות חיפה",
+      "ref": "ygmwcdxthcmvrdrbtwuy",
+      "surge": "chabad-haifa-budget.surge.sh",
+      "mode": "full"
     }
   ]
 }

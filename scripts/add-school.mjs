@@ -182,6 +182,16 @@ async function main() {
     'supabase/migration_v2_kind_mode.sql',
     'supabase/migration_v3_scenarios.sql',
     'supabase/migration_v4_tuition.sql',
+    'supabase/migration_v7_courier_simulation_rls.sql',
+    'supabase/migration_v8_lock_manager_writes.sql',
+    'supabase/migration_v9_books_and_student_expense.sql',
+    'supabase/migration_v10_ofek_salary.sql',
+    'supabase/migration_v11_grant_370.sql',
+    'supabase/migration_v12_talan_34h.sql',
+    'supabase/migration_v13_ofek_700.sql',
+    'supabase/migration_v14_extra_hours.sql',
+    'supabase/migration_v15_no_ofek_450.sql',
+    'supabase/migration_v16_budget_approvals.sql',
   ];
   for (const f of sqlFiles) {
     let sql = fs.readFileSync(path.join(root, f), 'utf8');

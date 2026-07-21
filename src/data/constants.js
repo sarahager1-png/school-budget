@@ -93,6 +93,8 @@ export const NAV_ITEMS = [
   { id: 'courier', label: 'בקשות תשלום', icon: 'Package', roles: ALL_ROLES, simpleMode: true },
   { id: 'salaries', label: 'משכורות', icon: 'Wallet', roles: ALL_ROLES, simpleMode: true },
   { id: 'simulations', label: 'שערוך תקציב', icon: 'FlaskConical', roles: ALL_ROLES, simpleMode: false },
+  { id: 'efficiency', label: 'הצעות ייעול', icon: 'Lightbulb', roles: ALL_ROLES, simpleMode: false },
+  { id: 'summary', label: 'סיכום ואישור', icon: 'FileSignature', roles: ALL_ROLES, simpleMode: true },
   { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES, simpleMode: true },
   { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES, simpleMode: true },
   { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES, simpleMode: true },
