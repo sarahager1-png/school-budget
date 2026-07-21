@@ -165,7 +165,7 @@ export default function SummaryPage() {
     const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     for (const m of dualMerges) {
-      rows.push({ key: `dual:${m.merged.id}`, label: `איחוד דו-גילאי: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
+      rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, לפי הנחת ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ הקבצה לחודש למקצוע)`, saving: m.delta });
     }
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר

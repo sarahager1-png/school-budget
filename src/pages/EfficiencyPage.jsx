@@ -378,8 +378,10 @@ export default function EfficiencyPage() {
           icon={Layers}
           tone="purple"
           index={++cardIndex}
-          title={`יצירת תקן — איחוד ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים שכן מקבלת תקן (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
+          title={m.createsStandard
+            ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
+            : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם שעות הקבצה נפרדות לפי שכבה ב${DUAL_AGE_SUBJECTS.join('/')}`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },

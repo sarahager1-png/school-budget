@@ -161,13 +161,13 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
     const div = divisionOf(idx);
     if (div !== 0 || divisionOf(idx + 1) !== div) continue;
     const a = singles.get(idx);
-    // התנאי המרכזי: לא עניין של גודל חדר — רק כשלפחות אחת מהכיתות ללא
-    // תקן בכלל, וההתאחדות בפועל חוצה סף וממש יוצרת תקן שלא היה קיים
+    // חיבור כיתות בשכבות סמוכות — תמיד כשזה חוסך; כשאחת ללא תקן והחיבור
+    // חוצה סף, זו גם "יצירת תקן" (מסומן ב-createsStandard לניסוח הכרטיס)
     const typeA = getClassType(a.studentCount, constants);
     const typeB = getClassType(partner.studentCount, constants);
-    if (typeA !== 'none' && typeB !== 'none') continue;
     const merged = mergedClass([a, partner]);
-    if (getClassType(merged.studentCount, constants) === 'none') continue;
+    const createsStandard = (typeA === 'none' || typeB === 'none')
+      && getClassType(merged.studentCount, constants) !== 'none';
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
     const mergedBudget = calculateClassBudget(merged, constants);
@@ -177,6 +177,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), h
       candidates.push({
         members: [a, partner],
         merged,
+        createsStandard,
         hakvatzaAnnualCost,
         incomeBefore: budgetA.totalIncome + budgetB.totalIncome,
         incomeAfter: mergedBudget.totalIncome,
