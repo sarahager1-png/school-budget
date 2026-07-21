@@ -342,9 +342,10 @@ export default function SummaryPage() {
       {/* The document */}
       <div className="card p-6 md:p-8">
         {/* Document header */}
+        {/* ב"ה תמיד בימין למעלה (RTL: הילד הראשון ב-flex מתחיל מימין) */}
         <div className="flex justify-between items-start mb-1">
-          <span className="text-xs text-gray-400">{today}</span>
           <span className="text-sm text-gray-500 font-medium">ב"ה</span>
+          <span className="text-xs text-gray-400">{today}</span>
         </div>
         <div className="text-center border-b border-gray-200 pb-4 mb-5">
           <h1 className="text-2xl font-black text-gray-800">סיכום תקציב שנתי</h1>

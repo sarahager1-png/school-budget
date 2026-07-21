@@ -14,6 +14,8 @@ export default function Header({ onMenuOpen }) {
 
   return (
     <header className="bg-white border-b border-gray-100 h-14 md:h-16 flex items-center px-4 md:px-6 gap-3 shadow-sm flex-shrink-0">
+      {/* ב"ה — תמיד ראשון מימין, בכל מסך */}
+      <span className="text-xs text-gray-400 font-medium flex-shrink-0 self-start mt-2">ב"ה</span>
       {/* Mobile hamburger */}
       <button
         onClick={onMenuOpen}
