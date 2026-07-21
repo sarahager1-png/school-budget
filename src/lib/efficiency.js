@@ -268,6 +268,21 @@ export function principalTeachingReport(classes, constants, hours = DEFAULT_PRIN
   };
 }
 
+// ─── שכר לימוד עם אחוזי גבייה ריאליים ──────────────────────────
+// לא כל שכר הלימוד שנקבע נגבה בפועל — אחוז הגבייה משקף את הצפוי במציאות
+export const DEFAULT_TUITION_AMOUNT = 3000; // ₪ לתלמיד לשנה
+export const DEFAULT_TUITION_COLLECTION_RATE = 80; // % גבייה ריאלית
+
+export function tuitionReport(classes, amountPerStudent = DEFAULT_TUITION_AMOUNT, collectionRatePct = DEFAULT_TUITION_COLLECTION_RATE) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+  return {
+    totalStudents,
+    amountPerStudent,
+    collectionRatePct,
+    gain: totalStudents > 0 ? totalStudents * amountPerStudent * (collectionRatePct / 100) : 0,
+  };
+}
+
 // ─── שעות בודדות ──────────────────────────────────────────────
 export function extraHoursReport(classes, constants) {
   const perHour = constants.actualHourlyRate * PAYMENT_MONTHS;

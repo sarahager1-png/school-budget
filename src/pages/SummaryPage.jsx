@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote } from 'lucide-react';
+import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import {
@@ -9,11 +9,14 @@ import {
 import {
   findMerges, extraHoursReport, thresholdReport, eventsCapReport, dualAgeMergeReport,
   jointShabbatReport, caharonReport, parentContributionReport,
-  partaniyotReport, principalTeachingReport,
+  partaniyotReport, principalTeachingReport, tuitionReport,
   DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, DEFAULT_PARENT_CONTRIBUTION,
 } from '../lib/efficiency.js';
+import { MANAGERS } from '../data/constants.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
+import { IncomeModal } from './IncomePage.jsx';
+import { ExpenseModal } from './ExpensesPage.jsx';
 
 // טבלת budget_approvals עוד לא הוקמה בחלק מהמוסדות (מיגרציה לא רצה עדיין) —
 // יש להבחין בין "הטבלה לא קיימת" (מצב זמני ידוע) לבין תקלת רשת חולפת.
@@ -120,12 +123,15 @@ export default function SummaryPage() {
   const {
     classes, incomeSources, expenses, expenseCategories, constants,
     school, currentYear, user, notify, saveFailed, isSimpleMode, navigate,
+    addIncomeSource, addExpense,
   } = useApp();
+  const canEdit = MANAGERS.includes(user?.role);
 
   const [approval, setApproval] = useState(null);
   const [signingSlot, setSigningSlot] = useState(null);
   const [overwriteSlot, setOverwriteSlot] = useState(null);
   const [tableReady, setTableReady] = useState(true);
+  const [quickModal, setQuickModal] = useState(null); // 'income' | 'expense' | null
 
   const totals = useMemo(
     () => isSimpleMode
@@ -168,6 +174,8 @@ export default function SummaryPage() {
     if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
     const caharon = caharonReport(classes, constants);
     if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
+    const tuition = tuitionReport(classes);
+    if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
     const parents = parentContributionReport(classes);
     if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
     const partaniyot = partaniyotReport(classes, constants);
@@ -338,7 +346,15 @@ export default function SummaryPage() {
 
         {/* Income breakdown */}
         <div className="mb-6">
-          <h3 className="font-bold text-gray-800 text-sm border-b-2 border-teal-200 pb-1.5 mb-2">הכנסות — ממה זה מורכב</h3>
+          <div className="flex items-center justify-between border-b-2 border-teal-200 pb-1.5 mb-2">
+            <h3 className="font-bold text-gray-800 text-sm">הכנסות — ממה זה מורכב</h3>
+            {canEdit && (
+              <button type="button" onClick={() => setQuickModal('income')} className="btn-ghost btn-sm no-print">
+                <Plus size={13} />
+                הוספת הכנסה
+              </button>
+            )}
+          </div>
           {isSimpleMode ? (
             <>
               {incomeSources.map(s => <Row key={s.id} label={s.name} value={formatCurrency(s.amount)} />)}
@@ -357,7 +373,15 @@ export default function SummaryPage() {
 
         {/* Expense breakdown */}
         <div className="mb-6">
-          <h3 className="font-bold text-gray-800 text-sm border-b-2 border-red-200 pb-1.5 mb-2">הוצאות — על מה זה יוצא</h3>
+          <div className="flex items-center justify-between border-b-2 border-red-200 pb-1.5 mb-2">
+            <h3 className="font-bold text-gray-800 text-sm">הוצאות — על מה זה יוצא</h3>
+            {canEdit && (
+              <button type="button" onClick={() => setQuickModal('expense')} className="btn-ghost btn-sm no-print">
+                <Plus size={13} />
+                הוספת הוצאה
+              </button>
+            )}
+          </div>
           {!isSimpleMode && (
             <>
               <Row label={`עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש)`} value={formatCurrency(totals.totalClassActualCost)} />
@@ -478,6 +502,13 @@ export default function SummaryPage() {
           onConfirm={() => { setSigningSlot(overwriteSlot); setOverwriteSlot(null); }}
           onClose={() => setOverwriteSlot(null)}
         />
+      )}
+
+      {quickModal === 'income' && (
+        <IncomeModal onSave={addIncomeSource} onClose={() => setQuickModal(null)} />
+      )}
+      {quickModal === 'expense' && (
+        <ExpenseModal categories={expenseCategories} onSave={addExpense} onClose={() => setQuickModal(null)} />
       )}
     </div>
   );

@@ -16,7 +16,7 @@ const INCOME_TYPE_LABELS = {
   other: 'אחר',
 };
 
-function IncomeModal({ src, onSave, onClose }) {
+export function IncomeModal({ src, onSave, onClose }) {
   const [form, setForm] = useState({
     name: src?.name || '',
     amount: src?.amount || '',

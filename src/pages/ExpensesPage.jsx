@@ -8,7 +8,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Picker from '../components/ui/Picker.jsx';
 
-function ExpenseModal({ exp, categories, onSave, onClose }) {
+export function ExpenseModal({ exp, categories, onSave, onClose }) {
   const [form, setForm] = useState({
     name: exp?.name || '',
     categoryId: exp?.categoryId || categories[0]?.id || '',
