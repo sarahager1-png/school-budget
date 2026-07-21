@@ -16,6 +16,7 @@ import {
   DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
+  normalizeSuggestionKey,
 } from '../lib/efficiency.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
@@ -137,7 +138,8 @@ export default function EfficiencyPage() {
 
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
-  const [hakvatzaHours, setHakvatzaHours] = useState(DEFAULT_HAKVATZA_HOURS_PER_SUBJECT);
+  // שעות הקבצה קבועות (8) — ערך מתכוונן היה גורם לרשימת הצעות שונה בין
+  // מסך זה לסיכום ולמסמך, ובחירה שנשמרה הייתה מפסיקה להתאים
   const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_MONTHLY_HOURS);
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
   const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
@@ -149,7 +151,7 @@ export default function EfficiencyPage() {
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
-    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, hakvatzaHours);
+    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     // כיתות שצורפו (רגיל או דו-גילאי): השעות הבודדות של החברות הקטנות כבר
@@ -177,7 +179,7 @@ export default function EfficiencyPage() {
       tuition: tuitionReport(classes, tuitionAmount, tuitionRate),
       supplement: tuitionSupplementReport(classes, supplementAmount),
     };
-  }, [classes, expenses, expenseCategories, constants, hakvatzaHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
+  }, [classes, expenses, expenseCategories, constants, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
@@ -237,7 +239,7 @@ export default function EfficiencyPage() {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) console.error(error);
-        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys));
+        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys.map(normalizeSuggestionKey)));
       });
   }, [user?.schoolId, currentYear?.id]);
 
@@ -383,19 +385,14 @@ export default function EfficiencyPage() {
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
             { label: 'הכנסות אחרי האיחוד', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
-            { label: `שעות הקבצה — ${DUAL_AGE_SUBJECTS.length} מקצועות × ${hakvatzaHours} ש׳ בחודש`, value: formatCurrency(m.hakvatzaAnnualCost) },
+            { label: `שעות הקבצה — ${DUAL_AGE_SUBJECTS.length} מקצועות × ${DEFAULT_HAKVATZA_HOURS_PER_SUBJECT} ש׳ בחודש`, value: formatCurrency(m.hakvatzaAnnualCost) },
             { label: 'עלות אחרי האיחוד — כיתה אחת + הקבצה', value: formatCurrency(m.costAfter), tone: 'green' },
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
           selected={isSelected(`dual:${m.merged.id}`)}
           onToggle={() => toggleKey(`dual:${m.merged.id}`)}
-        >
-          <div className="flex items-center justify-between gap-3 flex-wrap bg-purple-50/60 rounded-xl p-3">
-            <span className="text-sm font-medium text-gray-700">שעות הקבצה לחודש, לכל מקצוע</span>
-            <Stepper value={hakvatzaHours} onChange={setHakvatzaHours} min={0} max={20} unit="שעות" />
-          </div>
-        </SuggestionCard>
+        />
       ))}
 
       {/* Hours cut */}

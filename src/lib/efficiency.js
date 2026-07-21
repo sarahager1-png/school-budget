@@ -7,13 +7,23 @@ export const MAX_MERGED_STUDENTS = 32;
 
 // ─── צירוף כיתות ──────────────────────────────────────────────
 // כיתה מאוחדת: סכום התלמידים; שומרת את תוכנית השעות הבודדות הגדולה מבין המקורות
+// המזהה ממוין — סדר השליפה מה-DB אינו מובטח, ומפתח הצעה חייב להיות זהה
+// בכל מסך ובכל ריצה כדי שבחירה שנשמרה תמשיך להתאים
 export function mergedClass(members) {
   return {
-    id: members.map(m => m.id).join('+'),
+    id: members.map(m => m.id).sort().join('+'),
     name: members.map(m => m.name).join(' + '),
     studentCount: members.reduce((s, m) => s + m.studentCount, 0),
     extraHours: Math.max(...members.map(m => Number(m.extraHours || 0))),
   };
+}
+
+// מפתחות בחירה שנשמרו לפני שהמזהה מוין נשמרו בסדר השליפה דאז —
+// מיישרים אותם לצורה הממוינת בטעינה, כדי שבחירה קיימת לא תלך לאיבוד
+export function normalizeSuggestionKey(key) {
+  const m = /^(merge|dual):(.+)$/.exec(key || '');
+  if (!m) return key;
+  return `${m[1]}:${m[2].split('+').sort().join('+')}`;
 }
 
 export function mergeDelta(members, constants) {

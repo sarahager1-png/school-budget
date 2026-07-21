@@ -14,7 +14,7 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import {
-  calculateSchoolTotals, calculateSimpleTotals, categoryTotals, formatCurrency, formatCurrencyFull,
+  calculateSchoolTotals, calculateSimpleTotals, categoryTotals, annualAmount, formatCurrency, formatCurrencyFull,
 } from '../src/lib/calculations.js';
 import {
   findMerges, extraHoursReport, thresholdReport, eventsCapReport,
@@ -22,6 +22,7 @@ import {
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
   DEFAULT_PARENT_CONTRIBUTION, DEFAULT_HAKVATZA_HOURS_PER_SUBJECT,
+  normalizeSuggestionKey,
 } from '../src/lib/efficiency.js';
 import { withKind } from '../src/lib/categoryKinds.js';
 import { DEFAULT_CONSTANTS } from '../src/data/constants.js';
@@ -125,7 +126,7 @@ function buildSuggestions(classes, expenses, categories, constants) {
 
 const esc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport }) {
+function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual }) {
   const suggestionsTotal = suggestions.reduce((s, r) => s + r.saving, 0);
   const projected = totals.balance + suggestionsTotal;
   const finalWithNetwork = projected + (networkSupport || 0);
@@ -178,19 +179,20 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   <h2>הכנסות — ממה זה מורכב</h2>
   ${isSimpleMode ? '' : `
   ${row('שעות תקן — משרד החינוך', formatCurrency(totals.totalMinistryIncome))}
-  ${totals.totalMinistryGrantIncome > 0 ? row('תוספת כללית לתלמיד — משרד החינוך', formatCurrency(totals.totalMinistryGrantIncome)) : ''}
-  ${row(`הכנסה לתלמיד (${totals.totalStudents} תלמידים)`, formatCurrency(totals.totalStudentIncome))}
-  ${totals.totalTalanIncome > 0 ? row('תל"ן — תשלומי הורים', formatCurrency(totals.totalTalanIncome)) : ''}`}
+  ${row(`תוספת כללית לתלמיד — משרד החינוך (${totals.totalStudents} × ${formatCurrency(constants.ministryGrantPerStudent)})`, formatCurrency(totals.totalMinistryGrantIncome))}
+  ${row(`שכר לימוד — הכנסה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudent)})`, formatCurrency(totals.totalStudentIncome))}
+  ${row(`תל"ן — תשלומי הורים (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudentTalan)})`, formatCurrency(totals.totalTalanIncome))}`}
   ${incomeSources.map(s => row(s.name, formatCurrency(s.amount))).join('')}
   ${row('סה"כ הכנסות', formatCurrency(totals.totalIncome), 'total')}
 
   <h2>הוצאות — על מה זה יוצא</h2>
   ${isSimpleMode ? '' : `
-  ${row(`עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש)`, formatCurrency(totals.totalClassActualCost))}
-  ${totals.totalExtraHoursCost > 0 ? row('שעות בודדות', formatCurrency(totals.totalExtraHoursCost)) : ''}
-  ${totals.totalCounselingCost > 0 ? row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost)) : ''}
+  ${row(`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`, formatCurrency(totals.totalClassActualCost))}
+  ${row('שעות בודדות', formatCurrency(totals.totalExtraHoursCost))}
+  ${row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost))}
   ${row(`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, formatCurrency(totals.totalStudentExpenses))}
-  ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}`}
+  ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}
+  ${row('שכר מנהלת', formatCurrency(principalAnnual))}`}
   ${catRows.map(c => row(c.name, formatCurrency(c.value))).join('')}
   ${row('סה"כ הוצאות', formatCurrency(totals.totalExpenses), 'total')}
 
@@ -269,7 +271,13 @@ async function exportSchool(school) {
   const totals = isSimpleMode
     ? calculateSimpleTotals(incomeSources, expenses)
     : calculateSchoolTotals(classes, incomeSources, expenses, constants, categories);
-  const catRows = categoryTotals(expenses, categories).filter(c => c.kind !== 'profdev' && c.value > 0);
+  // שכר מנהלת מוצג בשמו — מופרד מהקטגוריה שהוא רשום בה (כמו במסך)
+  const principalLine = expenses.find(e => e.name === 'שכר מנהלת');
+  const principalAnnual = principalLine ? annualAmount(principalLine) : 0;
+  const catRows = categoryTotals(expenses, categories)
+    .filter(c => c.kind !== 'profdev')
+    .map(c => (principalLine && c.id === principalLine.categoryId ? { ...c, value: c.value - principalAnnual } : c))
+    .filter(c => c.value > 0);
   const allSuggestions = isSimpleMode ? [] : buildSuggestions(classes, expenses, categories, constants);
 
   // בחירת ההצעות + ההערות + סכום הרשת שנשמרו במסך "סיכום ואישור" —
@@ -282,14 +290,14 @@ async function exportSchool(school) {
       .select('selected_suggestion_keys, notes')
       .eq('school_id', schoolRow.id).eq('budget_year_id', year.id).maybeSingle());
   }
-  const selectedKeys = approval?.selected_suggestion_keys ? new Set(approval.selected_suggestion_keys) : null;
+  const selectedKeys = approval?.selected_suggestion_keys ? new Set(approval.selected_suggestion_keys.map(normalizeSuggestionKey)) : null;
   const suggestions = selectedKeys == null ? allSuggestions : allSuggestions.filter(s => selectedKeys.has(s.key));
   const notes = approval?.notes ?? '';
   const networkSupport = approval?.network_support != null ? Number(approval.network_support) : null;
 
   const html = renderHtml({
     school: { name: schoolRow?.name || school.name },
-    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport,
+    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual,
   });
 
   const base = path.join(outDir, `סיכום תקציב - ${schoolRow?.name || school.name}`);

@@ -248,6 +248,8 @@ export function AppProvider({ children }) {
     setExpenseRequests([]);
     setUsersList([]);
     setCurrentPage('dashboard');
+    // מנקים את ה-hash — שקישור ישיר (#summary) של המשתמש הקודם לא ישבש את הכניסה הבאה
+    try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch { /* לא קריטי */ }
   };
 
   const navigate = (page) => {

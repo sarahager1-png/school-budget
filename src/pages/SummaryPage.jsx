@@ -3,7 +3,7 @@ import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote,
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import {
-  calculateSchoolTotals, calculateSimpleTotals, categoryTotals,
+  calculateSchoolTotals, calculateSimpleTotals, categoryTotals, annualAmount,
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import {
@@ -12,6 +12,7 @@ import {
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   hoursCutReport, topExpensesReport,
   DEFAULT_HAKVATZA_HOURS_PER_SUBJECT, DEFAULT_PARENT_CONTRIBUTION,
+  normalizeSuggestionKey,
 } from '../lib/efficiency.js';
 import { MANAGERS } from '../data/constants.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
@@ -141,10 +142,16 @@ export default function SummaryPage() {
     [isSimpleMode, classes, incomeSources, expenses, constants, expenseCategories],
   );
 
-  const catRows = useMemo(
-    () => categoryTotals(expenses, expenseCategories).filter(c => c.kind !== 'profdev' && c.value > 0),
-    [expenses, expenseCategories],
-  );
+  // שכר מנהלת מוצג בשמו — מופרד מקטגוריית השכר שהוא רשום בה (כמו בדף הבית)
+  const { catRows, principalAnnual } = useMemo(() => {
+    const principalLine = expenses.find(e => e.name === 'שכר מנהלת');
+    const pAnnual = principalLine ? annualAmount(principalLine) : 0;
+    const rows = categoryTotals(expenses, expenseCategories)
+      .filter(c => c.kind !== 'profdev')
+      .map(c => (principalLine && c.id === principalLine.categoryId ? { ...c, value: c.value - pAnnual } : c))
+      .filter(c => c.value > 0);
+    return { catRows: rows, principalAnnual: pAnnual };
+  }, [expenses, expenseCategories]);
 
   // הצעות הייעול המדידות — מופיעות גם על המסמך החתום
   const suggestions = useMemo(() => {
@@ -238,7 +245,7 @@ export default function SummaryPage() {
           if (isMissingTableError(error)) setTableReady(false);
         }
         setApproval(data ?? null);
-        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys));
+        if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys.map(normalizeSuggestionKey)));
         if (data?.notes) setNotes(data.notes);
         if (data?.network_support != null) setNetworkAmount(String(data.network_support));
       });
@@ -251,28 +258,30 @@ export default function SummaryPage() {
       budget_year_id: currentYear.id,
       selected_suggestion_keys: selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys],
       notes: notes.trim() || null,
-      network_support: networkAmount === '' ? null : Number(networkAmount),
       updated_at: new Date().toISOString(),
     };
+    // עמודת סכום הרשת נשלחת רק כשבאמת הוקלד ערך — כך בתי"ס שעוד לא הריצו
+    // את המיגרציה שומרים בחירה+הערות נקי, בלי כשל ובלי הודעת שווא
+    const netValue = networkAmount === '' ? null : Math.max(0, Number(networkAmount) || 0);
+    if (networkAmount !== '') payload.network_support = netValue;
     let { data, error } = await supabase.from('budget_approvals')
       .upsert(payload, { onConflict: 'school_id,budget_year_id' })
       .select()
       .single();
-    // בתי"ס שעוד לא הריצו את מיגרציית עמודת הרשת — שומרים את השאר בלי לאבד כלום
     if (error && /network_support/.test(error.message || '')) {
       const { network_support, ...rest } = payload;
       ({ data, error } = await supabase.from('budget_approvals')
         .upsert(rest, { onConflict: 'school_id,budget_year_id' })
         .select()
         .single());
-      if (!error && data) notify('נשמר — אבל סכום הרשת דורש עדכון קטן ב-DB (פני לתמיכה)', 'error');
+      if (!error && data) notify('הבחירה וההערות נשמרו, אבל סכום הרשת עוד לא — דרוש עדכון קטן ב-DB (פני לתמיכה)', 'error');
     }
     setSavingSelection(false);
     if (isMissingTableError(error)) { setTableReady(false); return notify('שמירת ההצעות וההערות עדיין לא הופעלה במוסד זה', 'error'); }
     if (error || !data) return saveFailed(error);
     setApproval(data);
     selectionDirty.current = false;
-    notify('הבחירה, ההערות וסכום הרשת נשמרו ✓');
+    notify('הבחירה נשמרה ✓');
   };
 
   const saveSignature = async (slot, name, dataUrl) => {
@@ -382,9 +391,9 @@ export default function SummaryPage() {
           ) : (
             <>
               <Row label="שעות תקן — משרד החינוך" value={formatCurrency(totals.totalMinistryIncome)} />
-              {totals.totalMinistryGrantIncome > 0 && <Row label="תוספת כללית לתלמיד — משרד החינוך" value={formatCurrency(totals.totalMinistryGrantIncome)} />}
-              <Row label={`הכנסה לתלמיד (${totals.totalStudents} תלמידים)`} value={formatCurrency(totals.totalStudentIncome)} />
-              {totals.totalTalanIncome > 0 && <Row label='תל"ן — תשלומי הורים' value={formatCurrency(totals.totalTalanIncome)} />}
+              <Row label={`תוספת כללית לתלמיד — משרד החינוך (${totals.totalStudents} × ${formatCurrency(constants.ministryGrantPerStudent)})`} value={formatCurrency(totals.totalMinistryGrantIncome)} />
+              <Row label={`שכר לימוד — הכנסה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudent)})`} value={formatCurrency(totals.totalStudentIncome)} />
+              <Row label={`תל"ן — תשלומי הורים (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudentTalan)})`} value={formatCurrency(totals.totalTalanIncome)} />
               {incomeSources.map(s => <Row key={s.id} label={s.name} value={formatCurrency(s.amount)} />)}
             </>
           )}
@@ -404,11 +413,12 @@ export default function SummaryPage() {
           </div>
           {!isSimpleMode && (
             <>
-              <Row label={`עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש)`} value={formatCurrency(totals.totalClassActualCost)} />
-              {totals.totalExtraHoursCost > 0 && <Row label="שעות בודדות" value={formatCurrency(totals.totalExtraHoursCost)} />}
-              {totals.totalCounselingCost > 0 && <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />}
+              <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
+              <Row label="שעות בודדות" value={formatCurrency(totals.totalExtraHoursCost)} />
+              <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}
+              <Row label="שכר מנהלת" value={formatCurrency(principalAnnual)} />
             </>
           )}
           {catRows.map(c => <Row key={c.id} label={c.name} value={formatCurrency(c.value)} />)}
@@ -448,12 +458,12 @@ export default function SummaryPage() {
                 min="0"
                 className="input w-36 text-left no-print"
                 value={networkAmount}
-                onChange={e => { selectionDirty.current = true; setNetworkAmount(e.target.value); }}
+                onChange={e => { selectionDirty.current = true; setNetworkAmount(e.target.value.replace(/[^0-9]/g, '')); }}
                 placeholder="₪ לשנה"
                 aria-label='השתתפות רשת חינוך חב"ד בשקלים לשנה'
               />
               <span className="print-only text-base font-black text-purple-700">
-                {networkAmount !== '' ? `+${formatCurrency(Number(networkAmount))}` : '₪ ____________'}
+                {Number(networkAmount) > 0 ? `+${formatCurrency(Number(networkAmount))}` : '₪ ____________'}
               </span>
             </div>
             {networkAmount !== '' && Number(networkAmount) > 0 && (
@@ -465,7 +475,15 @@ export default function SummaryPage() {
               </div>
             )}
             <div className="flex items-center justify-between gap-2 mt-2 no-print">
-              <button type="button" onClick={() => navigate('efficiency')} className="btn-ghost btn-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  // מגן על בחירה/הערות שלא נשמרו — אחרת נעלמות בשקט במעבר מסך
+                  if (selectionDirty.current && !window.confirm('יש שינויים שעוד לא נשמרו — לעבור בלי לשמור?')) return;
+                  navigate('efficiency');
+                }}
+                className="btn-ghost btn-sm"
+              >
                 לכל ההצעות והפירוט
                 <ArrowLeft size={13} />
               </button>
