@@ -49,12 +49,11 @@ export function mergeDelta(members, constants) {
 export function findMerges(classes, constants, maxStudents = MAX_MERGED_STUDENTS) {
   const groups = new Map();
   for (const c of classes) {
+    // מקבצים לפי שכבה מנורמלת (כולל זיהוי מהשם כשהשדה ריק) כדי ש"א"/"א'"/
+    // "כיתה א" ייחשבו לאותה שכבה; טקסט חופשי שלא מזוהה מתקבץ לפי מחרוזת
+    const idx = classGradeIndex(c);
     const raw = (c.gradeLevel ?? '').toString().trim();
-    if (!raw) continue;
-    // מקבצים לפי שכבה מנורמלת (כמו dualAgeMergeReport) כדי ש"א"/"א'"/"כיתה א"
-    // ייחשבו לאותה שכבה גם אם הוקלדו בפורמט חופשי שונה; טקסט חופשי שלא
-    // מזוהה (למשל "גן חובה") ממשיך להתקבץ לפי השוואת מחרוזת כבעבר
-    const idx = normalizeGrade(raw);
+    if (idx == null && !raw) continue;
     const key = idx != null ? `n${idx}` : `r:${raw}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(c);
@@ -116,6 +115,12 @@ function divisionOf(idx) {
   return SCHOOL_DIVISIONS.findIndex(d => d.includes(grade));
 }
 
+// שכבת כיתה: משדה השכבה, ואם הוא ריק — מזהים מתוך שם הכיתה
+// ("כיתה ג" ← ג). בהרצליה למשל הוזנו שמות בלי שכבה, וזה הסתיר חיבורים.
+export function classGradeIndex(c) {
+  return normalizeGrade(c.gradeLevel) ?? normalizeGrade(c.name);
+}
+
 export function normalizeGrade(raw) {
   if (!raw) return null;
   const s = raw.toString().trim().replace(/^כיתה\s*/, '').replace(/["'׳״]/g, '').replace(/\s+/g, '');
@@ -138,7 +143,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
   const byGrade = new Map();
   for (const c of classes) {
     if (excludeIds.has(c.id)) continue;
-    const idx = normalizeGrade(c.gradeLevel);
+    const idx = classGradeIndex(c);
     if (idx == null) continue;
     if (!byGrade.has(idx)) byGrade.set(idx, []);
     byGrade.get(idx).push(c);
@@ -172,6 +177,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
     const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
     if (delta >= 1000) {
       candidates.push({
+        lowIdx: idx,
         members: [a, partner],
         merged,
         createsStandard,
@@ -185,15 +191,20 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
     }
   }
 
-  candidates.sort((a, b) => b.delta - a.delta);
-  const used = new Set();
-  const picked = [];
-  for (const cand of candidates) {
-    if (cand.members.some(m => used.has(m.id))) continue;
-    cand.members.forEach(m => used.add(m.id));
-    picked.push(cand);
+  // בחירת זוגות ללא חפיפה שממקסמת את סך החיסכון (תכנון דינמי על רצף
+  // השכבות) — כך "ב+ג וגם ד+ה" מנצחים "ג+ד" בודד, במקום שהזוג האמצעי
+  // ישרוף את שתי השכנות (הבאג שהסתיר את החיבורים בהרצליה)
+  const byLow = new Map(candidates.map(c => [c.lowIdx, c]));
+  let prev2 = { sum: 0, chosen: [] };
+  let prev1 = { sum: 0, chosen: [] };
+  for (let g = 0; g < GRADE_ORDER.length; g++) {
+    const cand = byLow.get(g - 1); // הזוג שתופס את שכבות g-1 ו-g
+    const take = cand ? { sum: prev2.sum + cand.delta, chosen: [...prev2.chosen, cand] } : null;
+    const best = take && take.sum > prev1.sum ? take : prev1;
+    prev2 = prev1;
+    prev1 = best;
   }
-  return picked;
+  return [...prev1.chosen].sort((a, b) => a.lowIdx - b.lowIdx);
 }
 
 // ─── קבלת שבת משותפת ──────────────────────────────────────────
@@ -317,7 +328,7 @@ export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUIT
 export function closeClassReport(classes, constants, excludeIds = new Set()) {
   const graded = classes
     .filter(c => !excludeIds.has(c.id))
-    .map(c => ({ c, idx: normalizeGrade(c.gradeLevel) }))
+    .map(c => ({ c, idx: classGradeIndex(c) }))
     .filter(x => x.idx != null);
   if (graded.length === 0) return [];
   const topIdx = Math.max(...graded.map(x => x.idx));
