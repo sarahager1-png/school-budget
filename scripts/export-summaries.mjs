@@ -126,7 +126,18 @@ function buildSuggestions(classes, expenses, categories, constants) {
 
 const esc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual }) {
+// תיבת חתימה: חתימה דיגיטלית שמורה מהמערכת אם קיימת, אחרת קו לחתימת יד
+function sigBlock(title, sig) {
+  if (sig?.image && /^data:image\//.test(sig.image)) {
+    const when = sig.signedAt ? new Date(sig.signedAt).toLocaleDateString('he-IL') : '';
+    return `<div class="sig"><p class="slabel" style="margin-bottom:6px">${esc(title)}</p>
+      <img src="${sig.image}" alt="${esc(title)}" style="height:52px; object-fit:contain; display:block; margin-bottom:4px;" />
+      <div class="sline"><span>✓ ${esc(sig.name || '')}</span><span>${esc(when)}</span></div></div>`;
+  }
+  return `<div class="sig"><p class="slabel">${esc(title)}</p><div class="sline"><span>שם + חתימה</span><span>תאריך</span></div></div>`;
+}
+
+function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual, signatures }) {
   const suggestionsTotal = suggestions.reduce((s, r) => s + r.saving, 0);
   const projected = totals.balance + suggestionsTotal;
   const finalWithNetwork = projected + (networkSupport || 0);
@@ -222,8 +233,8 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   <p style="color:#444; white-space:pre-wrap; line-height:1.5;">${notes ? esc(notes) : '<span style="color:#bbb">אין הערות</span>'}</p>` : ''}
 
   <div class="sigs">
-    <div class="sig"><p class="slabel">חתימת המנהלת</p><div class="sline"><span>שם + חתימה</span><span>תאריך</span></div></div>
-    <div class="sig"><p class="slabel">חתימת השליח</p><div class="sline"><span>שם + חתימה</span><span>תאריך</span></div></div>
+    ${sigBlock('חתימת המנהלת', signatures?.principal)}
+    ${sigBlock('חתימת השליח', signatures?.courier)}
   </div>
 
   <p class="note">אנו מאשרים שעברנו על סיכום התקציב לשנת ${esc(yearLabel)} כפי שמופיע בדף זה. כל הצעה מחושבת בנפרד לפי מודל התקציב; יישום של כמה הצעות יחד עשוי לחפוף חלקית.</p>
@@ -282,22 +293,28 @@ async function exportSchool(school) {
 
   // בחירת ההצעות + ההערות + סכום הרשת שנשמרו במסך "סיכום ואישור" —
   // אם עוד לא נשמרה בחירה, ברירת המחדל היא הכל (תואם את התנהגות המסך)
+  const SIG_COLS = 'principal_name, principal_signature, principal_signed_at, courier_name, courier_signature, courier_signed_at';
   let { data: approval, error: apprErr } = await supabase.from('budget_approvals')
-    .select('selected_suggestion_keys, notes, network_support')
+    .select(`selected_suggestion_keys, notes, network_support, ${SIG_COLS}`)
     .eq('school_id', schoolRow.id).eq('budget_year_id', year.id).maybeSingle();
   if (apprErr && /network_support/.test(apprErr.message || '')) {
     ({ data: approval } = await supabase.from('budget_approvals')
-      .select('selected_suggestion_keys, notes')
+      .select(`selected_suggestion_keys, notes, ${SIG_COLS}`)
       .eq('school_id', schoolRow.id).eq('budget_year_id', year.id).maybeSingle());
   }
   const selectedKeys = approval?.selected_suggestion_keys ? new Set(approval.selected_suggestion_keys.map(normalizeSuggestionKey)) : null;
   const suggestions = selectedKeys == null ? allSuggestions : allSuggestions.filter(s => selectedKeys.has(s.key));
   const notes = approval?.notes ?? '';
   const networkSupport = approval?.network_support != null ? Number(approval.network_support) : null;
+  // חתימות דיגיטליות שנשמרו במסך — מוטמעות במסמך; בלעדיהן נשאר קו לחתימת יד
+  const signatures = {
+    principal: { image: approval?.principal_signature, name: approval?.principal_name, signedAt: approval?.principal_signed_at },
+    courier: { image: approval?.courier_signature, name: approval?.courier_name, signedAt: approval?.courier_signed_at },
+  };
 
   const html = renderHtml({
     school: { name: schoolRow?.name || school.name },
-    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual,
+    yearLabel: year.label, classes, totals, incomeSources, catRows, constants, suggestions, isSimpleMode, notes, networkSupport, principalAnnual, signatures,
   });
 
   const base = path.join(outDir, `סיכום תקציב - ${schoolRow?.name || school.name}`);
