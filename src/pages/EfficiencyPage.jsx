@@ -13,7 +13,7 @@ import {
   jointShabbatReport, caharonReport, parentContributionReport, transportParentsReport,
   partaniyotReport, principalTeachingReport, tuitionReport, tuitionSupplementReport,
   DUAL_AGE_EXTRA_MONTHLY_HOURS,
-  DEFAULT_SHABBAT_MONTHLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
+  DEFAULT_SHABBAT_WEEKLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
   normalizeSuggestionKey,
@@ -138,7 +138,7 @@ export default function EfficiencyPage() {
 
   const [hoursCut, setHoursCut] = useState(1);
   const [trimPct, setTrimPct] = useState(10);
-  const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_MONTHLY_HOURS);
+  const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_WEEKLY_HOURS);
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
   const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
   const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS);
@@ -449,8 +449,7 @@ export default function EfficiencyPage() {
           subtitle={`מנהלת מלמדת בבית הספר בין 6 ל-8 שעות שבועיות בפועל. שכרה כבר משולם — כל שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית ב-${formatCurrency(principal.hourlyRate)} לשעה.`}
           saving={principal.saving}
           details={[
-            { label: `${principal.weeklyHours} ש׳ שבועיות = ${principal.monthlyHours} ש׳ בחודש`, value: '' },
-            { label: `${principal.monthlyHours} ש׳ בחודש × ${formatCurrency(principal.hourlyRate)} × 12`, value: formatCurrencyFull(principal.saving), tone: 'green' },
+            { label: `${principal.weeklyHours} ש׳ שבועיות × ${formatCurrency(principal.hourlyRate)} × 12 חודשים`, value: formatCurrencyFull(principal.saving), tone: 'green' },
           ]}
           selected={isSelected('principal-teaching')}
           onToggle={() => toggleKey('principal-teaching')}
@@ -469,19 +468,19 @@ export default function EfficiencyPage() {
           tone="gold"
           index={++cardIndex}
           title="קבלת שבת משותפת לכל הכיתות"
-          subtitle={`במקום קבלת שבת נפרדת בכל כיתה — כולם יחד במליאה אחת. נחסכת שעה שבועית לכל כיתה (${shabbat.monthlyHoursPerClass} ש׳ בחודש), וגם חוויה קהילתית. עובד גם למליאות נוספות: ראש חודש, תפילה, מסיבות.`}
+          subtitle={`במקום קבלת שבת נפרדת בכל כיתה — כולם יחד במליאה אחת. נחסכת שעה שבועית לכל כיתה, וגם חוויה קהילתית. עובד גם למליאות נוספות: ראש חודש, תפילה, מסיבות.`}
           saving={shabbat.saving}
           details={[
             { label: 'כיתות במערכת', value: `${shabbat.classCount}` },
-            { label: `חיסכון לכיתה — ${shabbat.monthlyHoursPerClass} ש׳ בחודש × ${formatCurrency(shabbat.hourlyRate)} × 12`, value: formatCurrency(shabbat.perClassAnnual), tone: 'green' },
+            { label: `חיסכון לכיתה — ${shabbat.weeklyHoursPerClass} ש׳ שבועית × ${formatCurrency(shabbat.hourlyRate)} × 12`, value: formatCurrency(shabbat.perClassAnnual), tone: 'green' },
             { label: `${shabbat.classCount} כיתות יחד`, value: formatCurrencyFull(shabbat.saving), tone: 'green' },
           ]}
           selected={isSelected('shabbat')}
           onToggle={() => toggleKey('shabbat')}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap bg-gold-50/60 rounded-xl p-3">
-            <span className="text-sm font-medium text-gray-700">כמה שעות חודשיות נחסכות לכיתה?</span>
-            <Stepper value={shabbatHours} onChange={setShabbatHours} min={1} max={12} unit="שעות" />
+            <span className="text-sm font-medium text-gray-700">כמה שעות שבועיות נחסכות לכיתה?</span>
+            <Stepper value={shabbatHours} onChange={setShabbatHours} min={1} max={4} unit="שעות" />
           </div>
         </SuggestionCard>
       )}

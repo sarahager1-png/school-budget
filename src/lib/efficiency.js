@@ -223,15 +223,17 @@ export function transportParentsReport(expenses) {
 
 // ─── קבלת שבת משותפת ──────────────────────────────────────────
 // כל הכיתות יחד בקבלת שבת אחת במקום קבלת שבת נפרדת בכל כיתה —
-// נחסכת שעה שבועית (= 4 שעות חודשיות) לכל כיתה
-export const DEFAULT_SHABBAT_MONTHLY_HOURS = 4;
+// נחסכת שעה שבועית אחת לכל כיתה. במודל המערכת התעריף (700/450) הוא
+// עלות חודשית של שעה שבועית, ולכן: שעות שבועיות × תעריף × 12 חודשים
+// (בדיוק כמו שאר ההצעות — בלי הכפלה נוספת ב-4).
+export const DEFAULT_SHABBAT_WEEKLY_HOURS = 1;
 
-export function jointShabbatReport(classes, constants, monthlyHoursPerClass = DEFAULT_SHABBAT_MONTHLY_HOURS) {
+export function jointShabbatReport(classes, constants, weeklyHoursPerClass = DEFAULT_SHABBAT_WEEKLY_HOURS) {
   const classCount = classes.length;
-  const perClassAnnual = monthlyHoursPerClass * constants.actualHourlyRate * PAYMENT_MONTHS;
+  const perClassAnnual = weeklyHoursPerClass * constants.actualHourlyRate * PAYMENT_MONTHS;
   return {
     classCount,
-    monthlyHoursPerClass,
+    weeklyHoursPerClass,
     hourlyRate: constants.actualHourlyRate,
     perClassAnnual,
     saving: classCount >= 2 ? classCount * perClassAnnual : 0,
@@ -290,18 +292,16 @@ export function partaniyotReport(classes, constants, hoursPerClass = DEFAULT_PAR
 
 // ─── שעות הוראה של המנהלת ─────────────────────────────────────
 // המנהלת מלמדת בפועל 6-8 שעות שבועיות — שכרה כבר משולם בנפרד, וכל
-// שעה שהיא מלמדת מחליפה שעת הוראה שהייתה נקנית בתעריף מלא.
-// שעה שבועית = 4 שעות חודשיות במודל המערכת.
+// שעה שבועית שהיא מלמדת מחליפה שעה שהייתה נקנית בתעריף מלא.
+// במודל המערכת התעריף (700/450) הוא עלות חודשית של שעה שבועית,
+// ולכן: שעות שבועיות × תעריף × 12 חודשים (בלי הכפלה נוספת ב-4).
 export const DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS = 6;
-export const WEEKS_PER_MONTH_FACTOR = 4;
 
 export function principalTeachingReport(classes, constants, weeklyHours = DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS) {
-  const monthlyHours = weeklyHours * WEEKS_PER_MONTH_FACTOR;
   return {
     weeklyHours,
-    monthlyHours,
     hourlyRate: constants.actualHourlyRate,
-    saving: classes.length > 0 ? monthlyHours * constants.actualHourlyRate * PAYMENT_MONTHS : 0,
+    saving: classes.length > 0 ? weeklyHours * constants.actualHourlyRate * PAYMENT_MONTHS : 0,
   };
 }
 
