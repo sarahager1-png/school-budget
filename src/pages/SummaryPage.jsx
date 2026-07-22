@@ -401,7 +401,7 @@ export default function SummaryPage() {
             <>
               <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
               <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />
-              <Row label={`תוספת 2 חוגים לכיתה (${classes.length} כיתות × 600 ₪ שבועי)`} value={formatCurrency(totals.totalClubsExpense)} />
+              <Row label={`תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`} value={formatCurrency(totals.totalClubsExpense)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}
               <Row label="שכר מנהלת" value={formatCurrency(principalAnnual)} />

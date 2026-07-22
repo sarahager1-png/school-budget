@@ -198,7 +198,7 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   ${isSimpleMode ? '' : `
   ${row(`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`, formatCurrency(totals.totalClassActualCost))}
   ${row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost))}
-  ${row(`תוספת 2 חוגים לכיתה (${classes.length} כיתות × 600 ₪ שבועי)`, formatCurrency(totals.totalClubsExpense))}
+  ${row(`תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`, formatCurrency(totals.totalClubsExpense))}
   ${row(`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, formatCurrency(totals.totalStudentExpenses))}
   ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}
   ${row('שכר מנהלת', formatCurrency(principalAnnual))}`}

@@ -202,7 +202,7 @@ function AutoExpensesCard({ classes, constants }) {
   const rows = [
     { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: teaching / 12, annual: teaching },
     { name: 'ייעוץ', hint: `${classes.length} כיתות × 2 שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: counseling / 12, annual: counseling },
-    { name: 'תוספת 2 חוגים לכיתה', hint: `${classes.length} כיתות × 600 ₪ לשבוע (×4 בחודש × 12 ח׳)`, monthly: clubs / 12, annual: clubs },
+    { name: 'תוספת חוגים לכיתה', hint: `${classes.length} כיתות × 2,000 ₪ לחודש × 10 ח׳`, monthly: clubs / 10, annual: clubs },
     { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} — אירועים, ערבי הורים, פיתוח מקצועי ושכפולים`, annual: students },
     { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
   ].filter(r => r.annual > 0);

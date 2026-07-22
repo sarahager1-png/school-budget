@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTANTS, HEBREW_MONTHS, PAYMENT_MONTHS, TUITION_COLLECTION_RATE } from '../data/constants.js';
+import { DEFAULT_CONSTANTS, HEBREW_MONTHS, PAYMENT_MONTHS, TUITION_COLLECTION_RATE, CLUBS_MONTHS } from '../data/constants.js';
 import { kindMap } from './categoryKinds.js';
 
 export function getClassType(studentCount, constants = DEFAULT_CONSTANTS) {
@@ -48,8 +48,8 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   // מרכיב ייעוץ — 2 שעות חודשיות לכל כיתה (ערך רשתי אחיד, לא נערך ב-DB)
   const counselingHours = Number(constants.counselingHoursPerClass ?? DEFAULT_CONSTANTS.counselingHoursPerClass);
   const counselingCost = counselingHours * actualHourlyRate * PAYMENT_MONTHS;
-  // תוספת חוגים — 600 ₪ שבועי לכיתה (×4 לחודש, ×12 לשנה; ערך רשתי אחיד, לא נערך ב-DB)
-  const clubsExpense = Number(constants.clubsWeeklyExpensePerClass ?? DEFAULT_CONSTANTS.clubsWeeklyExpensePerClass) * 4 * PAYMENT_MONTHS;
+  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ערך רשתי אחיד, לא נערך ב-DB)
+  const clubsExpense = Number(constants.clubsMonthlyExpensePerClass ?? DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass) * CLUBS_MONTHS;
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
   const profDevExpense = professionalDevPerClass;

@@ -84,7 +84,7 @@ function BudgetBreakdown({ budget }) {
     null,
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
     ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ בחודש)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
-    ...(budget.clubsExpense > 0 ? [{ label: 'תוספת 2 חוגים (600 ₪ שבועי)', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
+    ...(budget.clubsExpense > 0 ? [{ label: 'תוספת חוגים (2,000 ₪ × 10 ח׳)', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
     ...(budget.caharonExpense > 0 ? [{ label: 'הוצאות צהרון', value: formatCurrency(budget.caharonExpense), negative: true }] : []),
     ...(budget.profDevExpense > 0 ? [{ label: 'פיתוח מקצועי', value: formatCurrency(budget.profDevExpense), negative: true }] : []),

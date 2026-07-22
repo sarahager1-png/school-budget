@@ -109,8 +109,8 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
   // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
   const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
-  // תוספת חוגים — 600 ₪ שבועי לכיתה, ×4 לחודש ×12 (ר' CLUBS_WEEKLY_EXPENSE_PER_CLASS בקוד הראשי)
-  const clubsExpense = classes.length * 600 * 4 * PAYMENT_MONTHS;
+  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ר' CLUBS_MONTHLY_EXPENSE_PER_CLASS בקוד הראשי)
+  const clubsExpense = classes.length * 2000 * 10;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;

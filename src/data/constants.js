@@ -14,14 +14,15 @@ export const COUNSELING_HOURS_PER_CLASS = 2;
 // (לא כל ההורים משלמים במלואם; הנחיית שרה 21/7)
 export const TUITION_COLLECTION_RATE = 0.8;
 
-// תוספת הוצאות חוגים — 600 ₪ לכיתה לשבוע (שבועי ×4 = חודשי, ×12 = שנתי),
-// מרכיב קבוע בתחשיב (כמו ייעוץ)
-export const CLUBS_WEEKLY_EXPENSE_PER_CLASS = 600;
+// תוספת הוצאות חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (שנה"ל, ללא יולי-אוגוסט)
+// = 20,000 ₪ לכיתה לשנה. מרכיב קבוע בתחשיב (כמו ייעוץ)
+export const CLUBS_MONTHLY_EXPENSE_PER_CLASS = 2000;
+export const CLUBS_MONTHS = 10;
 
 export const DEFAULT_CONSTANTS = {
   schoolWeeks: 36, // legacy — לא משתתף בחישוב (הוחלף במודל החודשי); נשמר כי העמודה קיימת ב-DB
   counselingHoursPerClass: COUNSELING_HOURS_PER_CLASS,
-  clubsWeeklyExpensePerClass: CLUBS_WEEKLY_EXPENSE_PER_CLASS,
+  clubsMonthlyExpensePerClass: CLUBS_MONTHLY_EXPENSE_PER_CLASS,
   fullClassStudentThreshold: 21,
   halfClassStudentThreshold: 11,
   fullClassMinistryHours: 22,
