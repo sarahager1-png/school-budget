@@ -16,20 +16,31 @@ const INCOME_TYPE_LABELS = {
   other: 'אחר',
 };
 
-export function IncomeModal({ src, onSave, onClose }) {
+export function IncomeModal({ src, totalStudents = 0, onSave, onClose }) {
+  const [perStudent, setPerStudent] = useState(false);
   const [form, setForm] = useState({
     name: src?.name || '',
     amount: src?.amount || '',
     type: src?.type || 'other',
     notes: src?.notes || '',
   });
+  const [rate, setRate] = useState('');
   const [error, setError] = useState('');
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  const computedAmount = perStudent ? Number(rate || 0) * totalStudents : Number(form.amount || 0);
+
+  const togglePerStudent = (on) => {
+    setPerStudent(on);
+    if (on && !form.name.trim()) set('name', 'שכר לימוד');
+    if (on) set('type', 'parents');
+  };
+
   const handleSave = () => {
     if (!form.name.trim()) return setError('חסר שם למקור ההכנסה — למשל: מענק עירייה');
-    if (!form.amount || Number(form.amount) <= 0) return setError('חסר סכום');
-    onSave({ ...form, amount: Number(form.amount) });
+    if (perStudent && (!rate || Number(rate) <= 0)) return setError('חסר סכום לתלמיד');
+    if (!perStudent && (!form.amount || Number(form.amount) <= 0)) return setError('חסר סכום');
+    onSave({ ...form, amount: computedAmount });
     onClose();
   };
 
@@ -43,10 +54,29 @@ export function IncomeModal({ src, onSave, onClose }) {
           <label className="label">שם מקור ההכנסה</label>
           <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="תרומות שנתיות" />
         </div>
-        <div>
-          <label className="label">סכום שנתי (₪)</label>
-          <input className="input" type="number" inputMode="numeric" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="50000" />
-        </div>
+
+        {!src && totalStudents > 0 && (
+          <label className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-gray-50 cursor-pointer select-none">
+            <input type="checkbox" checked={perStudent} onChange={e => togglePerStudent(e.target.checked)} className="w-4 h-4 accent-teal-600" />
+            <span className="text-sm text-gray-700">חישוב לפי מספר תלמידים ({totalStudents} תלמידים במערכת)</span>
+          </label>
+        )}
+
+        {perStudent ? (
+          <div>
+            <label className="label">סכום שכר לימוד לתלמיד (₪)</label>
+            <input className="input" type="number" inputMode="numeric" min="0" value={rate} onChange={e => setRate(e.target.value)} placeholder="1500" />
+            <p className="text-xs text-gray-400 mt-1.5">
+              {totalStudents} תלמידים × {rate || 0} ₪ = <span className="font-bold text-gray-600">{formatCurrency(computedAmount)}</span> סה״כ שנתי
+            </p>
+          </div>
+        ) : (
+          <div>
+            <label className="label">סכום שנתי (₪)</label>
+            <input className="input" type="number" inputMode="numeric" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="50000" />
+          </div>
+        )}
+
         <Picker
           label="סוג"
           value={form.type}
@@ -83,6 +113,7 @@ export default function IncomePage() {
   const totalTalan = isSimpleMode ? 0 : classBreakdowns.reduce((s, c) => s + c.budget.talanIncome, 0);
   const totalAdditional = incomeSources.reduce((s, i) => s + (i.amount || 0), 0);
   const grandTotal = totalMinistry + totalMinistryGrant + totalStudentIncome + totalTalan + totalAdditional;
+  const totalStudents = classes.reduce((s, c) => s + (c.studentCount || 0), 0);
 
   return (
     <div className="space-y-5">
@@ -237,6 +268,7 @@ export default function IncomePage() {
       {modal && (
         <IncomeModal
           src={modal === 'new' ? null : modal}
+          totalStudents={totalStudents}
           onSave={data => modal === 'new' ? addIncomeSource(data) : updateIncomeSource(modal.id, data)}
           onClose={() => setModal(null)}
         />
