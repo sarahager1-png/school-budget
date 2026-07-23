@@ -53,7 +53,7 @@ function loadEnvFile(file) {
   return out;
 }
 
-function mapConstants(row) {
+function mapConstants(row, env = {}) {
   if (!row) return DEFAULT_CONSTANTS;
   return {
     schoolWeeks: row.school_weeks,
@@ -73,6 +73,7 @@ function mapConstants(row) {
     incomePerStudentCaharon: Number(row.income_per_student_caharon ?? 0),
     expensePerStudentCaharon: Number(row.expense_per_student_caharon ?? 0),
     ministryGrantPerStudent: Number(row.ministry_grant_per_student ?? 360),
+    clubsMonthlyExpensePerClass: env.VITE_DISABLE_CLUBS === '1' ? 0 : DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass,
   };
 }
 
@@ -261,7 +262,7 @@ async function exportSchool(school) {
     id: e.id, categoryId: e.category_id, name: e.name, amount: Number(e.amount), period: e.period,
   }));
   const categories = (catsRes.data ?? []).map(c => withKind({ id: c.id, name: c.name, kind: c.kind }));
-  const constants = mapConstants(constRes.data);
+  const constants = mapConstants(constRes.data, env);
   const isSimpleMode = schoolRow?.mode === 'simple';
 
   // "ללא תקציב": בלי מודל כיתות/תקן ובלי הצעות ייעול — כמו ב-SummaryPage

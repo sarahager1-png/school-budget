@@ -30,6 +30,8 @@ function mapConstantsFromDB(row) {
     incomePerStudentCaharon: Number(row.income_per_student_caharon ?? 0),
     expensePerStudentCaharon: Number(row.expense_per_student_caharon ?? 0),
     ministryGrantPerStudent: Number(row.ministry_grant_per_student ?? 360),
+    // חוגים כבויים בבית ספר זה (VITE_DISABLE_CLUBS=1) — לא ערך מה-DB, דגל build לפי בית ספר
+    clubsMonthlyExpensePerClass: import.meta.env.VITE_DISABLE_CLUBS === '1' ? 0 : DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass,
   };
 }
 
