@@ -5,13 +5,14 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, ArrowLeft,
-  School, CreditCard, Settings, Package, ChevronDown, FileSignature, Copy,
+  School, CreditCard, Settings, Package, ChevronDown, FileSignature, Copy, Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import {
   calculateSchoolTotals, calculateSimpleTotals, generateMonthlyData, generateCategoryData,
   categoryTotals, annualAmount, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
+import { useSuggestionPlan } from '../lib/useSuggestionPlan.js';
 import { REQUEST_STATUS, CLASS_TYPE, MANAGERS, OFEK_RATES } from '../data/constants.js';
 import CountUp from '../components/ui/CountUp.jsx';
 
@@ -339,12 +340,21 @@ function SummaryDocCard() {
 }
 
 function FullDashboard() {
-  const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, setConstants, user, navigate } = useApp();
+  const { classes, incomeSources, expenses, expenseCategories, expenseRequests, constants, setConstants, user, currentYear, navigate } = useApp();
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
     [classes, incomeSources, expenses, constants, expenseCategories],
   );
+
+  // הצעות הייעול שנבחרו בפועל — אותה בחירה שנשמרת במסך הייעול ובסיכום
+  const plan = useSuggestionPlan({
+    classes, expenses, expenseCategories, constants,
+    schoolId: user?.schoolId,
+    budgetYearId: currentYear?.id,
+  });
+  const projectedBalance = totals.balance + plan.total;
+  const hasPlan = plan.suggestions.length > 0;
 
   const monthlyData = useMemo(() => generateMonthlyData(totals), [totals]);
   const categoryData = useMemo(
@@ -388,6 +398,11 @@ function FullDashboard() {
     { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost },
     { label: 'מימון משרד לפי תקן', value: totals.totalMinistryIncome, negative: true },
   ];
+  // היתרה כפי שתיראה אחרי יישום ההצעות שסומנו — ומאילו הצעות היא מורכבת
+  const projectedBalanceBreakdown = [
+    { label: 'יתרה שנתית לפני ייעול', value: totals.balance, negative: totals.isDeficit },
+    ...plan.selected.map(s => ({ label: s.label, value: s.saving })),
+  ];
 
   return (
     <div className="space-y-6">
@@ -407,7 +422,7 @@ function FullDashboard() {
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-2 gap-4 ${hasPlan ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <StatCard
           index={0}
           label="סה״כ הכנסות שנתיות"
@@ -441,8 +456,21 @@ function FullDashboard() {
           isNegative={totals.isDeficit}
           breakdown={balanceBreakdown}
         />
+        {hasPlan && (
+          <StatCard
+            index={3}
+            label="מצב תקציב לאחר ייעול"
+            rawValue={projectedBalance}
+            format={formatCurrencyFull}
+            sub={`${plan.selected.length} הצעות ייעול שנבחרו · ${projectedBalance < 0 ? 'גירעון' : 'עודף'}`}
+            color={projectedBalance < 0 ? 'red' : 'green'}
+            icon={Sparkles}
+            isNegative={projectedBalance < 0}
+            breakdown={projectedBalanceBreakdown}
+          />
+        )}
         <StatCard
-          index={3}
+          index={hasPlan ? 4 : 3}
           label="פער עלות הוראה"
           rawValue={totals.ministryGap}
           format={formatCurrency}

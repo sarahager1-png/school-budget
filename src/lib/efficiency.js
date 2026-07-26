@@ -1,4 +1,4 @@
-import { calculateClassBudget, getClassType, annualAmount } from './calculations.js';
+import { calculateClassBudget, getClassType, annualAmount, formatCurrency } from './calculations.js';
 import { kindMap } from './categoryKinds.js';
 import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 
@@ -137,7 +137,9 @@ export function normalizeGrade(raw) {
   return null;
 }
 
-export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
+// extraMonthlyHours — השעות הבודדות שמוקצות לכיתה המחוברת. ברירת המחדל היא
+// ההקצאה הרשתית (12), ואפשר להעלות אותה במסך הייעול כשחיבור מסוים דורש יותר.
+export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), extraMonthlyHours = DUAL_AGE_EXTRA_MONTHLY_HOURS) {
   // רק כיתה שהיא היחידה בשכבה שלה — אם יש עוד כיתה באותה שכבה, צירוף
   // רגיל (findMerges) הוא האפשרות הזולה יותר ועדיפה
   const byGrade = new Map();
@@ -153,7 +155,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
     if (list.length === 1) singles.set(idx, list[0]);
   }
 
-  const joinExtraCost = DUAL_AGE_EXTRA_MONTHLY_HOURS * constants.actualHourlyRate * PAYMENT_MONTHS;
+  const joinExtraCost = extraMonthlyHours * constants.actualHourlyRate * PAYMENT_MONTHS;
 
   const candidates = [];
   for (const idx of [...singles.keys()].sort((a, b) => a - b)) {
@@ -184,6 +186,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set()) {
         members: [a, partner],
         merged,
         createsStandard,
+        extraMonthlyHours,
         joinExtraCost,
         incomeBefore: budgetA.totalIncome + budgetB.totalIncome,
         incomeAfter: mergedBudget.totalIncome,
@@ -442,4 +445,62 @@ export function topExpensesReport(expenses, categories, count = 3) {
     .sort((a, b) => b.annual - a.annual)
     .slice(0, count);
   return { rows, total: rows.reduce((s, r) => s + r.annual, 0) };
+}
+
+// ─── רשימת ההצעות המדידות ─────────────────────────────────────
+// מקור אמת אחד ל"מה ההצעות ובכמה הן שוות" — משמש את דף הבית, את הסיכום
+// ואת המסמך החתום, כדי שהמפתחות (key) והסכומים יהיו זהים בכל מסך.
+// ההצעות כאן מחושבות בערכי ברירת המחדל; מסך הייעול מאפשר לכוונן אותן.
+export function buildSuggestionRows(classes, expenses, expenseCategories, constants) {
+  const rows = [];
+  const merges = findMerges(classes, constants);
+  const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
+  for (const m of merges) {
+    rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
+  }
+  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
+  const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
+  for (const m of dualMerges) {
+    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות)`, saving: m.delta });
+  }
+  const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
+  for (const r of closeClassReport(classes, constants, allMergedIds)) {
+    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving });
+  }
+  const hoursR = hoursCutReport(classes, constants, 1);
+  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });
+  const topR = topExpensesReport(expenses, expenseCategories);
+  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ 10% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * 0.1) });
+  const shabbat = jointShabbatReport(classes, constants);
+  if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
+  const transport = transportParentsReport(expenses);
+  if (transport.total > 0) rows.push({ key: 'transport-parents', label: 'הסעות בגביית הורים — הסרת העלות מהתקציב', saving: transport.total });
+  const caharon = caharonReport(classes, constants);
+  if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
+  const tuition = tuitionReport(classes);
+  if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
+  const supplement = tuitionSupplementReport(classes);
+  if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${formatCurrency(supplement.amountPerStudent)} × ${supplement.collectionRatePct}% × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
+  const parents = parentContributionReport(classes);
+  if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
+  const partaniyot = partaniyotReport(classes, constants);
+  if (partaniyot.saving > 0) rows.push({ key: 'partaniyot', label: `שעות פרטניות מהמשרה כשעה פרונטלית (${partaniyot.hoursPerClass} ש׳ × ${partaniyot.classCount} כיתות)`, saving: partaniyot.saving });
+  const principal = principalTeachingReport(classes, constants);
+  if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.weeklyHours} ש׳ שבועיות)`, saving: principal.saving });
+  const events = eventsCapReport(expenses, expenseCategories, classes);
+  if (events.excess > 0) rows.push({ key: 'events-cap', label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
+  const th = thresholdReport(classes, constants, 4, allMergedIds);
+  for (const r of th.rows) {
+    rows.push({ key: `threshold:${r.cls.id}`, label: `${r.cls.name}: עוד ${r.gap} תלמידים ל${r.nextType === 'full' ? 'תקן מלא' : 'חצי תקן'}`, saving: r.gain });
+  }
+  return rows.sort((a, b) => b.saving - a.saving);
+}
+
+// selectedKeys === null פירושו "עוד לא נשמרה בחירה" — ברירת המחדל היא שהכל נבחר
+export function selectedSuggestions(rows, selectedKeys) {
+  return selectedKeys == null ? rows : rows.filter(r => selectedKeys.has(r.key));
+}
+
+export function sumSavings(rows) {
+  return rows.reduce((s, r) => s + r.saving, 0);
 }

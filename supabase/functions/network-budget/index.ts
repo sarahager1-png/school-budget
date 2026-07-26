@@ -2,17 +2,31 @@
 // chabad-budget-hub.surge.sh. מאובטח בקוד גישה (HUB_ACCESS_CODE) ומחזיק את
 // מפתחות השירות בסוד SCHOOL_KEYS = {"<ref>":"<service key>", ...}.
 // החישוב משקף אחד-לאחד את src/lib/calculations.js (שעות חודשיות × תעריף × 12).
+//
+// פריסה (הפונקציה יושבת בפרויקט של אשקלון; הפורטל קורא בלי JWT):
+//   set SUPABASE_ACCESS_TOKEN=sbp_...
+//   npx supabase functions deploy network-budget --project-ref ogkwvrerolofujhydhsl --no-verify-jwt
+// בדיקה לפני פריסה:  npx deno check supabase/functions/network-budget/index.ts
+//                    node scripts/verify-engine-parity.mjs
 
-const SCHOOLS = [
-  { slug: 'raanana', name: 'בית חינוך רעננה - בנים', ref: 'jhtajcejwxfcksvjzkzx', url: 'https://chabad-raanana-budget.surge.sh' },
+import {
+  buildSuggestionRows, selectedSuggestions, sumSavings, normalizeSuggestionKey,
+} from './budget-engine.js';
+
+// disableClubs — בתי ספר שבהם תוספת החוגים הרשתית כבויה (VITE_DISABLE_CLUBS=1
+// ב-.env של אותו בית ספר). חייב להישאר תואם, אחרת המספרים כאן לא יתאימו למערכת.
+type School = { slug: string; name: string; ref: string; url: string; disableClubs?: boolean };
+
+const SCHOOLS: School[] = [
+  { slug: 'raanana', name: 'בית חינוך רעננה - בנים', ref: 'jhtajcejwxfcksvjzkzx', url: 'https://chabad-raanana-budget.surge.sh', disableClubs: true },
   { slug: 'mazkeret', name: 'שלהבות מזכרת בתיה', ref: 'njsanabfbmnaqvwraqdh', url: 'https://chabad-mazkeret-budget.surge.sh' },
   { slug: 'ashkelon', name: 'שלהבות אשקלון', ref: 'ogkwvrerolofujhydhsl', url: 'https://chabad-ashkelon-budget.surge.sh' },
   { slug: 'or-akiva', name: 'שלהבות אור עקיבא', ref: 'fqzyouwodkorgrhoulnf', url: 'https://chabad-or-akiva-budget.surge.sh' },
-  { slug: 'jerusalem', name: 'שלהבות ירושלים', ref: 'yzzautohkioeikjoufpb', url: 'https://chabad-jerusalem-budget.surge.sh' },
+  { slug: 'jerusalem', name: 'שלהבות ירושלים', ref: 'yzzautohkioeikjoufpb', url: 'https://chabad-jerusalem-budget.surge.sh', disableClubs: true },
   { slug: 'kiryat-bialik', name: 'שלהבות קרית ביאליק', ref: 'qecoccsdkmunowyjzzoc', url: 'https://chabad-kiryat-bialik-budget.surge.sh' },
   { slug: 'ganei-tikva', name: 'שלהבות גני תקוה', ref: 'spvcflsbjleayhzsknph', url: 'https://chabad-ganei-tikva-budget.surge.sh' },
   { slug: 'ramat-yishai', name: 'שלהבות רמת ישי', ref: 'bvxoywkqefpnyxvjydpz', url: 'https://chabad-ramat-yishai-budget.surge.sh' },
-  { slug: 'afula', name: 'בית חינוך עפולה', ref: 'inwiirkalzcbpnxngqpi', url: 'https://chabad-afula-budget.surge.sh' },
+  { slug: 'afula', name: 'בית חינוך עפולה', ref: 'inwiirkalzcbpnxngqpi', url: 'https://chabad-afula-budget.surge.sh', disableClubs: true },
   { slug: 'herzliya', name: 'שלהבות הרצליה', ref: 'qawlduxrovrodmxpehvv', url: 'https://chabad-herzliya-budget.surge.sh' },
   { slug: 'haifa', name: 'שלהבות חיפה', ref: 'ygmwcdxthcmvrdrbtwuy', url: 'https://chabad-haifa-budget.surge.sh' },
   { slug: 'raanana-girls', name: 'בית חינוך רעננה - בנות', ref: 'dqxwsovaryixondmhgyz', url: 'https://chabad-raanana-girls-budget.surge.sh' },
@@ -32,7 +46,7 @@ const json = (body: unknown, status = 200) =>
 const annualAmount = (e: { amount: number; period: string }) =>
   e.period === 'monthly' ? Number(e.amount) * 12 : Number(e.amount);
 
-async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
+async function fetchSchool(s: School, key: string) {
   const h = { apikey: key, Authorization: `Bearer ${key}` };
   const base = `https://${s.ref}.supabase.co/rest/v1`;
   const get = async (path: string) => {
@@ -49,12 +63,21 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   if (!year) return { slug: s.slug, name: s.name, url: s.url, empty: true };
 
   const [classes, income, expenses, cats, constRows] = await Promise.all([
-    get(`classes?budget_year_id=eq.${year.id}&select=name,student_count,extra_hours`),
+    get(`classes?budget_year_id=eq.${year.id}&select=id,name,grade_level,student_count,extra_hours`),
     get(`income_sources?budget_year_id=eq.${year.id}&select=name,amount`),
-    get(`expenses?budget_year_id=eq.${year.id}&select=name,amount,period,category_id`),
+    get(`expenses?budget_year_id=eq.${year.id}&select=id,name,amount,period,category_id`),
     get('expense_categories?select=id,name,kind'),
     get(`financial_constants?budget_year_id=eq.${year.id}&select=*`),
   ]);
+
+  // הבחירה של המנהלת בהצעות הייעול. הטבלה לא קיימת בכל המוסדות (מיגרציה v16/v18)
+  // ואז נשארים בברירת המחדל של המערכת — כל ההצעות נחשבות נבחרות.
+  let selectedKeys: Set<string> | null = null;
+  try {
+    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys&limit=1`);
+    const keys = rows?.[0]?.selected_suggestion_keys;
+    if (Array.isArray(keys)) selectedKeys = new Set(keys.map(normalizeSuggestionKey));
+  } catch { /* טבלה שעוד לא הוקמה — ברירת מחדל */ }
   const c = constRows[0] ?? {};
   const mode = schoolRows[0]?.mode === 'simple' ? 'simple' : 'full';
   const students = classes.reduce((t: number, x: { student_count: number }) => t + x.student_count, 0);
@@ -100,7 +123,7 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
     const hours = type === 'full' ? fullH : type === 'half' ? halfH : 0;
     return { name: cl.name, students: cl.student_count, type, ministryAnnual: hours * rate * PAYMENT_MONTHS };
   });
-  const ministry = classRows.reduce((t, x) => t + x.ministryAnnual, 0);
+  const ministry = classRows.reduce((t: number, x: { ministryAnnual: number }) => t + x.ministryAnnual, 0);
   const grantIncome = students * grant;
   // שכר לימוד ותל"ן — 80% גבייה ריאלית (TUITION_COLLECTION_RATE בקוד הראשי)
   const studentIncome = students * perStudent * 0.8;
@@ -109,20 +132,68 @@ async function fetchSchool(s: (typeof SCHOOLS)[number], key: string) {
   // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
   // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
   const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
-  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ר' CLUBS_MONTHLY_EXPENSE_PER_CLASS בקוד הראשי)
-  const clubsExpense = classes.length * 2000 * 10;
+  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ר' CLUBS_MONTHLY_EXPENSE_PER_CLASS בקוד הראשי),
+  // כבוי בבתי ספר שסומנו disableClubs — בדיוק כמו VITE_DISABLE_CLUBS במערכת שלהם
+  const clubsMonthly = s.disableClubs ? 0 : 2000;
+  const clubsExpense = classes.length * clubsMonthly * 10;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
   const totalIncome = ministry + grantIncome + studentIncome + talanIncome + additional;
   const totalExpenses = teaching + counselingCost + clubsExpense + studentExp + profDevExp + manualTotal;
+  const balance = totalIncome - totalExpenses;
+
+  // מצב התקציב לאחר יישום הצעות הייעול שנבחרו — אותו חישוב בדיוק שרץ במערכת
+  // של בית הספר (budget-engine.js הוא העתק נאמן של src/lib/efficiency.js)
+  const engineConstants = {
+    counselingHoursPerClass: 2,
+    clubsMonthlyExpensePerClass: clubsMonthly,
+    fullClassStudentThreshold: fullTh,
+    halfClassStudentThreshold: halfTh,
+    fullClassMinistryHours: fullH,
+    halfClassMinistryHours: halfH,
+    ministryHourlyRate: rate,
+    actualWeeklyHours: actH,
+    actualHourlyRate: actRate,
+    incomePerStudent: perStudent,
+    incomePerStudentTalan: talan,
+    expensePerStudent: expStudent,
+    professionalDevPerClass: profDev,
+    incomePerStudentCaharon: Number(c.income_per_student_caharon ?? 0),
+    expensePerStudentCaharon: Number(c.expense_per_student_caharon ?? 0),
+    ministryGrantPerStudent: grant,
+  };
+  const engineClasses = classes.map((cl: { id: string; name: string; grade_level: string | null; student_count: number; extra_hours: number }) => ({
+    id: cl.id, name: cl.name, gradeLevel: cl.grade_level,
+    studentCount: cl.student_count, extraHours: Number(cl.extra_hours ?? 0),
+  }));
+  const engineExpenses = expenses.map((e: { id: string; name: string; amount: number; period: string; category_id: string }) => ({
+    id: e.id, name: e.name, amount: Number(e.amount), period: e.period, categoryId: e.category_id,
+  }));
+  let efficiency: unknown = null;
+  try {
+    const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
+    const chosen = selectedSuggestions(allRows, selectedKeys);
+    const total = sumSavings(chosen);
+    efficiency = {
+      total,
+      count: chosen.length,
+      offered: allRows.length,
+      saved: selectedKeys != null,
+      projectedBalance: balance + total,
+      rows: chosen.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+    };
+  } catch (e) {
+    console.error(`efficiency ${s.slug}: ${e}`);
+  }
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
     students, classCount: classes.length,
     ofek: c.ofek_salary ?? null,
+    efficiency,
     income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
     expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
-    balance: totalIncome - totalExpenses,
+    balance,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,
   };
