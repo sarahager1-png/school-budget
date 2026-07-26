@@ -73,8 +73,8 @@ function DualHoursStepper({ added, onChange, appliesToAll = false }) {
       </div>
       <p className="text-xs text-gray-400 mt-1.5">
         {added > 0
-          ? `סה״כ ${total} שעות לכיתה המחוברת — ${DUAL_AGE_EXTRA_MONTHLY_HOURS} מההקצאה הרשתית + ${added} שהוספת. החיסכון למטה כבר מעודכן.`
-          : `כרגע ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות — ההקצאה הרשתית. אפשר להוסיף מעליה אם החיבור דורש יותר.`}
+          ? `${DUAL_AGE_EXTRA_MONTHLY_HOURS} מההקצאה הרשתית + ${added} שהוספת = ${total} שעות, ומעליהן השעות הבודדות שהוזנו בכיתות שהתחברו. החיסכון למטה כבר מעודכן.`
+          : `${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות הן ההקצאה הרשתית, ומעליהן נספרות השעות הבודדות שהוזנו בכיתות שהתחברו. אפשר להוסיף עוד אם החיבור דורש.`}
       </p>
     </div>
   );
@@ -407,13 +407,20 @@ export default function EfficiencyPage() {
           title={m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
             : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${m.extraMonthlyHours} שעות שבועיות (שעות בודדות) לכיתה המחוברת`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם ${m.extraMonthlyHours} שעות בודדות בחודש לכיתה המחוברת${m.enteredHours > 0 ? ` — ${m.allocatedHours} הקצאה רשתית ו-${m.enteredHours} שהוזנו בכיתות עצמן` : ''}`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
             { label: 'הכנסות אחרי החיבור', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
-            { label: `תוספת ${m.extraMonthlyHours} שעות שבועיות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
+            { label: `הקצאה רשתית — ${m.allocatedHours} שעות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.allocatedHours * constants.actualHourlyRate * 12) },
+            ...(m.enteredHours > 0
+              ? [{ label: `שעות בודדות שהוזנו בכיתות — ${m.enteredHours} בחודש`, value: formatCurrency(m.enteredHours * constants.actualHourlyRate * 12) }]
+              : []),
+            ...(m.addedHours > 0
+              ? [{ label: `תוספת שהוספת — ${m.addedHours} שעות`, value: formatCurrency(m.addedHours * constants.actualHourlyRate * 12) }]
+              : []),
+            { label: `סה״כ תוספת שעות לכיתה המחוברת (${m.extraMonthlyHours} בחודש)`, value: formatCurrency(m.joinExtraCost), tone: 'red' },
             { label: 'עלות אחרי החיבור — כיתה אחת + התוספת', value: formatCurrency(m.costAfter), tone: 'green' },
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}

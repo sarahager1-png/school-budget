@@ -206,7 +206,6 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     if (list.length === 1) singles.set(idx, list[0]);
   }
 
-  const joinExtraCost = extraMonthlyHours * constants.actualHourlyRate * PAYMENT_MONTHS;
   const candidates = [];
   for (const idx of [...singles.keys()].sort((a, b) => a - b)) {
     const partner = singles.get(idx + 1);
@@ -220,13 +219,17 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     const merged = mergedClass([a, partner]);
     const createsStandard = (typeA === 'none' || typeB === 'none')
       && getClassType(merged.studentCount, constants) !== 'none';
+    // הכיתה המחוברת נושאת גם את השעות הבודדות שהוזנו בכיתות שהתחברו
+    const enteredHours = Number(merged.extraHours || 0);
+    const totalExtraHours = extraMonthlyHours + enteredHours;
+    const joinExtraCost = totalExtraHours * constants.actualHourlyRate * PAYMENT_MONTHS;
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
     const mergedBudget = calculateClassBudget(merged, constants);
     const costAfter = mergedBudget.totalExpenses + joinExtraCost;
     const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
     if (delta >= 1000) {
-      candidates.push({ lowIdx: idx, members: [a, partner], merged, createsStandard, extraMonthlyHours, delta });
+      candidates.push({ lowIdx: idx, members: [a, partner], merged, createsStandard, enteredHours, extraMonthlyHours: totalExtraHours, delta });
     }
   }
 
