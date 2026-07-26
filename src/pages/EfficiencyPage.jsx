@@ -49,6 +49,37 @@ function Stepper({ value, onChange, min, max, unit, step = 1, decLabel = 'הפח
   );
 }
 
+// שעות בודדות שמוסיפים לכיתה מחוברת מעבר להקצאה הרשתית (12).
+// הבורר סופר את התוספת עצמה — 0 = רק ההקצאה הרשתית.
+const MAX_DUAL_ADDED_HOURS = 24;
+
+function DualHoursStepper({ added, onChange, appliesToAll = false }) {
+  const total = DUAL_AGE_EXTRA_MONTHLY_HOURS + added;
+  return (
+    <div className="bg-purple-50/60 rounded-xl p-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <span className="text-sm font-medium text-gray-700">
+          שעות בודדות להוסיף מעבר ל-{DUAL_AGE_EXTRA_MONTHLY_HOURS}{appliesToAll ? ' (לכל החיבורים)' : ''}
+        </span>
+        <Stepper
+          value={added}
+          onChange={onChange}
+          min={0}
+          max={MAX_DUAL_ADDED_HOURS}
+          unit="שעות"
+          incLabel="הוספת שעה"
+          decLabel="הפחתת שעה"
+        />
+      </div>
+      <p className="text-xs text-gray-400 mt-1.5">
+        {added > 0
+          ? `סה״כ ${total} שעות לכיתה המחוברת — ${DUAL_AGE_EXTRA_MONTHLY_HOURS} מההקצאה הרשתית + ${added} שהוספת. החיסכון למטה כבר מעודכן.`
+          : `כרגע ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות — ההקצאה הרשתית. אפשר להוסיף מעליה אם החיבור דורש יותר.`}
+      </p>
+    </div>
+  );
+}
+
 const TONES = {
   purple: 'bg-purple-100 text-purple-600',
   teal: 'bg-teal-100 text-teal-600',
@@ -137,6 +168,8 @@ export default function EfficiencyPage() {
   const { classes, incomeSources, expenses, expenseCategories, constants, navigate, user, currentYear, notify, saveFailed } = useApp();
 
   const [hoursCut, setHoursCut] = useState(1);
+  // שעות בודדות שמוסיפים לכיתה מחוברת מעבר להקצאה הרשתית (0 = רק ההקצאה)
+  const [dualAddedHours, setDualAddedHours] = useState(0);
   const [trimPct, setTrimPct] = useState(10);
   const [shabbatHours, setShabbatHours] = useState(DEFAULT_SHABBAT_WEEKLY_HOURS);
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
@@ -149,7 +182,7 @@ export default function EfficiencyPage() {
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
-    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
+    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + dualAddedHours);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     return {
@@ -170,7 +203,7 @@ export default function EfficiencyPage() {
       tuition: tuitionReport(classes, tuitionAmount, tuitionRate),
       supplement: tuitionSupplementReport(classes, supplementAmount),
     };
-  }, [classes, expenses, expenseCategories, constants, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
+  }, [classes, expenses, expenseCategories, constants, dualAddedHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
@@ -374,21 +407,49 @@ export default function EfficiencyPage() {
           title={m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
             : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות (שעות בודדות) לכיתה המחוברת`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם תוספת של ${m.extraMonthlyHours} שעות שבועיות (שעות בודדות) לכיתה המחוברת`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
             { label: 'הכנסות אחרי החיבור', value: formatCurrency(m.incomeAfter), tone: m.incomeAfter < m.incomeBefore ? 'red' : undefined },
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
-            { label: `תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
+            { label: `תוספת ${m.extraMonthlyHours} שעות שבועיות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.joinExtraCost) },
             { label: 'עלות אחרי החיבור — כיתה אחת + התוספת', value: formatCurrency(m.costAfter), tone: 'green' },
             { label: 'חיסכון נטו בשנה', value: formatCurrencyFull(m.delta), tone: 'green' },
           ]}
           action={{ label: 'למסך הכיתות', onClick: () => navigate('classes') }}
           selected={isSelected(`dual:${m.merged.id}`)}
           onToggle={() => toggleKey(`dual:${m.merged.id}`)}
-        />
+        >
+          <DualHoursStepper
+            added={dualAddedHours}
+            onChange={setDualAddedHours}
+            appliesToAll={dualMerges.length > 1}
+          />
+        </SuggestionCard>
       ))}
+
+      {/* ההקצאה הועלתה עד שאף חיבור כבר לא חוסך — משאירים את הבורר כדי שאפשר יהיה לחזור */}
+      {dualMerges.length === 0 && dualAddedHours > 0 && (
+        <div className="card p-5 spring-enter">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${TONES.purple}`}>
+              <Layers size={21} />
+            </div>
+            <div className="flex-1 min-w-40">
+              <h3 className="font-bold text-gray-800 leading-snug">חיבור כיתות — לא חוסך בהקצאה הזו</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                עם {DUAL_AGE_EXTRA_MONTHLY_HOURS + dualAddedHours} שעות בודדות לכיתה המחוברת
+                ({DUAL_AGE_EXTRA_MONTHLY_HOURS} + {dualAddedHours} שהוספת), אף חיבור אינו חוסך יותר מ-1,000 ₪ בשנה.
+                אפשר להוריד את התוספת וההצעות יחזרו.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <DualHoursStepper added={dualAddedHours} onChange={setDualAddedHours} />
+          </div>
+        </div>
+      )}
 
       {/* Hours cut */}
       {hours.maxCut > 0 && (
