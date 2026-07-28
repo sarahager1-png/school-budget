@@ -129,13 +129,25 @@ async function exportSchool(school) {
     { 'שורה': 'סה"כ חיסכון מהצעות שנבחרו', 'מצב קיים': '', 'אחרי ייעול': suggestionsTotal },
   ];
 
-  // ── גיליון 2: פירוט הכנסות ──
+  // ── גיליון 2: פירוט לפי כיתה ──
+  const CLASS_TYPE_LABEL = { full: 'תקן מלא', half: 'חצי תקן', none: 'ללא תקן' };
+  const classRows = (totals.classBreakdowns ?? []).map(c => ({
+    'כיתה': c.name,
+    'שכבה': c.gradeLevel ?? '',
+    'תלמידים': c.studentCount,
+    'סוג': CLASS_TYPE_LABEL[c.budget.type] ?? c.budget.type,
+    'הכנסות': c.budget.totalIncome,
+    'הוצאות': c.budget.totalExpenses,
+    'מאזן': c.budget.balance,
+  }));
+
+  // ── גיליון 3: פירוט הכנסות ──
   const incomeRows = incomeSources.map(s => ({ 'מקור': s.name, 'סכום שנתי': s.amount }));
 
-  // ── גיליון 3: פירוט הוצאות לפי קטגוריה ──
+  // ── גיליון 4: פירוט הוצאות לפי קטגוריה ──
   const expenseRows = catRows.map(c => ({ 'קטגוריה': c.name, 'סכום שנתי': c.value }));
 
-  // ── גיליון 4: כל הצעות הייעול — מסומן אילו נבחרו ──
+  // ── גיליון 5: כל הצעות הייעול — מסומן אילו נבחרו ──
   const suggestionRows = allRows
     .slice()
     .sort((a, b) => b.saving - a.saving)
@@ -152,6 +164,7 @@ async function exportSchool(school) {
     XLSX.utils.book_append_sheet(wb, ws, name);
   };
   addSheet(summaryRows, 'סיכום', [{ wch: 30 }, { wch: 16 }, { wch: 16 }]);
+  addSheet(classRows, 'לפי כיתה', [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }]);
   addSheet(incomeRows, 'הכנסות', [{ wch: 28 }, { wch: 14 }]);
   addSheet(expenseRows, 'הוצאות', [{ wch: 28 }, { wch: 14 }]);
   addSheet(suggestionRows, 'הצעות ייעול', [{ wch: 60 }, { wch: 14 }, { wch: 30 }]);
