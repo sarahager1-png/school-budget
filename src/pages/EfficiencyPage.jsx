@@ -20,6 +20,7 @@ import {
 } from '../lib/efficiency.js';
 import { useBudgetClosed } from '../lib/useBudgetClosed.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
 
 // חודשי גבייה בפועל של שכר לימוד (כמו CLUBS_MONTHS) — ההורים חושבים ומדברים
@@ -227,6 +228,7 @@ export default function EfficiencyPage() {
   // נשמר ב-budget_approvals — אותה בחירה בדיוק שמופיעה בסיכום ואישור ובמסמך.
   const [selectedKeys, setSelectedKeys] = useState(null);
   const [savingSelection, setSavingSelection] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
 
   const allKeys = useMemo(() => [
     ...merges.map(m => `merge:${m.merged.id}`),
@@ -434,12 +436,22 @@ export default function EfficiencyPage() {
           </p>
         </div>
         {!closed && (
-          <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
+          <button type="button" onClick={() => setConfirmSave(true)} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
             <Save size={14} />
             שמירת הבחירה
           </button>
         )}
       </div>
+
+      {confirmSave && (
+        <ConfirmDialog
+          title="נעילת התקציב"
+          message="זו פעולה סופית — מרגע השמירה התקציב ננעל ולא ניתן לשנות עוד כיתות, הכנסות, הוצאות או הגדרות, גם אם רק בודקים הצעות. אם עדיין בודקים אפשרויות ולא סוגרים את השנה בפועל, אין צורך ללחוץ כאן — הסימון ✓ על הכרטיסים מספיק כדי לראות את ההשפעה על המספרים."
+          confirmLabel="נעילה סופית ✓"
+          onConfirm={saveSelection}
+          onClose={() => setConfirmSave(false)}
+        />
+      )}
 
       {/* תקציב נעול — פתיחה מחדש שמורה לאדמין הרשת בלבד */}
       {closed && (
