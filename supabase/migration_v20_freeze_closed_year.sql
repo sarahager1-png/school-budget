@@ -71,6 +71,11 @@ begin
   end loop;
 end $$;
 
--- פתיחה מחדש (רק במקרה של טעות אמיתית, מהדשבורד):
---   update public.budget_approvals set summary = null where budget_year_id = '<id>';
--- מרגע שה-summary נוקה השנה חוזרת להיות פתוחה, והחתימה הבאה תקפיא מחדש.
+-- פתיחה מחדש (רק במקרה של טעות אמיתית, מהדשבורד) — עדיף דרך כפתור "פתיחה
+-- מחדש לעריכה" באפליקציה (useBudgetClosed.reopen), ששומר את draftParams.
+-- אם חייבים SQL ידני, לשמור את הכוונון ולא לאפס הכל:
+--   update public.budget_approvals
+--   set summary = case when summary ? 'draftParams'
+--     then jsonb_build_object('draftParams', summary->'draftParams') else null end
+--   where budget_year_id = '<id>';
+-- מרגע שה-summary נוקה מ-suggestions השנה חוזרת להיות פתוחה, והחתימה הבאה תקפיא מחדש.

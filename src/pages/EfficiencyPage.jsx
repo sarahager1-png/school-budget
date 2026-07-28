@@ -363,22 +363,28 @@ export default function EfficiencyPage() {
     const now = new Date().toISOString();
     // אותם ערכים מכוונים בדיוק כמו הכרטיסים למעלה — אחרת הסנפשוט הקפוא
     // (המוצג בסיכום ואישור ובמסמך) חוזר לברירות המחדל הרשתיות ומתעלם מהכוונון
-    const rows = buildSuggestionRows(classes, expenses, expenseCategories, constants, {
+    const draftParams = {
       dualAddedHours, hoursCut, trimPct, shabbatHours, parentAmount, partaniyotHours,
       principalHours, tuitionAmount: tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate, supplementAmount,
-    });
+    };
+    const rows = buildSuggestionRows(classes, expenses, expenseCategories, constants, draftParams);
     const keys = selectedKeys == null ? allKeys : [...selectedKeys];
     const { data, error } = await supabase.from('budget_approvals').upsert({
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
       selected_suggestion_keys: keys,
-      summary: buildPlanSnapshot({
-        rows,
-        selectedKeys: new Set(keys),
-        totals,
-        classes,
-        closedAt: now,
-      }),
+      // draftParams נשמר גם בתוך הסנפשוט הקפוא — כדי שפתיחה מחדש (useBudgetClosed.reopen)
+      // תוכל להחזיר בדיוק את אותו כוונון, במקום לאבד אותו ולחזור לברירות מחדל
+      summary: {
+        ...buildPlanSnapshot({
+          rows,
+          selectedKeys: new Set(keys),
+          totals,
+          classes,
+          closedAt: now,
+        }),
+        draftParams,
+      },
       updated_at: now,
     }, { onConflict: 'school_id,budget_year_id' }).select().single();
     setSavingSelection(false);

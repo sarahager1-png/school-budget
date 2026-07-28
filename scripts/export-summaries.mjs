@@ -35,7 +35,7 @@ const outIdx = args.indexOf('--out');
 const outDir = outIdx !== -1
   ? args[outIdx + 1]
   : 'C:\\Users\\PC\\OneDrive\\Desktop\\סיכומי תקציב והצעות ייעול';
-const slugs = args.filter((a, i) => a !== '--out' && i !== outIdx + 1);
+const slugs = args.filter((a, i) => a !== '--out' && (outIdx === -1 || i !== outIdx + 1));
 const targets = slugs.length ? config.schools.filter(s => slugs.includes(s.slug)) : config.schools;
 
 fs.mkdirSync(outDir, { recursive: true });

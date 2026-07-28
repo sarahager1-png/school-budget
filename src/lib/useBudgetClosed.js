@@ -29,16 +29,18 @@ export function useBudgetClosed(schoolId, budgetYearId) {
     return () => { cancelled = true; };
   }, [schoolId, budgetYearId]);
 
-  // פתיחה מחדש — לאדמין הרשת בלבד. ניקוי הסנפשוט מחזיר את השנה למצב פתוח:
-  // הבחירה ניתנת לשינוי שוב, מסך הכיתות נפתח, והטריגר במסד מפסיק לחסום.
-  // השמירה הבאה תקפיא מחדש עם המספרים המעודכנים.
+  // פתיחה מחדש — לאדמין הרשת בלבד. מנקה את שדות הסנפשוט הקפוא (suggestions/
+  // total/classes וכו') כדי שהשנה תחזור למצב פתוח לעריכה — אבל שומרת את
+  // draftParams (הכוונון שנשמר בתוך אותו סנפשוט) כדי שמסך הייעול לא יחזור
+  // לברירות המחדל הרשתיות סתם כי פתחנו מחדש.
   const reopen = async () => {
+    const reopenedSummary = state.summary?.draftParams ? { draftParams: state.summary.draftParams } : null;
     const { error } = await supabase.from('budget_approvals')
-      .update({ summary: null, updated_at: new Date().toISOString() })
+      .update({ summary: reopenedSummary, updated_at: new Date().toISOString() })
       .eq('school_id', schoolId)
       .eq('budget_year_id', budgetYearId);
     if (error) return { error };
-    setState(s => ({ ...s, closed: false, summary: null }));
+    setState(s => ({ ...s, closed: false, summary: reopenedSummary }));
     return {};
   };
 
