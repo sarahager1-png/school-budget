@@ -182,6 +182,10 @@ async function fetchSchool(s: School, key: string) {
   // תקציב נעול — מגישים את הסנפשוט כמות שהוא, בלי לחשב מחדש
   const frozenPlan = planFromSnapshot(frozenSummary);
   const frozenTotals = totalsFromSnapshot(frozenSummary);
+  // כוונון ההצעות (hoursCut/trimPct/וכו') שהמנהלת קבעה במסך הייעול של בית
+  // הספר — נשמר על אותה שורת budget_approvals. בלי זה buildSuggestionRows
+  // נופל תמיד לברירות המחדל של הפונקציה ומתעלם מהכוונון בפועל.
+  const draftParams = (frozenSummary as { draftParams?: Record<string, number> } | null)?.draftParams ?? {};
 
   let efficiency: unknown = null;
   if (frozenPlan) {
@@ -190,7 +194,7 @@ async function fetchSchool(s: School, key: string) {
     // הסכומים נשארים כפי שנשמרו, רק תיאור המבנה מושלם.
     const liveByKey = new Map<string, { classDelta?: number; kind?: string; names?: string[] }>();
     try {
-      for (const r of buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants)) {
+      for (const r of buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants, draftParams)) {
         liveByKey.set(normalizeSuggestionKey(r.key), r);
       }
     } catch { /* אם החישוב החי נכשל — נשארים עם מה שיש בסנפשוט */ }
@@ -223,7 +227,7 @@ async function fetchSchool(s: School, key: string) {
     };
   } else {
     try {
-      const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
+      const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants, draftParams);
       const chosen = selectedSuggestions(allRows, selectedKeys);
       const total = sumSavings(chosen);
       const chosenKeys = new Set(chosen.map((r: { key: string }) => r.key));
