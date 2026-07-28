@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateClassBudget, formatCurrency } from '../lib/calculations.js';
-import { CLASS_TYPE, MANAGERS } from '../data/constants.js';
+import { CLASS_TYPE, INCOME_EXPENSE_EDITORS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -98,7 +98,7 @@ export function IncomeModal({ src, totalStudents = 0, onSave, onClose }) {
 
 export default function IncomePage() {
   const { classes, incomeSources, addIncomeSource, updateIncomeSource, deleteIncomeSource, constants, isSimpleMode, user } = useApp();
-  const canEdit = MANAGERS.includes(user?.role);
+  const canEdit = INCOME_EXPENSE_EDITORS.includes(user?.role);
   const [modal, setModal] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 

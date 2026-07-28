@@ -6,8 +6,9 @@ export const PAYMENT_MONTHS = 12;
 // ofekSalary === null ⇒ טרם נענתה — המערכת שואלת בדף הבית עד שעונים.
 export const OFEK_RATES = { yes: 700, no: 450 };
 
-// מרכיב ייעוץ: 2 שעות ייעוץ לכיתה בחודש — עלות קבועה בתחשיב כל כיתה.
-// אין עמודת DB (ערך רשתי אחיד); מוחזק כברירת מחדל בקבועים ולא נשמר ב-DB.
+// מרכיב ייעוץ: שעות ייעוץ לכיתה בחודש — עלות בתחשיב כל כיתה.
+// נערך במסך ההגדרות ונשמר בעמודה counseling_hours_per_class (מיגרציה v21).
+// הערך כאן הוא ברירת המחדל למוסד שעוד לא קבע ערך משלו.
 export const COUNSELING_HOURS_PER_CLASS = 2;
 
 // אחוז גבייה ריאלי על תשלומי הורים — שכר לימוד ותל"ן נספרים ב-80%
@@ -44,11 +45,13 @@ export const DEFAULT_CONSTANTS = {
 export const CONSTANTS_LABELS = {
   fullClassStudentThreshold: { label: 'סף כיתה מלאה (תלמידים)', unit: 'תלמידים' },
   halfClassStudentThreshold: { label: 'סף כיתה חצי (תלמידים)', unit: 'תלמידים' },
-  fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות/חודש' },
-  halfClassMinistryHours: { label: 'שעות חצי תקן (משרד)', unit: 'שעות/חודש' },
-  ministryHourlyRate: { label: 'תעריף שעה — משרד החינוך', unit: '₪/שעה' },
-  actualWeeklyHours: { label: 'שעות בפועל לכיתה בחודש', unit: 'שעות/חודש' },
-  actualHourlyRate: { label: 'תעריף שעה — עלות בפועל', unit: '₪/שעה' },
+  fullClassMinistryHours: { label: 'שעות תקן מלא (משרד)', unit: 'שעות שבועיות' },
+  halfClassMinistryHours: { label: 'שעות חצי תקן (משרד)', unit: 'שעות שבועיות' },
+  ministryHourlyRate: { label: 'תעריף שעה שבועית — משרד החינוך (לחודש)', unit: '₪/חודש' },
+  actualWeeklyHours: { label: 'שעות בפועל לכיתה', unit: 'שעות שבועיות' },
+  actualHourlyRate: { label: 'תעריף שעה שבועית — עלות בפועל (לחודש)', unit: '₪/חודש' },
+  counselingHoursPerClass: { label: 'שעות ייעוץ לכיתה', unit: 'שעות שבועיות' },
+  clubsMonthlyExpensePerClass: { label: 'תוספת חוגים לכיתה בחודש (0 = ללא חוגים)', unit: '₪/כיתה/חודש' },
   incomePerStudent: { label: 'הכנסה לתלמיד בשנה', unit: '₪/תלמיד/שנה' },
   incomePerStudentTalan: { label: 'תל"ן — תשלום הורה לשנה', unit: '₪/תלמיד/שנה' },
   expensePerStudent: { label: 'הוצאה לתלמיד בשנה — כולל אירועים, ערבי הורים, פיתוח מקצועי ושכפולים', unit: '₪/תלמיד/שנה' },
@@ -101,6 +104,8 @@ export const ROLES = {
 
 export const ALL_ROLES = ['principal', 'admin', 'courier'];
 export const MANAGERS = ['principal', 'admin'];
+// שאר התקציב (הכנסות + הוצאות) — בעריכת השליח; המנהלת נשארת עם "מערכת ה-1200" (כיתות/הגדרות)
+export const INCOME_EXPENSE_EDITORS = ['courier', 'admin'];
 
 // simpleMode: false ⇒ הפריט מוסתר בבתי ספר במצב "ללא תקציב"
 // כל תפקיד רואה את כל המסכים (צפייה) — פעולות כתיבה מוגנות בכל דף בנפרד + ב-RLS
@@ -118,6 +123,7 @@ export const NAV_ITEMS = [
   { id: 'reports', label: 'דוחות', icon: 'BarChart2', roles: ALL_ROLES, simpleMode: true },
   { id: 'settings', label: 'הגדרות', icon: 'Settings', roles: ALL_ROLES, simpleMode: true },
   { id: 'help', label: 'עזרה', icon: 'HelpCircle', roles: ALL_ROLES, simpleMode: true },
+  { id: 'contact', label: 'יצירת קשר', icon: 'Mail', roles: ALL_ROLES, simpleMode: true },
 ];
 
 export const SCHOOL_MODES = {

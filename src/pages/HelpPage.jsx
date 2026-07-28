@@ -1,4 +1,4 @@
-import { useApp } from '../context/AppContext.jsx';
+﻿import { useApp } from '../context/AppContext.jsx';
 import { annualAmount, formatCurrency } from '../lib/calculations.js';
 import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 import {
@@ -143,11 +143,11 @@ export default function HelpPage() {
               <div className="space-y-1.5 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <span className="badge bg-teal-100 text-teal-700">תקן מלא</span>
-                  <span>{c.fullClassStudentThreshold}+ תלמידים — {c.fullClassMinistryHours} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
+                  <span>{c.fullClassStudentThreshold}+ תלמידים — {c.fullClassMinistryHours} שעות שבועיות × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="badge bg-gold-100 text-gold-700">חצי תקן</span>
-                  <span>{c.halfClassStudentThreshold}–{c.fullClassStudentThreshold - 1} תלמידים — {c.halfClassMinistryHours} שעות בחודש × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
+                  <span>{c.halfClassStudentThreshold}–{c.fullClassStudentThreshold - 1} תלמידים — {c.halfClassMinistryHours} שעות שבועיות × {c.ministryHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="badge bg-red-100 text-red-700">ללא תקן</span>
@@ -175,7 +175,7 @@ export default function HelpPage() {
 
             <RuleCard icon={CreditCard} color="border-coral-500" title="מבנה הוצאות">
               <ul className="space-y-1.5 text-sm text-gray-600">
-                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>עלות הוראה:</strong> {c.actualWeeklyHours} שעות בחודש × {c.actualHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים לכל כיתה</span></li>
+                <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>עלות הוראה:</strong> {c.actualWeeklyHours} שעות שבועיות × {c.actualHourlyRate} ₪ × {PAYMENT_MONTHS} חודשים לכל כיתה</span></li>
                 <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>הוצאות תלמיד:</strong> {formatCurrency(c.expensePerStudent)} לתלמיד לשנה — כולל אירועים, ערבי הורים, פיתוח מקצועי ושכפולים</span></li>
                 {c.professionalDevPerClass > 0 && (
                   <li className="flex items-start gap-2"><span className="text-coral-500 mt-0.5">•</span><span><strong>פיתוח מקצועי:</strong> {formatCurrency(c.professionalDevPerClass)} לכיתה לשנה</span></li>

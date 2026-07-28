@@ -10,7 +10,8 @@
 //                    node scripts/verify-engine-parity.mjs
 
 import {
-  buildSuggestionRows, selectedSuggestions, sumSavings, normalizeSuggestionKey,
+  buildSuggestionRows, selectedSuggestions, sumSavings, sumClassDelta, classChangeSummary,
+  normalizeSuggestionKey, planFromSnapshot, totalsFromSnapshot,
 } from './budget-engine.js';
 
 // disableClubs — בתי ספר שבהם תוספת החוגים הרשתית כבויה (VITE_DISABLE_CLUBS=1
@@ -72,11 +73,15 @@ async function fetchSchool(s: School, key: string) {
 
   // הבחירה של המנהלת בהצעות הייעול. הטבלה לא קיימת בכל המוסדות (מיגרציה v16/v18)
   // ואז נשארים בברירת המחדל של המערכת — כל ההצעות נחשבות נבחרות.
+  // summary מחזיק את הסנפשוט הנעול: מרגע שהתקציב נשמר, הפורטל מציג בדיוק את
+  // המספרים שנשמרו ולא מחשב מחדש — אחרת שינוי במנוע היה מזיז תקציב נעול.
   let selectedKeys: Set<string> | null = null;
+  let frozenSummary: unknown = null;
   try {
-    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys&limit=1`);
+    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary&limit=1`);
     const keys = rows?.[0]?.selected_suggestion_keys;
     if (Array.isArray(keys)) selectedKeys = new Set(keys.map(normalizeSuggestionKey));
+    frozenSummary = rows?.[0]?.summary ?? null;
   } catch { /* טבלה שעוד לא הוקמה — ברירת מחדל */ }
   const c = constRows[0] ?? {};
   const mode = schoolRows[0]?.mode === 'simple' ? 'simple' : 'full';
@@ -130,11 +135,16 @@ async function fetchSchool(s: School, key: string) {
   const talanIncome = students * talan * 0.8;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
   // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
-  // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
-  const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
-  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ר' CLUBS_MONTHLY_EXPENSE_PER_CLASS בקוד הראשי),
-  // כבוי בבתי ספר שסומנו disableClubs — בדיוק כמו VITE_DISABLE_CLUBS במערכת שלהם
-  const clubsMonthly = s.disableClubs ? 0 : 2000;
+  // מרכיב ייעוץ — שעות חודשיות לכל כיתה, נערך בהגדרות של בית הספר
+  // (counseling_hours_per_class, מיגרציה v21). ברירת מחדל 2 כמו קודם.
+  const counselingHours = Number(c.counseling_hours_per_class ?? 2);
+  const counselingCost = classes.length * counselingHours * actRate * PAYMENT_MONTHS;
+  // תוספת חוגים לכיתה לחודש × 10 חודשי פעילות. הערך נערך בהגדרות של בית הספר
+  // (clubs_monthly_expense_per_class, מיגרציה v21); כל עוד לא נקבע — נשמרת
+  // ההתנהגות הישנה לפי הדגל disableClubs, שמשקף את VITE_DISABLE_CLUBS.
+  const clubsMonthly = c.clubs_monthly_expense_per_class != null
+    ? Number(c.clubs_monthly_expense_per_class)
+    : (s.disableClubs ? 0 : 2000);
   const clubsExpense = classes.length * clubsMonthly * 10;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
@@ -145,7 +155,7 @@ async function fetchSchool(s: School, key: string) {
   // מצב התקציב לאחר יישום הצעות הייעול שנבחרו — אותו חישוב בדיוק שרץ במערכת
   // של בית הספר (budget-engine.js הוא העתק נאמן של src/lib/efficiency.js)
   const engineConstants = {
-    counselingHoursPerClass: 2,
+    counselingHoursPerClass: counselingHours,
     clubsMonthlyExpensePerClass: clubsMonthly,
     fullClassStudentThreshold: fullTh,
     halfClassStudentThreshold: halfTh,
@@ -169,31 +179,85 @@ async function fetchSchool(s: School, key: string) {
   const engineExpenses = expenses.map((e: { id: string; name: string; amount: number; period: string; category_id: string }) => ({
     id: e.id, name: e.name, amount: Number(e.amount), period: e.period, categoryId: e.category_id,
   }));
+  // תקציב נעול — מגישים את הסנפשוט כמות שהוא, בלי לחשב מחדש
+  const frozenPlan = planFromSnapshot(frozenSummary);
+  const frozenTotals = totalsFromSnapshot(frozenSummary);
+
   let efficiency: unknown = null;
-  try {
-    const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
-    const chosen = selectedSuggestions(allRows, selectedKeys);
-    const total = sumSavings(chosen);
-    efficiency = {
-      total,
-      count: chosen.length,
-      offered: allRows.length,
-      saved: selectedKeys != null,
-      projectedBalance: balance + total,
-      rows: chosen.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+  if (frozenPlan) {
+    // סנפשוט שנשמר לפני שנוספו שדות מבנה הכיתות (classDelta/kind/names) לא
+    // יודע לדווח כמה כיתות נחסכות. משלימים אותם מהחישוב החי לפי המפתח —
+    // הסכומים נשארים כפי שנשמרו, רק תיאור המבנה מושלם.
+    const liveByKey = new Map<string, { classDelta?: number; kind?: string; names?: string[] }>();
+    try {
+      for (const r of buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants)) {
+        liveByKey.set(normalizeSuggestionKey(r.key), r);
+      }
+    } catch { /* אם החישוב החי נכשל — נשארים עם מה שיש בסנפשוט */ }
+    const enrich = (r: { key: string; classDelta?: number; names?: string[] | null }) => {
+      if (r.classDelta && r.names?.length) return r;
+      const live = liveByKey.get(normalizeSuggestionKey(r.key));
+      return live ? { ...r, classDelta: live.classDelta ?? 0, kind: live.kind, names: live.names } : r;
     };
-  } catch (e) {
-    console.error(`efficiency ${s.slug}: ${e}`);
+    const selected = frozenPlan.selected.map(enrich);
+    const chosenKeys = new Set(selected.map((r: { key: string }) => normalizeSuggestionKey(r.key)));
+    const available = frozenPlan.suggestions.filter(
+      (r: { key: string }) => !chosenKeys.has(normalizeSuggestionKey(r.key)),
+    );
+
+    efficiency = {
+      total: frozenPlan.total,
+      count: selected.length,
+      offered: frozenPlan.suggestions.length,
+      saved: true,
+      locked: true,
+      closedAt: frozenPlan.closedAt,
+      projectedBalance: frozenPlan.projectedBalance,
+      classCountAfter: frozenPlan.classCountAfter ?? (frozenTotals!.classCount + sumClassDelta(selected)),
+      classChanges: classChangeSummary(selected),
+      rows: selected.map((r: { label: string; saving: number; classDelta?: number }) =>
+        ({ label: r.label, saving: r.saving, classDelta: r.classDelta ?? 0 })),
+      // הצעות שהמערכת מציעה ולא נבחרו — הפוטנציאל שעוד לא מומש
+      available: available.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+      availableTotal: sumSavings(available),
+    };
+  } else {
+    try {
+      const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
+      const chosen = selectedSuggestions(allRows, selectedKeys);
+      const total = sumSavings(chosen);
+      const chosenKeys = new Set(chosen.map((r: { key: string }) => r.key));
+      const available = allRows.filter((r: { key: string }) => !chosenKeys.has(r.key));
+      efficiency = {
+        total,
+        count: chosen.length,
+        offered: allRows.length,
+        saved: selectedKeys != null,
+        locked: false,
+        projectedBalance: balance + total,
+        classCountAfter: classes.length + sumClassDelta(chosen),
+        classChanges: classChangeSummary(chosen),
+        rows: chosen.map((r: { label: string; saving: number; classDelta: number }) =>
+          ({ label: r.label, saving: r.saving, classDelta: r.classDelta })),
+        // הצעות שהמערכת מציעה ולא נבחרו — הפוטנציאל שעוד לא מומש
+        available: available.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+        availableTotal: sumSavings(available),
+      };
+    } catch (e) {
+      console.error(`efficiency ${s.slug}: ${e}`);
+    }
   }
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
-    students, classCount: classes.length,
+    students: frozenTotals ? frozenTotals.totalStudents : students,
+    classCount: frozenTotals ? frozenTotals.classCount : classes.length,
+    locked: frozenPlan != null,
     ofek: c.ofek_salary ?? null,
     efficiency,
-    income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
-    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
-    balance,
+    income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: frozenTotals ? frozenTotals.totalIncome : totalIncome },
+    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: frozenTotals ? frozenTotals.totalExpenses : totalExpenses },
+    balance: frozenTotals ? frozenTotals.balance : balance,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,
   };

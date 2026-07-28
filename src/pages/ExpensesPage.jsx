@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Send, AlertTriangle, CheckCircle, CreditCard, Calculator } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { annualAmount, formatCurrency, categoryColor, calculateClassBudget } from '../lib/calculations.js';
-import { EXPENSE_STATUS, EVENTS_CAP_PER_STUDENT, MANAGERS } from '../data/constants.js';
+import { EXPENSE_STATUS, EVENTS_CAP_PER_STUDENT, MANAGERS, INCOME_EXPENSE_EDITORS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -200,9 +200,9 @@ function AutoExpensesCard({ classes, constants }) {
   const profDev = budgets.reduce((s, b) => s + b.profDevExpense, 0);
 
   const rows = [
-    { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: teaching / 12, annual: teaching },
-    { name: 'ייעוץ', hint: `${classes.length} כיתות × 2 שעות בחודש × ${constants.actualHourlyRate} ₪ × 12 ח׳`, monthly: counseling / 12, annual: counseling },
-    { name: 'תוספת חוגים לכיתה', hint: `${classes.length} כיתות × 2,000 ₪ לחודש × 10 ח׳`, monthly: clubs / 10, annual: clubs },
+    { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות שבועיות × ${constants.actualHourlyRate} ₪ לחודש × 12 ח׳`, monthly: teaching / 12, annual: teaching },
+    { name: 'ייעוץ', hint: `${classes.length} כיתות × ${constants.counselingHoursPerClass} שעות שבועיות × ${constants.actualHourlyRate} ₪ לחודש × 12 ח׳ — משנים ב"הגדרות"`, monthly: counseling / 12, annual: counseling },
+    { name: 'תוספת חוגים לכיתה', hint: `${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} לחודש × 10 ח׳`, monthly: clubs / 10, annual: clubs },
     { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} — אירועים, ערבי הורים, פיתוח מקצועי ושכפולים`, annual: students },
     { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
   ].filter(r => r.annual > 0);
@@ -241,7 +241,10 @@ function AutoExpensesCard({ classes, constants }) {
 
 export default function ExpensesPage() {
   const { expenses, expenseCategories, classes, constants, addExpense, updateExpense, deleteExpense, addExpenseRequest, isSimpleMode, user } = useApp();
-  const canEdit = MANAGERS.includes(user?.role);
+  // הכנסות/הוצאות בעריכת השליח — "שכר מנהלת" נשאר מוגבל למנהלת/אדמין כי הוא מסונכרן מההגדרות (מערכת ה-1200)
+  const canEdit = INCOME_EXPENSE_EDITORS.includes(user?.role);
+  const canEditExpense = (exp) => exp?.name === 'שכר מנהלת' ? MANAGERS.includes(user?.role) : canEdit;
+  const canRequest = MANAGERS.includes(user?.role);
   const [activeCategory, setActiveCategory] = useState('all');
   const [modal, setModal] = useState(null);
   const [requestModal, setRequestModal] = useState(null);
@@ -374,17 +377,23 @@ export default function ExpensesPage() {
                       </p>
                     </div>
                   </div>
-                  {canEdit && (
+                  {(canRequest || canEditExpense(exp)) && (
                     <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
-                      <button onClick={() => setRequestModal(exp)} className="btn-outline btn-sm flex-1 justify-center text-teal-600">
-                        <Send size={13} /> לתשלום
-                      </button>
-                      <button onClick={() => setModal(exp)} className="btn-outline btn-sm flex-1 justify-center">
-                        <Edit2 size={13} /> עריכה
-                      </button>
-                      <button onClick={() => setDeleteConfirm(exp)} className="btn-outline btn-sm flex-1 justify-center text-red-500 hover:bg-red-50">
-                        <Trash2 size={13} /> מחיקה
-                      </button>
+                      {canRequest && (
+                        <button onClick={() => setRequestModal(exp)} className="btn-outline btn-sm flex-1 justify-center text-teal-600">
+                          <Send size={13} /> לתשלום
+                        </button>
+                      )}
+                      {canEditExpense(exp) && (
+                        <>
+                          <button onClick={() => setModal(exp)} className="btn-outline btn-sm flex-1 justify-center">
+                            <Edit2 size={13} /> עריכה
+                          </button>
+                          <button onClick={() => setDeleteConfirm(exp)} className="btn-outline btn-sm flex-1 justify-center text-red-500 hover:bg-red-50">
+                            <Trash2 size={13} /> מחיקה
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -443,30 +452,36 @@ export default function ExpensesPage() {
                           <span className={`badge ${st?.color}`}>{st?.label}</span>
                         </td>
                         <td className="px-3 py-3">
-                          {canEdit && (
+                          {(canRequest || canEditExpense(exp)) && (
                             <div className="flex items-center gap-1 justify-center">
-                              <button
-                                onClick={() => setRequestModal(exp)}
-                                title="יצירת בקשת תשלום"
-                                aria-label={`בקשת תשלום — ${exp.name}`}
-                                className="p-1.5 hover:bg-teal-50 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
-                              >
-                                <Send size={13} />
-                              </button>
-                              <button
-                                onClick={() => setModal(exp)}
-                                aria-label={`עריכת ${exp.name}`}
-                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
-                              >
-                                <Edit2 size={13} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirm(exp)}
-                                aria-label={`מחיקת ${exp.name}`}
-                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
+                              {canRequest && (
+                                <button
+                                  onClick={() => setRequestModal(exp)}
+                                  title="יצירת בקשת תשלום"
+                                  aria-label={`בקשת תשלום — ${exp.name}`}
+                                  className="p-1.5 hover:bg-teal-50 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
+                                >
+                                  <Send size={13} />
+                                </button>
+                              )}
+                              {canEditExpense(exp) && (
+                                <>
+                                  <button
+                                    onClick={() => setModal(exp)}
+                                    aria-label={`עריכת ${exp.name}`}
+                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-teal-600 transition-colors"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(exp)}
+                                    aria-label={`מחיקת ${exp.name}`}
+                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </td>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+﻿import { useState, useEffect, useMemo, useRef } from 'react';
 import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
@@ -6,7 +6,10 @@ import {
   calculateSchoolTotals, calculateSimpleTotals, categoryTotals, annualAmount,
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
-import { buildSuggestionRows, normalizeSuggestionKey } from '../lib/efficiency.js';
+import {
+  buildSuggestionRows, normalizeSuggestionKey, buildPlanSnapshot, isPlanClosed,
+  planFromSnapshot, totalsFromSnapshot,
+} from '../lib/efficiency.js';
 import { MANAGERS, SUMMARY_DISCLAIMER } from '../data/constants.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
@@ -128,12 +131,23 @@ export default function SummaryPage() {
   const [tableReady, setTableReady] = useState(true);
   const [quickModal, setQuickModal] = useState(null); // 'income' | 'expense' | null
 
-  const totals = useMemo(
+  // התקציב ננעל ברגע השמירה (ר' saveSelection). מאותו רגע הסכומים, מצבת
+  // הכיתות ומספרי התלמידים מוצגים מהסנפשוט השמור ולא מחושבים מחדש.
+  const closed = isPlanClosed(approval?.summary);
+  const frozenTotals = useMemo(() => totalsFromSnapshot(approval?.summary), [approval?.summary]);
+  const frozenPlan = useMemo(() => planFromSnapshot(approval?.summary), [approval?.summary]);
+
+  const liveTotals = useMemo(
     () => isSimpleMode
       ? calculateSimpleTotals(incomeSources, expenses)
       : calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
     [isSimpleMode, classes, incomeSources, expenses, constants, expenseCategories],
   );
+  // הסנפשוט מחזיק רק את שורות הסיכום (הכנסות/הוצאות/יתרה/תלמידים/כיתות).
+  // שורות הפירוט — ייעוץ, חוגים, עלות הוראה — נשארות מהחישוב החי, אחרת הן
+  // יוצאות undefined ומוצגות כ-NaN. בתקציב נעול הנתונים ממילא לא משתנים,
+  // כי המסד חוסם כל שינוי (migration_v20), אז הפירוט תואם לסכום החתום.
+  const totals = frozenTotals ? { ...liveTotals, ...frozenTotals } : liveTotals;
 
   // שכר מנהלת מוצג בשמו — מופרד מקטגוריית השכר שהוא רשום בה (כמו בדף הבית)
   const { catRows, principalAnnual } = useMemo(() => {
@@ -146,11 +160,15 @@ export default function SummaryPage() {
     return { catRows: rows, principalAnnual: pAnnual };
   }, [expenses, expenseCategories]);
 
-  // הצעות הייעול המדידות — מופיעות גם על המסמך החתום ובכרטיס שבדף הבית
-  const suggestions = useMemo(
-    () => (isSimpleMode ? [] : buildSuggestionRows(classes, expenses, expenseCategories, constants)),
-    [isSimpleMode, classes, expenses, expenseCategories, constants],
+  // הצעות הייעול המדידות — מופיעות גם על המסמך החתום ובכרטיס שבדף הבית.
+  // אחרי סגירה מוצגות ההצעות שנחתמו, לא חישוב מחדש. draftParams — הכוונון
+  // שנעשה במסך הייעול (שכר לימוד, שעות וכו') — בלעדיו השורות כאן חוזרות
+  // לברירת המחדל הרשתית במקום לשקף את מה שהמנהלת בפועל כיוונה
+  const liveSuggestions = useMemo(
+    () => (isSimpleMode ? [] : buildSuggestionRows(classes, expenses, expenseCategories, constants, approval?.summary?.draftParams || {})),
+    [isSimpleMode, classes, expenses, expenseCategories, constants, approval?.summary?.draftParams],
   );
+  const suggestions = frozenPlan?.suggestions ?? liveSuggestions;
 
   // בחירה: אילו הצעות המנהלת בפועל מאמצת. null = עוד לא נטען/נשמר —
   // ברירת מחדל היא הכל נבחר, עד שתבטלי סימון ותשמרי.
@@ -159,8 +177,15 @@ export default function SummaryPage() {
   const [savingSelection, setSavingSelection] = useState(false);
   const selectionDirty = useRef(false);
 
-  const isSelected = (key) => selectedKeys == null || selectedKeys.has(key);
+  // אחרי סגירה הבחירה נעולה — הסימון נקרא מהסנפשוט ואי אפשר לשנות אותו
+  const frozenSelectedKeys = useMemo(
+    () => (frozenPlan ? new Set(frozenPlan.selected.map(s => s.key)) : null),
+    [frozenPlan],
+  );
+  const isSelected = (key) => (frozenSelectedKeys ? frozenSelectedKeys.has(key)
+    : selectedKeys == null || selectedKeys.has(key));
   const toggleSuggestion = (key) => {
+    if (closed) return;
     selectionDirty.current = true;
     setSelectedKeys(prev => {
       const base = prev == null ? new Set(suggestions.map(s => s.key)) : new Set(prev);
@@ -195,14 +220,25 @@ export default function SummaryPage() {
       });
   }, [user?.schoolId, currentYear?.id]);
 
+  // כמו במסך הייעול — השמירה מקפיאה את התקציב כולו
   const saveSelection = async () => {
+    if (closed) return notify('התקציב כבר נשמר ונעול — לפתיחה מחדש יש לפנות לרשת', 'error');
     setSavingSelection(true);
+    const now = new Date().toISOString();
+    const keys = selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys];
     const payload = {
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
-      selected_suggestion_keys: selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys],
+      selected_suggestion_keys: keys,
+      summary: buildPlanSnapshot({
+        rows: suggestions,
+        selectedKeys: new Set(keys),
+        totals,
+        classes,
+        closedAt: now,
+      }),
       notes: notes.trim() || null,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     };
     const { data, error } = await supabase.from('budget_approvals')
       .upsert(payload, { onConflict: 'school_id,budget_year_id' })
@@ -218,19 +254,19 @@ export default function SummaryPage() {
 
   const saveSignature = async (slot, name, dataUrl) => {
     const now = new Date().toISOString();
+    // אם התקציב כבר ננעל בשמירה — החתימה לא כותבת את הסנפשוט מחדש, אחרת
+    // המספרים היו זזים אחרי הנעילה. חתימה בלי שמירה קודמת מקפיאה כאן.
+    const summary = closed ? approval.summary : buildPlanSnapshot({
+      rows: suggestions,
+      selectedKeys,
+      totals,
+      classes,
+      closedAt: now,
+    });
     const payload = {
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
-      summary: {
-        totalIncome: Math.round(totals.totalIncome),
-        totalExpenses: Math.round(totals.totalExpenses),
-        balance: Math.round(totals.balance),
-        students: totals.totalStudents ?? null,
-        classCount: classes.length,
-        suggestionsTotal: Math.round(suggestionsTotal),
-        projectedBalance: Math.round(projectedBalance),
-        savedAt: now,
-      },
+      summary,
       updated_at: now,
       [`${slot}_name`]: name,
       [`${slot}_signature`]: dataUrl,
@@ -297,9 +333,19 @@ export default function SummaryPage() {
           <h1 className="text-2xl font-black text-gray-800">סיכום תקציב שנתי</h1>
           <p className="text-gray-600 mt-1 font-medium">{school?.name} · {currentYear?.label}</p>
           {!isSimpleMode && (
-            <p className="text-xs text-gray-400 mt-1">{classes.length} כיתות · {totals.totalStudents} תלמידים</p>
+            <p className="text-xs text-gray-400 mt-1">{totals.classCount ?? classes.length} כיתות · {totals.totalStudents} תלמידים</p>
           )}
         </div>
+
+        {/* מרגע הנעילה המסמך מציג את מה שנשמר — סכומים ומספרי תלמידים כאחד */}
+        {closed && (
+          <p className="text-xs text-teal-800 leading-relaxed bg-teal-50 border border-teal-200 rounded-xl px-3 py-2 mb-5">
+            <strong>התקציב נשמר ונעול</strong>
+            {frozenPlan?.closedAt ? ` מ-${new Date(frozenPlan.closedAt).toLocaleDateString('he-IL')}` : ''}.
+            {' '}הסכומים, מספרי התלמידים והצעות הייעול מוצגים כפי שנשמרו ואינם משתנים עוד.
+            {' '}לפתיחה מחדש יש לפנות לרשת.
+          </p>
+        )}
 
         {/* הערה קבועה — מופיעה על כל סיכום, במסך ובהדפסה */}
         <p className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 mb-5">
@@ -364,8 +410,8 @@ export default function SummaryPage() {
           </div>
           {!isSimpleMode && (
             <>
-              <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
-              <Row label={`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`} value={formatCurrency(totals.totalCounselingCost)} />
+              <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
+              <Row label={`ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`} value={formatCurrency(totals.totalCounselingCost)} />
               <Row label={`תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`} value={formatCurrency(totals.totalClubsExpense)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}

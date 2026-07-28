@@ -2,6 +2,7 @@ import { Fragment, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, ChevronDown, ChevronUp, Users, School } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { calculateClassBudget, formatCurrency, formatCurrencyFull } from '../lib/calculations.js';
+import { useBudgetClosed } from '../lib/useBudgetClosed.js';
 import { CLASS_TYPE, MANAGERS } from '../data/constants.js';
 import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
@@ -83,7 +84,7 @@ function BudgetBreakdown({ budget }) {
     { label: 'סה״כ הכנסות', value: formatCurrency(budget.totalIncome), bold: true, positive: true },
     null,
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
-    ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ בחודש)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
+    ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ שבועיות)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
     ...(budget.clubsExpense > 0 ? [{ label: 'תוספת חוגים (2,000 ₪ × 10 ח׳)', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
     ...(budget.caharonExpense > 0 ? [{ label: 'הוצאות צהרון', value: formatCurrency(budget.caharonExpense), negative: true }] : []),
@@ -114,8 +115,11 @@ function BudgetBreakdown({ budget }) {
 }
 
 export default function ClassesPage() {
-  const { classes, addClass, updateClass, deleteClass, constants, isSimpleMode, user } = useApp();
-  const canEdit = MANAGERS.includes(user?.role);
+  const { classes, addClass, updateClass, deleteClass, constants, isSimpleMode, user, currentYear } = useApp();
+  // תקציב שנשמר ננעל: מספרי התלמידים לא משתנים עוד. המסד אוכף את זה
+  // (migration_v20) — כאן רק מסתירים את כפתורי העריכה כדי שלא תיתקלי בשגיאה.
+  const { closed } = useBudgetClosed(user?.schoolId, currentYear?.id);
+  const canEdit = MANAGERS.includes(user?.role) && !closed;
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState(null);
   const [modal, setModal] = useState(null);
@@ -152,6 +156,12 @@ export default function ClassesPage() {
           <h2 className="text-xl font-bold text-gray-800">ניהול כיתות</h2>
           <p className="text-gray-500 text-sm mt-0.5">{classes.length} כיתות · {totals.students} תלמידים</p>
         </div>
+        {closed && (
+          <p className="text-xs text-teal-800 bg-teal-50 border border-teal-200 rounded-xl px-3 py-2 leading-relaxed">
+            <strong>התקציב נשמר ונעול</strong> — מספרי התלמידים אינם ניתנים לשינוי.
+            <br />{user?.role === 'admin' ? 'פתיחה מחדש — במסך הצעות ייעול.' : 'לפתיחה מחדש יש לפנות לרשת.'}
+          </p>
+        )}
         {canEdit && (
           <button onClick={() => setModal('new')} className="btn-primary flex-shrink-0">
             <Plus size={16} />

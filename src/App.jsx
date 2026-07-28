@@ -10,6 +10,7 @@ import CourierPage from './pages/CourierPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
 import SalariesPage from './pages/SalariesPage.jsx';
 import SimulationsPage from './pages/SimulationsPage.jsx';
 import TuitionPage from './pages/TuitionPage.jsx';
@@ -95,6 +96,7 @@ function AppContent() {
     efficiency: <EfficiencyPage />,
     summary: <SummaryPage />,
     help: <HelpPage />,
+    contact: <ContactPage />,
   };
 
   return (

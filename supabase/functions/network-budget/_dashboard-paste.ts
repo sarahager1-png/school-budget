@@ -6,7 +6,7 @@
 // בדשבורד: לוודא ש-"Verify JWT" נשאר כבוי, אחרת הפורטל יקבל 401.
 
 const { buildSuggestionRows, selectedSuggestions, sumSavings, normalizeSuggestionKey } = (() => {
-// מנוע הייעול של מבט רשת — העתק נאמן של src/lib/efficiency.js (+ החלקים
+﻿// מנוע הייעול של מבט רשת — העתק נאמן של src/lib/efficiency.js (+ החלקים
 // הדרושים מ-src/lib/calculations.js ומ-src/data/constants.js), כדי שה-Edge
 // Function תחשב "מצב תקציב לאחר ייעול" בדיוק כמו המערכת של בית הספר.
 //
@@ -225,11 +225,14 @@ function dualAgeMergeReport(classes, constants, excludeIds = new Set(), extraMon
     const typeB = getClassType(partner.studentCount, constants);
     if (idx === 0 && typeA !== 'none') continue;
     const merged = mergedClass([a, partner]);
+    // אותה תקרה כמו בצירוף בתוך שכבה — כיתה דו-גילאית מעל MAX_MERGED_STUDENTS
+    // אינה ריאלית, וזוג חורג גם דחק הצעות סבירות בבחירת הזוגות שלמטה
+    if (merged.studentCount > MAX_MERGED_STUDENTS) continue;
     const createsStandard = (typeA === 'none' || typeB === 'none')
       && getClassType(merged.studentCount, constants) !== 'none';
-    // הכיתה המחוברת נושאת גם את השעות הבודדות שהוזנו בכיתות שהתחברו
+    // השעות הבודדות שהוזנו בכיתות אינן נספרות בחיבור — רק הקצאת החיבור
     const enteredHours = Number(merged.extraHours || 0);
-    const totalExtraHours = extraMonthlyHours + enteredHours;
+    const totalExtraHours = extraMonthlyHours;
     const joinExtraCost = totalExtraHours * constants.actualHourlyRate * PAYMENT_MONTHS;
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
@@ -380,42 +383,58 @@ function topExpensesReport(expenses, categories, count = 3) {
   return { rows, total: rows.reduce((s, r) => s + r.annual, 0) };
 }
 
+// ערכי ברירת מחדל לפרמטרים הניתנים לכוונון במסך הייעול — ר' src/lib/efficiency.js
+const DEFAULT_SUGGESTION_PARAMS = {
+  dualAddedHours: 0,
+  hoursCut: 1,
+  trimPct: 10,
+  shabbatHours: DEFAULT_SHABBAT_WEEKLY_HOURS,
+  parentAmount: DEFAULT_PARENT_CONTRIBUTION,
+  partaniyotHours: DEFAULT_PARTANIYOT_HOURS,
+  principalHours: DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS,
+  tuitionAmount: DEFAULT_TUITION_AMOUNT,
+  tuitionRate: DEFAULT_TUITION_COLLECTION_RATE,
+  supplementAmount: DEFAULT_TUITION_SUPPLEMENT,
+};
+
 // ─── רשימת ההצעות ─────────────────────────────────────────────
-function buildSuggestionRows(classes, expenses, expenseCategories, constants) {
+function buildSuggestionRows(classes, expenses, expenseCategories, constants, params = {}) {
+  const p = { ...DEFAULT_SUGGESTION_PARAMS, ...params };
   const rows = [];
   const merges = findMerges(classes, constants);
   const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
+  // classDelta — בכמה כיתות מצטמצם בית הספר אם ההצעה מיושמת
   for (const m of merges) {
-    rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
+    rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'merge', names: m.members.map(x => x.name) });
   }
-  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
+  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + p.dualAddedHours);
   const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
   for (const m of dualMerges) {
-    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות)`, saving: m.delta });
+    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${m.extraMonthlyHours} שעות שבועיות)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'dual', names: m.members.map(shortClassLabel) });
   }
   const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
   for (const r of closeClassReport(classes, constants, allMergedIds)) {
-    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving });
+    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving, classDelta: -1, kind: 'close', names: [r.cls.name] });
   }
-  const hoursR = hoursCutReport(classes, constants, 1);
-  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });
+  const hoursR = hoursCutReport(classes, constants, p.hoursCut);
+  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת ${p.hoursCut} שעות הוראה מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.saving });
   const topR = topExpensesReport(expenses, expenseCategories);
-  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ 10% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * 0.1) });
-  const shabbat = jointShabbatReport(classes, constants);
+  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ ${p.trimPct}% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * p.trimPct / 100) });
+  const shabbat = jointShabbatReport(classes, constants, p.shabbatHours);
   if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
   const transport = transportParentsReport(expenses);
   if (transport.total > 0) rows.push({ key: 'transport-parents', label: 'הסעות בגביית הורים — הסרת העלות מהתקציב', saving: transport.total });
   const caharon = caharonReport(classes, constants);
   if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${nis(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
-  const tuition = tuitionReport(classes);
+  const tuition = tuitionReport(classes, p.tuitionAmount, p.tuitionRate);
   if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${nis(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
-  const supplement = tuitionSupplementReport(classes);
+  const supplement = tuitionSupplementReport(classes, p.supplementAmount);
   if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${nis(supplement.amountPerStudent)} × ${supplement.collectionRatePct}% × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
-  const parents = parentContributionReport(classes);
-  if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${nis(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
-  const partaniyot = partaniyotReport(classes, constants);
+  const parents = parentContributionReport(classes, p.parentAmount);
+  if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${nis(parents.amountPerStudent)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
+  const partaniyot = partaniyotReport(classes, constants, p.partaniyotHours);
   if (partaniyot.saving > 0) rows.push({ key: 'partaniyot', label: `שעות פרטניות מהמשרה כשעה פרונטלית (${partaniyot.hoursPerClass} ש׳ × ${partaniyot.classCount} כיתות)`, saving: partaniyot.saving });
-  const principal = principalTeachingReport(classes, constants);
+  const principal = principalTeachingReport(classes, constants, p.principalHours);
   if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.weeklyHours} ש׳ שבועיות)`, saving: principal.saving });
   const events = eventsCapReport(expenses, expenseCategories, classes);
   if (events.excess > 0) rows.push({ key: 'events-cap', label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
@@ -433,6 +452,72 @@ function selectedSuggestions(rows, selectedKeys) {
 
 function sumSavings(rows) {
   return rows.reduce((s, r) => s + r.saving, 0);
+}
+
+// כמה כיתות נחסכות בתוכנית — סכום הצמצומים של ההצעות הנבחרות
+function sumClassDelta(rows) {
+  return rows.reduce((s, r) => s + (r.classDelta ?? 0), 0);
+}
+
+// תיאור שינויי מבנה הכיתות להצגה בסוגריים — "ג,ד — דו־גילאית"
+function classChangeSummary(rows) {
+  const parts = [];
+  for (const r of rows) {
+    if (!r.classDelta || !r.names?.length) continue;
+    const names = r.names.join(',');
+    if (r.kind === 'dual') parts.push(`${names} — דו־גילאית`);
+    else if (r.kind === 'merge') parts.push(`${names} — מאוחדות`);
+    else if (r.kind === 'close') parts.push(`סגירת ${names}`);
+  }
+  return parts.join(' · ');
+}
+
+// שם קצר לכיתה — אות השכבה ("כיתה ד" ← "ד"), ואם לא מזוהה, השם כפי שהוזן
+function shortClassLabel(c) {
+  const idx = classGradeIndex(c);
+  return idx != null ? GRADE_ORDER[idx] : c.name;
+}
+
+// ─── הקפאת התוכנית בסגירה ─────────────────────────────────────
+// עותק נאמן של src/lib/efficiency.js. מרגע שהתקציב נסגר, מבט רשת מציג את
+// הסנפשוט מ-budget_approvals.summary ולא מחשב מחדש — כך שהמספר בפורטל
+// זהה למספר שהמנהלת חתמה עליו, גם אחרי שינוי בהיגיון המנוע.
+const PLAN_SNAPSHOT_VERSION = 1;
+
+function isPlanClosed(summary) {
+  return Array.isArray(summary?.suggestions);
+}
+
+function planFromSnapshot(summary) {
+  if (!isPlanClosed(summary)) return null;
+  const row = (s) => ({ key: s.key, label: s.label, saving: Number(s.saving) || 0, classDelta: Number(s.classDelta) || 0, kind: s.kind ?? null, names: s.names ?? null });
+  const suggestions = summary.suggestions.map(row);
+  const selected = summary.suggestions.filter(s => s.selected).map(row);
+  return {
+    suggestions,
+    selected,
+    total: sumSavings(selected),
+    projectedBalance: Number(summary.projectedBalance) || 0,
+    classCountAfter: summary.classCountAfter ?? null,
+    closedAt: summary.closedAt ?? null,
+    frozen: true,
+  };
+}
+
+function totalsFromSnapshot(summary) {
+  if (!isPlanClosed(summary)) return null;
+  return {
+    totalIncome: Number(summary.totalIncome) || 0,
+    totalExpenses: Number(summary.totalExpenses) || 0,
+    balance: Number(summary.balance) || 0,
+    totalStudents: Number(summary.students) || 0,
+    classCount: Number(summary.classCount) || 0,
+    frozen: true,
+  };
+}
+
+function classesFromSnapshot(summary) {
+  return Array.isArray(summary?.classes) ? summary.classes : null;
 }
 
   return { buildSuggestionRows, selectedSuggestions, sumSavings, normalizeSuggestionKey };
@@ -509,11 +594,15 @@ async function fetchSchool(s: School, key: string) {
 
   // הבחירה של המנהלת בהצעות הייעול. הטבלה לא קיימת בכל המוסדות (מיגרציה v16/v18)
   // ואז נשארים בברירת המחדל של המערכת — כל ההצעות נחשבות נבחרות.
+  // summary מחזיק את הסנפשוט הנעול: מרגע שהתקציב נשמר, הפורטל מציג בדיוק את
+  // המספרים שנשמרו ולא מחשב מחדש — אחרת שינוי במנוע היה מזיז תקציב נעול.
   let selectedKeys: Set<string> | null = null;
+  let frozenSummary: unknown = null;
   try {
-    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys&limit=1`);
+    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary&limit=1`);
     const keys = rows?.[0]?.selected_suggestion_keys;
     if (Array.isArray(keys)) selectedKeys = new Set(keys.map(normalizeSuggestionKey));
+    frozenSummary = rows?.[0]?.summary ?? null;
   } catch { /* טבלה שעוד לא הוקמה — ברירת מחדל */ }
   const c = constRows[0] ?? {};
   const mode = schoolRows[0]?.mode === 'simple' ? 'simple' : 'full';
@@ -567,11 +656,16 @@ async function fetchSchool(s: School, key: string) {
   const talanIncome = students * talan * 0.8;
   const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
   // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
-  // מרכיב ייעוץ — 2 שעות חודשיות קבועות לכל כיתה (ר' COUNSELING_HOURS_PER_CLASS בקוד הראשי)
-  const counselingCost = classes.length * 2 * actRate * PAYMENT_MONTHS;
-  // תוספת חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (ר' CLUBS_MONTHLY_EXPENSE_PER_CLASS בקוד הראשי),
-  // כבוי בבתי ספר שסומנו disableClubs — בדיוק כמו VITE_DISABLE_CLUBS במערכת שלהם
-  const clubsMonthly = s.disableClubs ? 0 : 2000;
+  // מרכיב ייעוץ — שעות חודשיות לכל כיתה, נערך בהגדרות של בית הספר
+  // (counseling_hours_per_class, מיגרציה v21). ברירת מחדל 2 כמו קודם.
+  const counselingHours = Number(c.counseling_hours_per_class ?? 2);
+  const counselingCost = classes.length * counselingHours * actRate * PAYMENT_MONTHS;
+  // תוספת חוגים לכיתה לחודש × 10 חודשי פעילות. הערך נערך בהגדרות של בית הספר
+  // (clubs_monthly_expense_per_class, מיגרציה v21); כל עוד לא נקבע — נשמרת
+  // ההתנהגות הישנה לפי הדגל disableClubs, שמשקף את VITE_DISABLE_CLUBS.
+  const clubsMonthly = c.clubs_monthly_expense_per_class != null
+    ? Number(c.clubs_monthly_expense_per_class)
+    : (s.disableClubs ? 0 : 2000);
   const clubsExpense = classes.length * clubsMonthly * 10;
   const studentExp = students * expStudent;
   const profDevExp = classes.length * profDev;
@@ -582,7 +676,7 @@ async function fetchSchool(s: School, key: string) {
   // מצב התקציב לאחר יישום הצעות הייעול שנבחרו — אותו חישוב בדיוק שרץ במערכת
   // של בית הספר (budget-engine.js הוא העתק נאמן של src/lib/efficiency.js)
   const engineConstants = {
-    counselingHoursPerClass: 2,
+    counselingHoursPerClass: counselingHours,
     clubsMonthlyExpensePerClass: clubsMonthly,
     fullClassStudentThreshold: fullTh,
     halfClassStudentThreshold: halfTh,
@@ -606,31 +700,85 @@ async function fetchSchool(s: School, key: string) {
   const engineExpenses = expenses.map((e: { id: string; name: string; amount: number; period: string; category_id: string }) => ({
     id: e.id, name: e.name, amount: Number(e.amount), period: e.period, categoryId: e.category_id,
   }));
+  // תקציב נעול — מגישים את הסנפשוט כמות שהוא, בלי לחשב מחדש
+  const frozenPlan = planFromSnapshot(frozenSummary);
+  const frozenTotals = totalsFromSnapshot(frozenSummary);
+
   let efficiency: unknown = null;
-  try {
-    const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
-    const chosen = selectedSuggestions(allRows, selectedKeys);
-    const total = sumSavings(chosen);
-    efficiency = {
-      total,
-      count: chosen.length,
-      offered: allRows.length,
-      saved: selectedKeys != null,
-      projectedBalance: balance + total,
-      rows: chosen.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+  if (frozenPlan) {
+    // סנפשוט שנשמר לפני שנוספו שדות מבנה הכיתות (classDelta/kind/names) לא
+    // יודע לדווח כמה כיתות נחסכות. משלימים אותם מהחישוב החי לפי המפתח —
+    // הסכומים נשארים כפי שנשמרו, רק תיאור המבנה מושלם.
+    const liveByKey = new Map<string, { classDelta?: number; kind?: string; names?: string[] }>();
+    try {
+      for (const r of buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants)) {
+        liveByKey.set(normalizeSuggestionKey(r.key), r);
+      }
+    } catch { /* אם החישוב החי נכשל — נשארים עם מה שיש בסנפשוט */ }
+    const enrich = (r: { key: string; classDelta?: number; names?: string[] | null }) => {
+      if (r.classDelta && r.names?.length) return r;
+      const live = liveByKey.get(normalizeSuggestionKey(r.key));
+      return live ? { ...r, classDelta: live.classDelta ?? 0, kind: live.kind, names: live.names } : r;
     };
-  } catch (e) {
-    console.error(`efficiency ${s.slug}: ${e}`);
+    const selected = frozenPlan.selected.map(enrich);
+    const chosenKeys = new Set(selected.map((r: { key: string }) => normalizeSuggestionKey(r.key)));
+    const available = frozenPlan.suggestions.filter(
+      (r: { key: string }) => !chosenKeys.has(normalizeSuggestionKey(r.key)),
+    );
+
+    efficiency = {
+      total: frozenPlan.total,
+      count: selected.length,
+      offered: frozenPlan.suggestions.length,
+      saved: true,
+      locked: true,
+      closedAt: frozenPlan.closedAt,
+      projectedBalance: frozenPlan.projectedBalance,
+      classCountAfter: frozenPlan.classCountAfter ?? (frozenTotals!.classCount + sumClassDelta(selected)),
+      classChanges: classChangeSummary(selected),
+      rows: selected.map((r: { label: string; saving: number; classDelta?: number }) =>
+        ({ label: r.label, saving: r.saving, classDelta: r.classDelta ?? 0 })),
+      // הצעות שהמערכת מציעה ולא נבחרו — הפוטנציאל שעוד לא מומש
+      available: available.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+      availableTotal: sumSavings(available),
+    };
+  } else {
+    try {
+      const allRows = buildSuggestionRows(engineClasses, engineExpenses, cats, engineConstants);
+      const chosen = selectedSuggestions(allRows, selectedKeys);
+      const total = sumSavings(chosen);
+      const chosenKeys = new Set(chosen.map((r: { key: string }) => r.key));
+      const available = allRows.filter((r: { key: string }) => !chosenKeys.has(r.key));
+      efficiency = {
+        total,
+        count: chosen.length,
+        offered: allRows.length,
+        saved: selectedKeys != null,
+        locked: false,
+        projectedBalance: balance + total,
+        classCountAfter: classes.length + sumClassDelta(chosen),
+        classChanges: classChangeSummary(chosen),
+        rows: chosen.map((r: { label: string; saving: number; classDelta: number }) =>
+          ({ label: r.label, saving: r.saving, classDelta: r.classDelta })),
+        // הצעות שהמערכת מציעה ולא נבחרו — הפוטנציאל שעוד לא מומש
+        available: available.map((r: { label: string; saving: number }) => ({ label: r.label, saving: r.saving })),
+        availableTotal: sumSavings(available),
+      };
+    } catch (e) {
+      console.error(`efficiency ${s.slug}: ${e}`);
+    }
   }
 
   return {
     slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
-    students, classCount: classes.length,
+    students: frozenTotals ? frozenTotals.totalStudents : students,
+    classCount: frozenTotals ? frozenTotals.classCount : classes.length,
+    locked: frozenPlan != null,
     ofek: c.ofek_salary ?? null,
     efficiency,
-    income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: totalIncome },
-    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: totalExpenses },
-    balance,
+    income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: frozenTotals ? frozenTotals.totalIncome : totalIncome },
+    expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: frozenTotals ? frozenTotals.totalExpenses : totalExpenses },
+    balance: frozenTotals ? frozenTotals.balance : balance,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,
   };

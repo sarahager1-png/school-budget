@@ -171,13 +171,18 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     // תקן בכלל (הנחיית שרה 22/7); אחרת החיבורים מתחילים מ-ב+ג
     if (idx === 0 && typeA !== 'none') continue;
     const merged = mergedClass([a, partner]);
+    // אותה תקרה כמו בצירוף בתוך שכבה: כיתה דו-גילאית מעל MAX_MERGED_STUDENTS
+    // אינה ריאלית (חדר אחד, מחנך/ת אחד/ת). בלי הבדיקה הזאת הוצעו כיתות של
+    // 45 ו-60 תלמידים — והן גם דחקו הצעות סבירות בבחירת הזוגות שלמטה,
+    // וכך נעלמה ברמת ישי ההצעה "ג + כיתה ד" שכבר נבחרה ונשמרה.
+    if (merged.studentCount > MAX_MERGED_STUDENTS) continue;
     const createsStandard = (typeA === 'none' || typeB === 'none')
       && getClassType(merged.studentCount, constants) !== 'none';
-    // הכיתה המחוברת נושאת גם את השעות הבודדות שהוזנו בכיתות שהתחברו —
-    // הן לא נעלמות בחיבור, ולכן נספרות כאן מעל ההקצאה הרשתית והתוספת הידנית.
-    // (בתקציב עצמו השדה עדיין אינו נספר — זו אפשרות במסך הייעול בלבד.)
+    // השעות הבודדות שהוזנו בכיתות אינן נספרות בחיבור: הכיתה המחוברת מקבלת
+    // את הקצאת החיבור בלבד (12 שעות, ועוד תוספת ידנית אם הוגדרה במסך הייעול).
+    // enteredHours נשמר לתצוגה בלבד — הכרטיס מציין אילו שעות יורדות בחיבור.
     const enteredHours = Number(merged.extraHours || 0);
-    const totalExtraHours = extraMonthlyHours + enteredHours;
+    const totalExtraHours = extraMonthlyHours;
     const joinExtraCost = totalExtraHours * constants.actualHourlyRate * PAYMENT_MONTHS;
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
@@ -454,45 +459,65 @@ export function topExpensesReport(expenses, categories, count = 3) {
   return { rows, total: rows.reduce((s, r) => s + r.annual, 0) };
 }
 
+// ערכי ברירת מחדל לפרמטרים הניתנים לכוונון במסך הייעול (שעות חיבור נוספות,
+// שכר לימוד, תרומת הורים וכו'). מי שקורא ל-buildSuggestionRows עם הערכים
+// שנבחרו בפועל (ר' EfficiencyPage) מקבל את אותם הסכומים גם בסיכום ואישור
+// ובסנפשוט השמור — בלעדיהם השורות תמיד חוזרות לברירת המחדל הרשתית.
+export const DEFAULT_SUGGESTION_PARAMS = {
+  dualAddedHours: 0,
+  hoursCut: 1,
+  trimPct: 10,
+  shabbatHours: DEFAULT_SHABBAT_WEEKLY_HOURS,
+  parentAmount: DEFAULT_PARENT_CONTRIBUTION,
+  partaniyotHours: DEFAULT_PARTANIYOT_HOURS,
+  principalHours: DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS,
+  tuitionAmount: DEFAULT_TUITION_AMOUNT,
+  tuitionRate: DEFAULT_TUITION_COLLECTION_RATE,
+  supplementAmount: DEFAULT_TUITION_SUPPLEMENT,
+};
+
 // ─── רשימת ההצעות המדידות ─────────────────────────────────────
 // מקור אמת אחד ל"מה ההצעות ובכמה הן שוות" — משמש את דף הבית, את הסיכום
 // ואת המסמך החתום, כדי שהמפתחות (key) והסכומים יהיו זהים בכל מסך.
-// ההצעות כאן מחושבות בערכי ברירת המחדל; מסך הייעול מאפשר לכוונן אותן.
-export function buildSuggestionRows(classes, expenses, expenseCategories, constants) {
+// params — הערכים שכוונונו במסך הייעול; מי שלא מעביר מקבל את ברירת המחדל הרשתית.
+export function buildSuggestionRows(classes, expenses, expenseCategories, constants, params = {}) {
+  const p = { ...DEFAULT_SUGGESTION_PARAMS, ...params };
   const rows = [];
   const merges = findMerges(classes, constants);
   const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
+  // classDelta — בכמה כיתות מצטמצם בית הספר אם ההצעה מיושמת. משמש את מבט
+  // רשת כדי להציג את מספר הכיתות המתקבל, ולא רק את החיסכון הכספי.
   for (const m of merges) {
-    rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta });
+    rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'merge', names: m.members.map(x => x.name) });
   }
-  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds);
+  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + p.dualAddedHours);
   const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
   for (const m of dualMerges) {
-    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות)`, saving: m.delta });
+    rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${m.extraMonthlyHours} שעות שבועיות)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'dual', names: m.members.map(shortClassLabel) });
   }
   const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
   for (const r of closeClassReport(classes, constants, allMergedIds)) {
-    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving });
+    rows.push({ key: `close:${r.cls.id}`, label: `סגירת כיתה ${r.cls.name} — הכיתה הגבוהה, ${r.cls.studentCount} תל׳ בלבד`, saving: r.saving, classDelta: -1, kind: 'close', names: [r.cls.name] });
   }
-  const hoursR = hoursCutReport(classes, constants, 1);
-  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת שעת הוראה אחת מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.perHourAllClasses });
+  const hoursR = hoursCutReport(classes, constants, p.hoursCut);
+  if (hoursR.maxCut > 0 && hoursR.perHourAllClasses > 0) rows.push({ key: 'hours-cut', label: `הורדת ${p.hoursCut} שעות הוראה מכל כיתה (${hoursR.classCount} כיתות)`, saving: hoursR.saving });
   const topR = topExpensesReport(expenses, expenseCategories);
-  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ 10% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * 0.1) });
-  const shabbat = jointShabbatReport(classes, constants);
+  if (topR.total > 0) rows.push({ key: 'trim', label: `קיצוץ ${p.trimPct}% ב-${topR.rows.length} ההוצאות הגדולות`, saving: Math.round(topR.total * p.trimPct / 100) });
+  const shabbat = jointShabbatReport(classes, constants, p.shabbatHours);
   if (shabbat.saving > 0) rows.push({ key: 'shabbat', label: `קבלת שבת משותפת לכל הכיתות (שעה שבועית × ${shabbat.classCount} כיתות)`, saving: shabbat.saving });
   const transport = transportParentsReport(expenses);
   if (transport.total > 0) rows.push({ key: 'transport-parents', label: 'הסעות בגביית הורים — הסרת העלות מהתקציב', saving: transport.total });
   const caharon = caharonReport(classes, constants);
   if (caharon.gap > 0) rows.push({ key: 'caharon', label: `התאמת מחיר הצהרון לעלות (${formatCurrency(caharon.perStudentGap)} לתלמיד)`, saving: caharon.gap });
-  const tuition = tuitionReport(classes);
+  const tuition = tuitionReport(classes, p.tuitionAmount, p.tuitionRate);
   if (tuition.gain > 0) rows.push({ key: 'tuition', label: `שכר לימוד עם גבייה ריאלית (${formatCurrency(tuition.amountPerStudent)} × ${tuition.collectionRatePct}% × ${tuition.totalStudents} תלמידים)`, saving: tuition.gain });
-  const supplement = tuitionSupplementReport(classes);
+  const supplement = tuitionSupplementReport(classes, p.supplementAmount);
   if (supplement.gain > 0) rows.push({ key: 'tuition-supplement', label: `תוספת שכר לימוד (${formatCurrency(supplement.amountPerStudent)} × ${supplement.collectionRatePct}% × ${supplement.totalStudents} תלמידים)`, saving: supplement.gain });
-  const parents = parentContributionReport(classes);
-  if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(DEFAULT_PARENT_CONTRIBUTION)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
-  const partaniyot = partaniyotReport(classes, constants);
+  const parents = parentContributionReport(classes, p.parentAmount);
+  if (parents.gain > 0) rows.push({ key: 'parents', label: `השתתפות הורים שנתית (${formatCurrency(parents.amountPerStudent)} לתלמיד × ${parents.totalStudents})`, saving: parents.gain });
+  const partaniyot = partaniyotReport(classes, constants, p.partaniyotHours);
   if (partaniyot.saving > 0) rows.push({ key: 'partaniyot', label: `שעות פרטניות מהמשרה כשעה פרונטלית (${partaniyot.hoursPerClass} ש׳ × ${partaniyot.classCount} כיתות)`, saving: partaniyot.saving });
-  const principal = principalTeachingReport(classes, constants);
+  const principal = principalTeachingReport(classes, constants, p.principalHours);
   if (principal.saving > 0) rows.push({ key: 'principal-teaching', label: `שעות הוראה של המנהלת (${principal.weeklyHours} ש׳ שבועיות)`, saving: principal.saving });
   const events = eventsCapReport(expenses, expenseCategories, classes);
   if (events.excess > 0) rows.push({ key: 'events-cap', label: 'החזרת הוצאות אירועים לתקרת הרשת', saving: events.excess });
@@ -510,4 +535,124 @@ export function selectedSuggestions(rows, selectedKeys) {
 
 export function sumSavings(rows) {
   return rows.reduce((s, r) => s + r.saving, 0);
+}
+
+// כמה כיתות נחסכות בתוכנית — סכום הצמצומים של ההצעות הנבחרות
+export function sumClassDelta(rows) {
+  return rows.reduce((s, r) => s + (r.classDelta ?? 0), 0);
+}
+
+// תיאור קצר של שינויי מבנה הכיתות, להצגה בסוגריים ליד מספר הכיתות:
+// "ג,ד — דו־גילאית" · "ג1,ג2 — מאוחדות" · "סגירת ו". מקור אחד לכל המסכים.
+export function classChangeSummary(rows) {
+  const parts = [];
+  for (const r of rows) {
+    if (!r.classDelta || !r.names?.length) continue;
+    const names = r.names.join(',');
+    if (r.kind === 'dual') parts.push(`${names} — דו־גילאית`);
+    else if (r.kind === 'merge') parts.push(`${names} — מאוחדות`);
+    else if (r.kind === 'close') parts.push(`סגירת ${names}`);
+  }
+  return parts.join(' · ');
+}
+
+// שם קצר לכיתה בתיאור מבנה: אות השכבה ("כיתה ד" ← "ד"), ואם השכבה לא
+// מזוהה — השם כפי שהוזן. בחיבור דו-גילאי יש כיתה אחת לכל שכבה, ולכן
+// אותיות השכבה הן הזיהוי הקריא ביותר.
+export function shortClassLabel(c) {
+  const idx = classGradeIndex(c);
+  return idx != null ? GRADE_ORDER[idx] : c.name;
+}
+
+// ─── הקפאת התוכנית בסגירה ─────────────────────────────────────
+// מרגע שהתקציב נסגר (החתימה הראשונה) התוכנית קופאת: ההצעות, התוויות
+// והסכומים נשמרים כפי שהיו באותו רגע ב-budget_approvals.summary, ומשם
+// ואילך כל המסכים — דף הבית, הסיכום, המסמך החתום ומבט רשת — מציגים את
+// הסנפשוט במקום לחשב מחדש.
+// בלי זה כל שינוי בהיגיון המנוע כותב מחדש רטרואקטיבית תקציב שכבר אושר:
+// כך נעלמה ברמת ישי הבחירה השמורה "ג + כיתה ד" אחרי שינוי בתמחור החיבור.
+export const PLAN_SNAPSHOT_VERSION = 1;
+
+export function buildPlanSnapshot({ rows, selectedKeys, totals, classes, closedAt }) {
+  const selected = selectedSuggestions(rows, selectedKeys);
+  const suggestionsTotal = sumSavings(selected);
+  const balance = Math.round(totals.balance);
+  const list = classes ?? [];
+  return {
+    version: PLAN_SNAPSHOT_VERSION,
+    closedAt,
+    totalIncome: Math.round(totals.totalIncome),
+    totalExpenses: Math.round(totals.totalExpenses),
+    balance,
+    students: list.reduce((s, c) => s + Number(c.studentCount || 0), 0),
+    classCount: list.length,
+    suggestionsTotal: Math.round(suggestionsTotal),
+    projectedBalance: balance + Math.round(suggestionsTotal),
+    // מספר הכיתות המתקבל אחרי יישום ההצעות שנבחרו
+    classCountAfter: list.length + sumClassDelta(selected),
+    // מצבת הכיתות ומספרי התלמידים כפי שהיו ברגע החתימה. מרגע הסגירה
+    // מספרי התלמידים לא משתנים בשום מסך — גם אם הכיתות ישתנו במסד.
+    classes: list.map(c => ({
+      id: c.id,
+      name: c.name,
+      gradeLevel: c.gradeLevel ?? null,
+      studentCount: Number(c.studentCount || 0),
+      extraHours: Number(c.extraHours || 0),
+    })),
+    // כל ההצעות שהוצעו בזמן הסגירה ולא רק הנבחרות — כדי שהמסמך יישאר
+    // קריא במלואו גם אחרי שהמנוע ישתנה
+    suggestions: rows.map(r => ({
+      key: r.key,
+      label: r.label,
+      saving: Math.round(r.saving),
+      classDelta: r.classDelta ?? 0,
+      kind: r.kind ?? null,
+      names: r.names ?? null,
+      selected: selectedKeys == null || selectedKeys.has(r.key),
+    })),
+  };
+}
+
+// סנפשוט תקין הוא הסימן היחיד לכך שהתקציב נסגר. summary ישן (סכומים בלבד,
+// בלי מערך הצעות) נחשב "עוד לא נסגר" וממשיך להתנהג כמו קודם.
+export function isPlanClosed(summary) {
+  return Array.isArray(summary?.suggestions);
+}
+
+// התוכנית הקפואה בדיוק במבנה שמחזיר useSuggestionPlan
+export function planFromSnapshot(summary) {
+  if (!isPlanClosed(summary)) return null;
+  const row = (s) => ({
+    key: s.key, label: s.label, saving: Number(s.saving) || 0,
+    classDelta: Number(s.classDelta) || 0, kind: s.kind ?? null, names: s.names ?? null,
+  });
+  const suggestions = summary.suggestions.map(row);
+  const selected = summary.suggestions.filter(s => s.selected).map(row);
+  return {
+    suggestions,
+    selected,
+    total: sumSavings(selected),
+    projectedBalance: Number(summary.projectedBalance) || 0,
+    classCountAfter: summary.classCountAfter ?? null,
+    closedAt: summary.closedAt ?? null,
+    frozen: true,
+  };
+}
+
+// התמונה התקציבית הקפואה — סכומים, מצבת כיתות ומספרי תלמידים כפי שנחתמו.
+// מסכי התצוגה קוראים מכאן אחרי סגירה, כדי ששינוי במסד לא יזיז מספר שנחתם.
+export function totalsFromSnapshot(summary) {
+  if (!isPlanClosed(summary)) return null;
+  return {
+    totalIncome: Number(summary.totalIncome) || 0,
+    totalExpenses: Number(summary.totalExpenses) || 0,
+    balance: Number(summary.balance) || 0,
+    totalStudents: Number(summary.students) || 0,
+    classCount: Number(summary.classCount) || 0,
+    frozen: true,
+  };
+}
+
+export function classesFromSnapshot(summary) {
+  return Array.isArray(summary?.classes) ? summary.classes : null;
 }

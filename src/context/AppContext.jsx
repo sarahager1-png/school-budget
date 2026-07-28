@@ -30,8 +30,15 @@ function mapConstantsFromDB(row) {
     incomePerStudentCaharon: Number(row.income_per_student_caharon ?? 0),
     expensePerStudentCaharon: Number(row.expense_per_student_caharon ?? 0),
     ministryGrantPerStudent: Number(row.ministry_grant_per_student ?? 360),
-    // חוגים כבויים בבית ספר זה (VITE_DISABLE_CLUBS=1) — לא ערך מה-DB, דגל build לפי בית ספר
-    clubsMonthlyExpensePerClass: import.meta.env.VITE_DISABLE_CLUBS === '1' ? 0 : DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass,
+    // שעות ייעוץ לכיתה בחודש — ניתן לעריכה בהגדרות. במוסד שהעמודה עוד לא
+    // הוקמה בו נשארת ברירת המחדל הרשתית (2), בדיוק כמו קודם.
+    counselingHoursPerClass: Number(row.counseling_hours_per_class ?? DEFAULT_CONSTANTS.counselingHoursPerClass),
+    // תוספת חוגים לכיתה בחודש — ניתן לעריכה בהגדרות. כל עוד לא נקבע ערך
+    // (NULL) נשמרת ההתנהגות הישנה: דגל ה-build VITE_DISABLE_CLUBS מכבה, אחרת
+    // ברירת המחדל הרשתית. ערך שנקבע במסך ההגדרות גובר על שניהם.
+    clubsMonthlyExpensePerClass: row.clubs_monthly_expense_per_class != null
+      ? Number(row.clubs_monthly_expense_per_class)
+      : (import.meta.env.VITE_DISABLE_CLUBS === '1' ? 0 : DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass),
   };
 }
 
@@ -54,6 +61,8 @@ function mapConstantsToDB(c) {
     income_per_student_caharon: c.incomePerStudentCaharon,
     expense_per_student_caharon: c.expensePerStudentCaharon,
     ministry_grant_per_student: c.ministryGrantPerStudent,
+    counseling_hours_per_class: c.counselingHoursPerClass,
+    clubs_monthly_expense_per_class: c.clubsMonthlyExpensePerClass,
   };
 }
 
@@ -512,9 +521,22 @@ export function AppProvider({ children }) {
       .select('id')
       .eq('budget_year_id', currentYear.id)
       .maybeSingle();
-    const { error } = existing
-      ? await supabase.from('financial_constants').update(dbData).eq('id', existing.id)
-      : await supabase.from('financial_constants').insert(dbData);
+    const write = (payload) => (existing
+      ? supabase.from('financial_constants').update(payload).eq('id', existing.id)
+      : supabase.from('financial_constants').insert(payload));
+
+    let { error } = await write(dbData);
+    // עמודה שעוד לא הוקמה במוסד (למשל counseling_hours_per_class לפני מיגרציה
+    // v21) לא תפיל את שמירת כל הקבועים — שומרים בלעדיה ומתריעים על השדה בלבד.
+    const missingCol = error && (error.code === '42703' || /column .* does not exist|schema cache/i.test(error.message || ''));
+    if (missingCol) {
+      const { counseling_hours_per_class: _c, clubs_monthly_expense_per_class: _k, ...withoutNew } = dbData;
+      ({ error } = await write(withoutNew));
+      if (!error) {
+        await syncPrincipalSalaryExpense(newConstants.principalMonthlySalary);
+        return notify('הקבועים נשמרו ✓ — שעות הייעוץ ותוספת החוגים עדיין לא הופעלו במוסד זה', 'error');
+      }
+    }
     if (error) return saveFailed(error);
     await syncPrincipalSalaryExpense(newConstants.principalMonthlySalary);
     notify('הקבועים נשמרו ✓');

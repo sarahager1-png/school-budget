@@ -192,6 +192,7 @@ async function main() {
     'supabase/migration_v14_extra_hours.sql',
     'supabase/migration_v15_no_ofek_450.sql',
     'supabase/migration_v16_budget_approvals.sql',
+    'supabase/migration_v22_courier_income_expenses.sql',
   ];
   for (const f of sqlFiles) {
     let sql = fs.readFileSync(path.join(root, f), 'utf8');

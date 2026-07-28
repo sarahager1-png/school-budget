@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+﻿import { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Lightbulb, Merge, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
-  GraduationCap, UserCog, Wallet, Banknote, Save, DoorClosed, Bus,
+  GraduationCap, UserCog, Wallet, Banknote, Save, DoorClosed, Bus, Lock, Unlock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
@@ -16,10 +16,15 @@ import {
   DEFAULT_SHABBAT_WEEKLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
-  normalizeSuggestionKey,
+  normalizeSuggestionKey, buildSuggestionRows, buildPlanSnapshot,
 } from '../lib/efficiency.js';
+import { useBudgetClosed } from '../lib/useBudgetClosed.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { CLASS_TYPE } from '../data/constants.js';
+
+// חודשי גבייה בפועל של שכר לימוד (כמו CLUBS_MONTHS) — ההורים חושבים ומדברים
+// על שכר הלימוד לפי חודש, אבל תחשיב ההצעה (וכל שאר ההצעות) עובד ב-₪/תלמיד/שנה
+const TUITION_SUGGESTION_MONTHS = 10;
 
 function Stepper({ value, onChange, min, max, unit, step = 1, decLabel = 'הפחתה', incLabel = 'הוספה' }) {
   return (
@@ -73,8 +78,8 @@ function DualHoursStepper({ added, onChange, appliesToAll = false }) {
       </div>
       <p className="text-xs text-gray-400 mt-1.5">
         {added > 0
-          ? `${DUAL_AGE_EXTRA_MONTHLY_HOURS} מההקצאה הרשתית + ${added} שהוספת = ${total} שעות, ומעליהן השעות הבודדות שהוזנו בכיתות שהתחברו. החיסכון למטה כבר מעודכן.`
-          : `${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות הן ההקצאה הרשתית, ומעליהן נספרות השעות הבודדות שהוזנו בכיתות שהתחברו. אפשר להוסיף עוד אם החיבור דורש.`}
+          ? `${DUAL_AGE_EXTRA_MONTHLY_HOURS} מההקצאה הרשתית + ${added} שהוספת = ${total} שעות שבועיות. החיסכון למטה כבר מעודכן.`
+          : `${DUAL_AGE_EXTRA_MONTHLY_HOURS} שעות שבועיות הן ההקצאה הרשתית לחיבור — זו כל התוספת. אפשר להוסיף עוד אם החיבור דורש.`}
       </p>
     </div>
   );
@@ -175,7 +180,11 @@ export default function EfficiencyPage() {
   const [parentAmount, setParentAmount] = useState(DEFAULT_PARENT_CONTRIBUTION);
   const [partaniyotHours, setPartaniyotHours] = useState(DEFAULT_PARTANIYOT_HOURS);
   const [principalHours, setPrincipalHours] = useState(DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS);
-  const [tuitionAmount, setTuitionAmount] = useState(DEFAULT_TUITION_AMOUNT);
+  // הצעה בלבד — לא נקבע בקבועי התקציב, אלא ברמת ה-build של המוסד (למשל
+  // רעננה: VITE_TUITION_SUGGESTION_AMOUNT, ₪ לחודש), בדיוק כמו VITE_DISABLE_CLUBS
+  const [tuitionMonthly, setTuitionMonthly] = useState(
+    Number(import.meta.env.VITE_TUITION_SUGGESTION_AMOUNT) || Math.round(DEFAULT_TUITION_AMOUNT / TUITION_SUGGESTION_MONTHS),
+  );
   const [tuitionRate, setTuitionRate] = useState(DEFAULT_TUITION_COLLECTION_RATE);
   const [supplementAmount, setSupplementAmount] = useState(DEFAULT_TUITION_SUPPLEMENT);
 
@@ -200,10 +209,10 @@ export default function EfficiencyPage() {
       parents: parentContributionReport(classes, parentAmount),
       partaniyot: partaniyotReport(classes, constants, partaniyotHours),
       principal: principalTeachingReport(classes, constants, principalHours),
-      tuition: tuitionReport(classes, tuitionAmount, tuitionRate),
+      tuition: tuitionReport(classes, tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate),
       supplement: tuitionSupplementReport(classes, supplementAmount),
     };
-  }, [classes, expenses, expenseCategories, constants, dualAddedHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionAmount, tuitionRate, supplementAmount]);
+  }, [classes, expenses, expenseCategories, constants, dualAddedHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
@@ -237,12 +246,40 @@ export default function EfficiencyPage() {
     ...(top.rows.length > 0 ? ['trim'] : []),
   ], [report]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isSelected = (key) => selectedKeys == null || selectedKeys.has(key);
-  const toggleKey = (key) => setSelectedKeys(prev => {
-    const base = prev == null ? new Set(allKeys) : new Set(prev);
-    if (base.has(key)) base.delete(key); else base.add(key);
-    return base;
-  });
+  // אחרי שמירה התוכנית נעולה: הסימון מוצג מהסנפשוט שנשמר ואי אפשר לשנותו.
+  // closedNow מסמן נעילה שקרתה בשמירה הנוכחית, בלי לטעון מחדש מהמסד.
+  const { closed: closedSaved, plan: frozenPlan, reopen } = useBudgetClosed(user?.schoolId, currentYear?.id);
+  const [closedNow, setClosedNow] = useState(false);
+  const [reopened, setReopened] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const closed = (closedSaved || closedNow) && !reopened;
+
+  // אדמין הרשת יכול לפתוח תקציב נעול ולשנות את הבחירה. למנהלת אין את זה.
+  const isAdmin = user?.role === 'admin';
+  const doReopen = async () => {
+    setReopening(true);
+    const { error } = await reopen();
+    setReopening(false);
+    if (error) return saveFailed(error);
+    setReopened(true);
+    setClosedNow(false);
+    notify('התקציב נפתח לעריכה — שמירה תנעל אותו מחדש');
+  };
+  const frozenSelected = useMemo(
+    () => (frozenPlan ? new Set(frozenPlan.selected.map(s => s.key)) : null),
+    [frozenPlan],
+  );
+
+  const isSelected = (key) => (frozenSelected ? frozenSelected.has(key)
+    : selectedKeys == null || selectedKeys.has(key));
+  const toggleKey = (key) => {
+    if (closed) return;
+    setSelectedKeys(prev => {
+      const base = prev == null ? new Set(allKeys) : new Set(prev);
+      if (base.has(key)) base.delete(key); else base.add(key);
+      return base;
+    });
+  };
 
   // כרטיס סף-התקן מציג כמה כיתות יחד — הסימון שולט על כולן כאחת
   const thKeys = thresholds.rows.map(r => `threshold:${r.cls.id}`);
@@ -254,32 +291,95 @@ export default function EfficiencyPage() {
     return base;
   });
 
+  // הפרמטרים המכוונים (שכר לימוד, שעות וכו') נטענים מה-DB לפני שהאוטו-שמירה
+  // למטה מתחילה לכתוב — אחרת ברירות המחדל הראשוניות דורסות טיונינג קודם
+  const paramsLoaded = useRef(false);
+
   useEffect(() => {
     setSelectedKeys(null);
+    paramsLoaded.current = false;
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
-      .select('selected_suggestion_keys')
+      .select('selected_suggestion_keys, summary')
       .eq('school_id', user.schoolId)
       .eq('budget_year_id', currentYear.id)
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) console.error(error);
         if (data?.selected_suggestion_keys) setSelectedKeys(new Set(data.selected_suggestion_keys.map(normalizeSuggestionKey)));
+        const dp = data?.summary?.draftParams;
+        if (dp) {
+          if (dp.dualAddedHours != null) setDualAddedHours(dp.dualAddedHours);
+          if (dp.hoursCut != null) setHoursCut(dp.hoursCut);
+          if (dp.trimPct != null) setTrimPct(dp.trimPct);
+          if (dp.shabbatHours != null) setShabbatHours(dp.shabbatHours);
+          if (dp.parentAmount != null) setParentAmount(dp.parentAmount);
+          if (dp.partaniyotHours != null) setPartaniyotHours(dp.partaniyotHours);
+          if (dp.principalHours != null) setPrincipalHours(dp.principalHours);
+          if (dp.tuitionAmount != null) setTuitionMonthly(Math.round(dp.tuitionAmount / TUITION_SUGGESTION_MONTHS));
+          if (dp.tuitionRate != null) setTuitionRate(dp.tuitionRate);
+          if (dp.supplementAmount != null) setSupplementAmount(dp.supplementAmount);
+        }
+        paramsLoaded.current = true;
       });
   }, [user?.schoolId, currentYear?.id]);
 
+  // אוטו-שמירה של הכוונון (לא נועלת כלום — closed חוסם לגמרי) כדי שסיכום
+  // ואישור, דף הבית והמסמך יראו בדיוק את מה שכוונן כאן, גם לפני שמירת הבחירה
+  useEffect(() => {
+    if (!paramsLoaded.current || closed || !user?.schoolId || !currentYear?.id) return;
+    const draftParams = {
+      dualAddedHours, hoursCut, trimPct, shabbatHours, parentAmount, partaniyotHours,
+      principalHours, tuitionAmount: tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate, supplementAmount,
+    };
+    const timer = setTimeout(() => {
+      supabase.from('budget_approvals').upsert({
+        school_id: user.schoolId,
+        budget_year_id: currentYear.id,
+        summary: { draftParams },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'school_id,budget_year_id' }).then(({ error }) => {
+        if (error && !isMissingTableError(error)) console.error(error);
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [
+    closed, user?.schoolId, currentYear?.id, dualAddedHours, hoursCut, trimPct, shabbatHours,
+    parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount,
+  ]);
+
+  // השמירה היא רגע ההקפאה: נשמר סנפשוט מלא — הצעות, סכומים, מצבת כיתות
+  // ומספרי תלמידים — ומאותו רגע התקציב נעול ואינו משתנה עוד, לא מהמנוע
+  // ולא מעריכה במסכים אחרים (האכיפה עצמה במסד, migration_v20).
   const saveSelection = async () => {
+    if (closed) return notify('התקציב כבר נשמר ונעול — לפתיחה מחדש יש לפנות לרשת', 'error');
     setSavingSelection(true);
+    const now = new Date().toISOString();
+    // אותם ערכים מכוונים בדיוק כמו הכרטיסים למעלה — אחרת הסנפשוט הקפוא
+    // (המוצג בסיכום ואישור ובמסמך) חוזר לברירות המחדל הרשתיות ומתעלם מהכוונון
+    const rows = buildSuggestionRows(classes, expenses, expenseCategories, constants, {
+      dualAddedHours, hoursCut, trimPct, shabbatHours, parentAmount, partaniyotHours,
+      principalHours, tuitionAmount: tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate, supplementAmount,
+    });
+    const keys = selectedKeys == null ? allKeys : [...selectedKeys];
     const { data, error } = await supabase.from('budget_approvals').upsert({
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
-      selected_suggestion_keys: selectedKeys == null ? allKeys : [...selectedKeys],
-      updated_at: new Date().toISOString(),
+      selected_suggestion_keys: keys,
+      summary: buildPlanSnapshot({
+        rows,
+        selectedKeys: new Set(keys),
+        totals,
+        classes,
+        closedAt: now,
+      }),
+      updated_at: now,
     }, { onConflict: 'school_id,budget_year_id' }).select().single();
     setSavingSelection(false);
     if (isMissingTableError(error)) return notify('שמירת הבחירה עדיין לא הופעלה במוסד זה — יש לפנות לתמיכה', 'error');
     if (error || !data) return saveFailed(error);
-    notify('הבחירה נשמרה ✓ — מופיעה גם בסיכום ואישור ובמסמך');
+    setClosedNow(true);
+    notify('נשמר ונעול ✓ — התקציב לא ישתנה עוד');
   };
 
   const totalPotential =
@@ -329,11 +429,36 @@ export default function EfficiencyPage() {
             המערכת מציעה — את בוחרת: סמני ✓ על ההצעות שמאמצים, והסכומים יתעדכנו מיד
           </p>
         </div>
-        <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
-          <Save size={14} />
-          שמירת הבחירה
-        </button>
+        {!closed && (
+          <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
+            <Save size={14} />
+            שמירת הבחירה
+          </button>
+        )}
       </div>
+
+      {/* תקציב נעול — פתיחה מחדש שמורה לאדמין הרשת בלבד */}
+      {closed && (
+        <div className="card p-4 bg-teal-50 border border-teal-200 flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <p className="font-bold text-teal-900 text-sm">
+              <Lock size={14} className="inline-block ms-1" />
+              התקציב נשמר ונעול
+              {frozenPlan?.closedAt ? ` מ-${new Date(frozenPlan.closedAt).toLocaleDateString('he-IL')}` : ''}
+            </p>
+            <p className="text-teal-800 text-xs mt-1 leading-relaxed">
+              ההצעות והסכומים מוצגים כפי שנשמרו ואינם משתנים עוד — גם אם מספרי התלמידים או ההוצאות ישתנו.
+              {!isAdmin && ' לשינוי יש לפנות לרשת.'}
+            </p>
+          </div>
+          {isAdmin && (
+            <button type="button" onClick={doReopen} disabled={reopening} className="btn-outline btn-sm flex-shrink-0">
+              <Unlock size={14} />
+              {reopening ? 'פותח...' : 'פתיחה מחדש לעריכה'}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="card overflow-hidden spring-enter">
@@ -407,7 +532,7 @@ export default function EfficiencyPage() {
           title={m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
             : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
-          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם ${m.extraMonthlyHours} שעות בודדות בחודש לכיתה המחוברת${m.enteredHours > 0 ? ` — ${m.allocatedHours} הקצאה רשתית ו-${m.enteredHours} שהוזנו בכיתות עצמן` : ''}`}
+          subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם ${m.extraMonthlyHours} שעות בודדות בחודש לכיתה המחוברת`}
           saving={m.delta}
           details={[
             { label: 'הכנסות (משרד + תלמידים) לפני', value: formatCurrency(m.incomeBefore) },
@@ -415,7 +540,7 @@ export default function EfficiencyPage() {
             { label: 'עלות הוראה והוצאות לפני (2 כיתות)', value: formatCurrency(m.costBefore) },
             { label: `הקצאה רשתית — ${m.allocatedHours} שעות × ${formatCurrency(constants.actualHourlyRate)} × 12`, value: formatCurrency(m.allocatedHours * constants.actualHourlyRate * 12) },
             ...(m.enteredHours > 0
-              ? [{ label: `שעות בודדות שהוזנו בכיתות — ${m.enteredHours} בחודש`, value: formatCurrency(m.enteredHours * constants.actualHourlyRate * 12) }]
+              ? [{ label: `${m.enteredHours} שעות בודדות שהוזנו בכיתות — נחסכות בחיבור`, value: formatCurrency(m.enteredHours * constants.actualHourlyRate * 12), tone: 'green' }]
               : []),
             ...(m.addedHours > 0
               ? [{ label: `תוספת שהוספת — ${m.addedHours} שעות`, value: formatCurrency(m.addedHours * constants.actualHourlyRate * 12) }]
@@ -465,7 +590,7 @@ export default function EfficiencyPage() {
           tone="teal"
           index={++cardIndex}
           title="הורדת שעות הוראה בפועל"
-          subtitle={`היום כל כיתה מקבלת ${hours.currentHours} שעות בחודש, והמשרד מממן ${hours.fundedHours} לכיתה מלאה. כל שעה חודשית שמורידים חוסכת ${formatCurrency(hours.hourlyRate * 12)} לכיתה בשנה.`}
+          subtitle={`היום כל כיתה מקבלת ${hours.currentHours} שעות שבועיות, והמשרד מממן ${hours.fundedHours} לכיתה מלאה. כל שעה חודשית שמורידים חוסכת ${formatCurrency(hours.hourlyRate * 12)} לכיתה בשנה.`}
           saving={hoursSaving}
           details={[
             { label: 'כיתות במערכת', value: `${hours.classCount}` },
@@ -494,7 +619,7 @@ export default function EfficiencyPage() {
           saving={partaniyot.saving}
           details={[
             { label: 'כיתות במערכת', value: `${partaniyot.classCount}` },
-            { label: `חיסכון לכיתה — ${partaniyot.hoursPerClass} ש׳ בחודש × ${formatCurrency(partaniyot.hourlyRate)} × 12`, value: formatCurrency(partaniyot.perClassAnnual), tone: 'green' },
+            { label: `חיסכון לכיתה — ${partaniyot.hoursPerClass} ש׳ שבועיות × ${formatCurrency(partaniyot.hourlyRate)} × 12`, value: formatCurrency(partaniyot.perClassAnnual), tone: 'green' },
             { label: `${partaniyot.classCount} כיתות יחד`, value: formatCurrencyFull(partaniyot.saving), tone: 'green' },
           ]}
           selected={isSelected('partaniyot')}
@@ -644,7 +769,7 @@ export default function EfficiencyPage() {
           tone="teal"
           index={++cardIndex}
           title="שכר לימוד עם אחוזי גבייה ריאליים"
-          subtitle={`קביעת שכר לימוד של ${formatCurrency(tuition.amountPerStudent)} לתלמיד לשנה, עם ${tuition.collectionRatePct}% גבייה ריאלית (לא כולם משלמים במלואם) — ${tuition.totalStudents} תלמידים.`}
+          subtitle={`קביעת שכר לימוד של ${formatCurrency(tuitionMonthly)} לתלמיד לחודש (${formatCurrency(tuition.amountPerStudent)} לשנה), עם ${tuition.collectionRatePct}% גבייה ריאלית (לא כולם משלמים במלואם) — ${tuition.totalStudents} תלמידים.`}
           saving={tuition.gain}
           savingLabel="הכנסה ריאלית בשנה"
           details={[
@@ -657,8 +782,8 @@ export default function EfficiencyPage() {
         >
           <div className="flex flex-col gap-3 bg-teal-50/60 rounded-xl p-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-sm font-medium text-gray-700">שכר לימוד לתלמיד לשנה</span>
-              <Stepper value={tuitionAmount} onChange={setTuitionAmount} min={500} max={10000} step={500} unit="₪" />
+              <span className="text-sm font-medium text-gray-700">שכר לימוד לתלמיד לחודש</span>
+              <Stepper value={tuitionMonthly} onChange={setTuitionMonthly} min={600} max={1500} step={50} unit="₪" />
             </div>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-sm font-medium text-gray-700">אחוז גבייה ריאלי</span>

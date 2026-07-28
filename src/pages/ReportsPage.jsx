@@ -371,7 +371,7 @@ export default function ReportsPage() {
                     { label: 'סה״כ הכנסות', value: totals.totalIncome, type: 'total-income' },
                     { label: null },
                     { label: 'עלות הוראה בפועל', value: totals.totalClassActualCost, type: 'expense' },
-                    ...(totals.totalCounselingCost > 0 ? [{ label: 'ייעוץ (2 ש׳ לכיתה)', value: totals.totalCounselingCost, type: 'expense' }] : []),
+                    ...(totals.totalCounselingCost > 0 ? [{ label: `ייעוץ (${constants.counselingHoursPerClass} ש׳ לכיתה)`, value: totals.totalCounselingCost, type: 'expense' }] : []),
                     ...(totals.totalClubsExpense > 0 ? [{ label: 'תוספת חוגים לכיתה (2,000 ₪ × 10 ח׳)', value: totals.totalClubsExpense, type: 'expense' }] : []),
                     { label: 'הוצאות לתלמיד (אירועים, ערבי הורים, פיתוח מקצועי, שכפולים)', value: totals.totalStudentExpenses, type: 'expense' },
                     ...(totals.totalProfDev > 0 ? [{ label: 'פיתוח מקצועי', value: totals.totalProfDev, type: 'expense' }] : []),
