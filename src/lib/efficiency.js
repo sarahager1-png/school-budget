@@ -355,26 +355,32 @@ export function tuitionSupplementReport(classes, amountPerStudent = DEFAULT_TUIT
 // (מתחת לסף כיתה מלאה) — התרחיש הריאלי לסגירה. החיסכון = הגירעון נטו
 // של הכיתה, בהנחה שהתלמידים אינם נשארים במוסד.
 export function closeClassReport(classes, constants, excludeIds = new Set()) {
-  const graded = classes
-    .filter(c => !excludeIds.has(c.id))
+  const allGraded = classes
     .map(c => ({ c, idx: classGradeIndex(c) }))
     .filter(x => x.idx != null);
-  if (graded.length === 0) return [];
-  const topIdx = Math.max(...graded.map(x => x.idx));
-  // close_class_extra_grades (מיגרציה v23) — שכבות נוספות, מלבד הגבוהה
-  // ביותר שנבדקת תמיד, שהמנהלת בחרה להציע כהצעת סגירה נפרדת (ר' SettingsPage).
-  const extraIdxs = (constants.closeClassExtraGrades ?? [])
-    .map(g => normalizeGrade(g))
-    .filter(idx => idx != null && idx < topIdx);
-  const targetIdxs = [...new Set([topIdx, ...extraIdxs])];
+  if (allGraded.length === 0) return [];
+
+  // close_class_extra_grades (מיגרציה v23) — שכבות שהמנהלת בחרה במפורש
+  // להציע כהצעת סגירה נפרדת (ר' SettingsPage). אלה מוצגות גם אם קיימת גם
+  // הצעת חיבור/איחוד לאותה כיתה (excludeIds) — שתי אפשרויות חלופיות
+  // שהמנהלת בוחרת ביניהן, לא סתירה.
+  const extraIdxs = new Set(
+    (constants.closeClassExtraGrades ?? []).map(g => normalizeGrade(g)).filter(idx => idx != null),
+  );
+
+  // ברירת המחדל (בלי שכבות נוספות): רק השכבה הגבוהה מבין הכיתות שעדיין לא
+  // קיבלו הצעת חיבור זולה יותר — בדיוק כמו קודם.
+  const nonExcluded = allGraded.filter(x => !excludeIds.has(x.c.id));
+  const autoTopIdx = nonExcluded.length ? Math.max(...nonExcluded.map(x => x.idx)) : null;
+
+  const targetIdxs = new Set(extraIdxs);
+  if (autoTopIdx != null) targetIdxs.add(autoTopIdx);
 
   const rows = [];
   for (const idx of targetIdxs) {
-    const atGrade = graded
-      .filter(x => x.idx === idx)
-      .map(x => x.c)
-      .sort((a, b) => a.studentCount - b.studentCount);
-    const cand = atGrade[0];
+    const respectExclude = idx === autoTopIdx && !extraIdxs.has(idx);
+    const pool = (respectExclude ? nonExcluded : allGraded).filter(x => x.idx === idx);
+    const cand = pool.map(x => x.c).sort((a, b) => a.studentCount - b.studentCount)[0];
     if (!cand || cand.studentCount >= constants.fullClassStudentThreshold) continue;
     const budget = calculateClassBudget(cand, constants);
     if (budget.balance >= -1000) continue;
