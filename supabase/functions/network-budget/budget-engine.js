@@ -316,15 +316,26 @@ export function closeClassReport(classes, constants, excludeIds = new Set()) {
     .filter(x => x.idx != null);
   if (graded.length === 0) return [];
   const topIdx = Math.max(...graded.map(x => x.idx));
-  const topClasses = graded
-    .filter(x => x.idx === topIdx)
-    .map(x => x.c)
-    .sort((a, b) => a.studentCount - b.studentCount);
-  const cand = topClasses[0];
-  if (!cand || cand.studentCount >= constants.fullClassStudentThreshold) return [];
-  const budget = calculateClassBudget(cand, constants);
-  if (budget.balance >= -1000) return [];
-  return [{ cls: cand, budget, saving: -budget.balance }];
+  // close_class_extra_grades (מיגרציה v23) — שכבות נוספות, מלבד הגבוהה
+  // ביותר שנבדקת תמיד, שהמנהלת בחרה להציע כהצעת סגירה נפרדת (ר' SettingsPage).
+  const extraIdxs = (constants.closeClassExtraGrades ?? [])
+    .map(g => normalizeGrade(g))
+    .filter(idx => idx != null && idx < topIdx);
+  const targetIdxs = [...new Set([topIdx, ...extraIdxs])];
+
+  const rows = [];
+  for (const idx of targetIdxs) {
+    const atGrade = graded
+      .filter(x => x.idx === idx)
+      .map(x => x.c)
+      .sort((a, b) => a.studentCount - b.studentCount);
+    const cand = atGrade[0];
+    if (!cand || cand.studentCount >= constants.fullClassStudentThreshold) continue;
+    const budget = calculateClassBudget(cand, constants);
+    if (budget.balance >= -1000) continue;
+    rows.push({ cls: cand, budget, saving: -budget.balance });
+  }
+  return rows;
 }
 
 export function hoursCutReport(classes, constants, hoursCut = 1) {

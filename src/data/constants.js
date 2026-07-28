@@ -40,6 +40,7 @@ export const DEFAULT_CONSTANTS = {
   incomePerStudentCaharon: 0,
   expensePerStudentCaharon: 0,
   ministryGrantPerStudent: 370,
+  closeClassExtraGrades: [], // שכבות נוספות (מלבד הגבוהה) להצעת "סגירת כיתה" — נערך בהגדרות (מיגרציה v23)
 };
 
 export const CONSTANTS_LABELS = {

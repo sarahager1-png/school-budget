@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, PAYMENT_MONTHS, OFEK_RATES } from '../data/constants.js';
+import { classGradeIndex } from '../lib/efficiency.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
 import Picker from '../components/ui/Picker.jsx';
@@ -189,7 +190,7 @@ function YearsTab() {
 }
 
 function FinancialTab() {
-  const { constants, setConstants, user } = useApp();
+  const { constants, setConstants, classes, user } = useApp();
   const canEdit = MANAGERS.includes(user?.role);
   const [form, setForm] = useState({ ...constants });
 
@@ -205,6 +206,22 @@ function FinancialTab() {
     ofekSalary: yes,
     actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
   }));
+
+  // שכבות שאפשר להוסיף כהצעת "סגירת כיתה" נפרדת — כל שכבה קיימת מלבד
+  // הגבוהה ביותר (היא תמיד נבדקת אוטומטית, ר' closeClassReport)
+  const gradedClasses = classes
+    .map(c => ({ label: c.gradeLevel || c.name, idx: classGradeIndex(c) }))
+    .filter(x => x.idx != null);
+  const topGradeIdx = gradedClasses.length ? Math.max(...gradedClasses.map(x => x.idx)) : null;
+  const closeableGrades = [...new Map(
+    gradedClasses.filter(x => x.idx < topGradeIdx).map(x => [x.idx, x.label]),
+  ).entries()].sort((a, b) => a[0] - b[0]).map(([, label]) => label);
+
+  const toggleCloseGrade = (label) => setForm(p => {
+    const set = new Set(p.closeClassExtraGrades || []);
+    if (set.has(label)) set.delete(label); else set.add(label);
+    return { ...p, closeClassExtraGrades: [...set] };
+  });
 
   return (
     <div className="space-y-5">
@@ -232,6 +249,31 @@ function FinancialTab() {
           <p className="text-xs text-gold-700 mt-2">טרם נבחר — המערכת תמשיך לשאול בדף הבית</p>
         )}
       </div>
+
+      {closeableGrades.length > 0 && (
+        <div className="card p-4 border border-coral-200">
+          <label className="label">שכבות נוספות להצעת "סגירת כיתה"</label>
+          <p className="text-xs text-gray-400 mb-3">
+            השכבה הגבוהה ביותר בבית הספר תמיד נבדקת אוטומטית. סמני כאן שכבות נוספות שרוצים
+            לראות גם אותן כהצעת "סגירת כיתה" נפרדת במסך הייעול — כל שכבה מסומנת תופיע ככרטיס
+            נפרד, ואפשר לבחור בכל אחת בנפרד. לא לשכוח לשמור למטה.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {closeableGrades.map(label => (
+              <button
+                key={label}
+                type="button"
+                disabled={!canEdit}
+                onClick={() => toggleCloseGrade(label)}
+                aria-pressed={(form.closeClassExtraGrades || []).includes(label)}
+                className={(form.closeClassExtraGrades || []).includes(label) ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+              >
+                כיתה {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Object.entries(CONSTANTS_LABELS).map(([key, meta]) => (

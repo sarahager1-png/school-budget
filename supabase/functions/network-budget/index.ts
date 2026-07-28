@@ -171,6 +171,7 @@ async function fetchSchool(s: School, key: string) {
     incomePerStudentCaharon: Number(c.income_per_student_caharon ?? 0),
     expensePerStudentCaharon: Number(c.expense_per_student_caharon ?? 0),
     ministryGrantPerStudent: grant,
+    closeClassExtraGrades: c.close_class_extra_grades ? String(c.close_class_extra_grades).split(',').map((s: string) => s.trim()).filter(Boolean) : [],
   };
   const engineClasses = classes.map((cl: { id: string; name: string; grade_level: string | null; student_count: number; extra_hours: number }) => ({
     id: cl.id, name: cl.name, gradeLevel: cl.grade_level,

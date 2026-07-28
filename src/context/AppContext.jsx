@@ -39,6 +39,11 @@ function mapConstantsFromDB(row) {
     clubsMonthlyExpensePerClass: row.clubs_monthly_expense_per_class != null
       ? Number(row.clubs_monthly_expense_per_class)
       : (import.meta.env.VITE_DISABLE_CLUBS === '1' ? 0 : DEFAULT_CONSTANTS.clubsMonthlyExpensePerClass),
+    // שכבות נוספות להצעת "סגירת כיתה" (מיגרציה v23) — אותיות שכבה מופרדות
+    // בפסיק, לדוגמה "ג,ד". ריק/NULL = רק השכבה הגבוהה, כמו קודם.
+    closeClassExtraGrades: row.close_class_extra_grades
+      ? row.close_class_extra_grades.split(',').map(s => s.trim()).filter(Boolean)
+      : [],
   };
 }
 
@@ -63,6 +68,7 @@ function mapConstantsToDB(c) {
     ministry_grant_per_student: c.ministryGrantPerStudent,
     counseling_hours_per_class: c.counselingHoursPerClass,
     clubs_monthly_expense_per_class: c.clubsMonthlyExpensePerClass,
+    close_class_extra_grades: c.closeClassExtraGrades?.length ? c.closeClassExtraGrades.join(',') : null,
   };
 }
 
