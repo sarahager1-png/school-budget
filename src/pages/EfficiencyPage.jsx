@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect, useRef } from 'react';
+﻿import { useMemo, useState, useEffect } from 'react';
 import {
   Lightbulb, Merge, Clock, UserPlus, PartyPopper, Scissors,
   AlertTriangle, ChevronDown, Plus, Minus, School, ArrowLeft, Sparkles, Layers, Flame, Sun, HandCoins,
@@ -292,12 +292,16 @@ export default function EfficiencyPage() {
   });
 
   // הפרמטרים המכוונים (שכר לימוד, שעות וכו') נטענים מה-DB לפני שהאוטו-שמירה
-  // למטה מתחילה לכתוב — אחרת ברירות המחדל הראשוניות דורסות טיונינג קודם
-  const paramsLoaded = useRef(false);
+  // למטה מתחילה לכתוב — אחרת ברירות המחדל הראשוניות דורסות טיונינג קודם.
+  // state (לא ref!) — ברגע שהטעינה מסתיימת האוטו-שמירה למטה חייבת לרוץ מיד
+  // פעם אחת, גם בלי שנגעו בסליידר, אחרת ברירת המחדל של המוסד (VITE_TUITION_
+  // SUGGESTION_AMOUNT) מוצגת בייעול אבל לא נכתבת ל-draftParams, וסיכום ואישור
+  // עדיין רואה את ברירת המחדל הרשתית הישנה עד שמישהי בפועל מזיזה סליידר.
+  const [paramsLoaded, setParamsLoaded] = useState(false);
 
   useEffect(() => {
     setSelectedKeys(null);
-    paramsLoaded.current = false;
+    setParamsLoaded(false);
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
       .select('selected_suggestion_keys, summary')
@@ -320,14 +324,14 @@ export default function EfficiencyPage() {
           if (dp.tuitionRate != null) setTuitionRate(dp.tuitionRate);
           if (dp.supplementAmount != null) setSupplementAmount(dp.supplementAmount);
         }
-        paramsLoaded.current = true;
+        setParamsLoaded(true);
       });
   }, [user?.schoolId, currentYear?.id]);
 
   // אוטו-שמירה של הכוונון (לא נועלת כלום — closed חוסם לגמרי) כדי שסיכום
   // ואישור, דף הבית והמסמך יראו בדיוק את מה שכוונן כאן, גם לפני שמירת הבחירה
   useEffect(() => {
-    if (!paramsLoaded.current || closed || !user?.schoolId || !currentYear?.id) return;
+    if (!paramsLoaded || closed || !user?.schoolId || !currentYear?.id) return;
     const draftParams = {
       dualAddedHours, hoursCut, trimPct, shabbatHours, parentAmount, partaniyotHours,
       principalHours, tuitionAmount: tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate, supplementAmount,
@@ -344,7 +348,7 @@ export default function EfficiencyPage() {
     }, 600);
     return () => clearTimeout(timer);
   }, [
-    closed, user?.schoolId, currentYear?.id, dualAddedHours, hoursCut, trimPct, shabbatHours,
+    paramsLoaded, closed, user?.schoolId, currentYear?.id, dualAddedHours, hoursCut, trimPct, shabbatHours,
     parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount,
   ]);
 

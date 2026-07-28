@@ -3,8 +3,57 @@ import { annualAmount, formatCurrency } from '../lib/calculations.js';
 import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 import {
   AlertTriangle, CheckCircle, BookOpen, Calculator, Users, CreditCard,
-  TrendingUp, BarChart2, Settings, Package, Wallet, FlaskConical, Printer,
+  TrendingUp, BarChart2, Settings, Package, Wallet, FlaskConical, Printer, UserCog,
 } from 'lucide-react';
+
+// "מי מנהל מה" — התפקיד מתחלק בין מנהלת (מערכת ה-1200 לתלמיד: כיתות
+// והגדרות) לשליח (הכנסות והוצאות שוטפות + בקשות תשלום). מוצג לפי תפקיד
+// המשתמש/ת המחוברת, כדי שכל אחד/ת יראה בדיוק את מה שרלוונטי לו/ה.
+function RoleIntroCard({ role, isSimpleMode, expensePerStudent }) {
+  if (role === 'courier') {
+    return (
+      <div className="rounded-2xl p-5 bg-teal-50 border border-teal-200">
+        <div className="flex items-start gap-3">
+          <UserCog size={22} className="text-teal-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-base text-teal-800">התפקיד שלך: הכנסות, הוצאות ובקשות תשלום</p>
+            <p className="text-sm text-teal-700 mt-1.5 leading-relaxed">
+              במסכי <strong>הכנסות</strong> ו<strong>הוצאות</strong> אתה מוסיף/ה, עורך/ת ומוחק/ת בעצמך —
+              תרומות, מענקים, שכר דירה וכל סעיף אחר. סעיף שמסומן <strong>"חודשי"</strong> (כמו שכר דירה)
+              נשאר קבוע מחודש לחודש והמערכת מכפילה אותו ×12 לבד, בלי להזין אותו מחדש כל פעם.
+              לצד זה ממשיך גם התפקיד המוכר: ביצוע <strong>בקשות תשלום</strong> שהמנהלת שולחת.
+            </p>
+            <p className="text-sm text-teal-700 mt-2 leading-relaxed">
+              {isSimpleMode
+                ? 'את/ה תמיד יכול/ה לראות בדף הבית את היתרה הכוללת (הכנסות מול הוצאות).'
+                : 'את/ה תמיד יכול/ה לראות את היעד הכולל של בית הספר בדף הבית ("יתרה שנתית" ו"מצב תקציב לאחר ייעול"), ואת מצב הגבייה מול ההורים במסך "גבייה". מסכי הכיתות וההגדרות — מערכת ה-1,200 ₪ לתלמיד — שייכים למנהלת; את/ה תמיד רואה אותם, אבל בלי כפתורי עריכה.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (role === 'principal') {
+    return (
+      <div className="rounded-2xl p-5 bg-purple-50 border border-purple-200">
+        <div className="flex items-start gap-3">
+          <UserCog size={22} className="text-purple-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-base text-purple-800">
+              {isSimpleMode ? 'התפקיד שלך' : 'התפקיד שלך: מערכת ה-1,200 ₪ לתלמיד'}
+            </p>
+            <p className="text-sm text-purple-700 mt-1.5 leading-relaxed">
+              {isSimpleMode
+                ? 'ניהול ההכנסות וההוצאות השוטף עבר לשליח — הוא/היא מוסיף/ה ועורך/ת ישירות. את/ה תמיד רואה הכל בדף הבית, ויכולה לשלוח לשליח בקשת תשלום מכל הוצאה.'
+                : (<>מסכי <strong>כיתות</strong> ו<strong>הגדרות</strong> — התקנים, הקבועים הפיננסיים וההוצאה הקבועה של {formatCurrency(expensePerStudent)} לתלמיד — נשארים אצלך. ניהול ההכנסות וההוצאות השוטף (תרומות, שכר דירה וכו') עבר לשליח, שמוסיף ועורך אותן ישירות. את/ה תמיד רואה הכל, ויכולה לשלוח לשליח בקשת תשלום מכל הוצאה.</>)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
 
 function RuleCard({ icon: Icon, color, title, children }) {
   return (
@@ -35,7 +84,7 @@ function PageCard({ icon: Icon, title, desc, color }) {
 }
 
 export default function HelpPage() {
-  const { expenses, classes, constants, school, expenseCategories, isSimpleMode } = useApp();
+  const { expenses, classes, constants, school, expenseCategories, isSimpleMode, user } = useApp();
 
   const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
   const eventCatIds = new Set(expenseCategories.filter(c => c.kind === 'events').map(c => c.id));
@@ -79,6 +128,8 @@ export default function HelpPage() {
           )}
         </div>
       </div>
+
+      <RoleIntroCard role={user?.role} isSimpleMode={isSimpleMode} expensePerStudent={c.expensePerStudent} />
 
       {/* Events Budget Cap — budget mode only */}
       {!isSimpleMode && totalStudents > 0 && (
@@ -196,10 +247,10 @@ export default function HelpPage() {
             ? 'רישום הכיתות ומספרי התלמידים.'
             : 'הוספה ועריכה של כיתות. לחיצה על כיתה פותחת פירוט תקציב מלא.'} />
           <PageCard icon={TrendingUp} color="bg-green-500" title="הכנסות" desc={isSimpleMode
-            ? 'רישום כל מקורות ההכנסה: תרומות, עירייה, הורים, אירועים.'
-            : 'הכנסות משרד החינוך מחושבות אוטומטית לפי הכיתות; כאן מוסיפים הכנסות נוספות.'} />
+            ? 'רישום כל מקורות ההכנסה: תרומות, עירייה, הורים, אירועים — מנוהל ע״י השליח.'
+            : 'הכנסות משרד החינוך מחושבות אוטומטית לפי הכיתות; מקורות הכנסה נוספים (תרומות, עירייה, הורים) מנוהלים ע״י השליח.'} />
           <PageCard icon={Wallet} color="bg-teal-600" title="גבייה" desc="מעקב שכר לימוד: מייבאים את רשימת התלמידים מאקסל, רושמים כל תשלום שנכנס — ורואים מיד מי שילם, מי חלקית ומה נותר לגבות." />
-          <PageCard icon={CreditCard} color="bg-coral-500" title="הוצאות" desc="רישום כל הוצאה לפי קטגוריה. מכל הוצאה אפשר לשלוח בקשת תשלום לשליח." />
+          <PageCard icon={CreditCard} color="bg-coral-500" title="הוצאות" desc="ניהול שוטף ע״י השליח: כל הוצאה לפי קטגוריה, כולל סעיפים קבועים שחוזרים כל חודש (כמו שכר דירה — מוכפל אוטומטית ×12). מכל הוצאה אפשר לשלוח בקשת תשלום לשליח." />
           <PageCard icon={Package} color="bg-gold-500" title="בקשות תשלום" desc="מעקב אחרי ביצוע תשלומים: ממתין ← בביצוע ← שולם ← הושלם, כולל העלאת קבלות." />
           <PageCard icon={Wallet} color="bg-pink-500" title="משכורות" desc="רשימת העובדים והמשכורות, וסימון תשלום חודש-חודש עם אסמכתא." />
           {!isSimpleMode && (
