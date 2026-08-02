@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo, useRef } from 'react';
-import { Printer, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote, Plus } from 'lucide-react';
+import { Printer, FileSpreadsheet, PenLine, Lightbulb, ArrowLeft, CheckCircle2, Save, StickyNote, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import {
@@ -10,6 +10,7 @@ import {
   buildSuggestionRows, normalizeSuggestionKey, buildPlanSnapshot, isPlanClosed,
   planFromSnapshot, totalsFromSnapshot,
 } from '../lib/efficiency.js';
+import { exportSummaryToExcel } from '../lib/exportExcel.js';
 import { MANAGERS, SUMMARY_DISCLAIMER } from '../data/constants.js';
 import SignaturePad from '../components/ui/SignaturePad.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
@@ -293,6 +294,57 @@ export default function SummaryPage() {
 
   const today = new Date().toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  // אותה תמונה שרואים על המסמך המודפס — כולל הצעות ייעול, רק הנבחרות מהן
+  // (בדיוק כמו שהלא-נבחרות מקבלות no-print ולא מודפסות)
+  const handleExportExcel = () => {
+    const rows = [
+      { label: 'הכנסות — ממה זה מורכב' },
+      ...(isSimpleMode
+        ? incomeSources.map(s => ({ label: s.name, value: Math.round(s.amount) }))
+        : [
+            { label: 'שעות תקן — משרד החינוך', value: Math.round(totals.totalMinistryIncome) },
+            { label: `תוספת כללית לתלמיד — משרד החינוך (${totals.totalStudents} × ${formatCurrency(constants.ministryGrantPerStudent)})`, value: Math.round(totals.totalMinistryGrantIncome) },
+            { label: `שכר לימוד — הכנסה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudent)} × 80% גבייה)`, value: Math.round(totals.totalStudentIncome) },
+            { label: `תל"ן — תשלומי הורים (${totals.totalStudents} × ${formatCurrency(constants.incomePerStudentTalan)} × 80% גבייה)`, value: Math.round(totals.totalTalanIncome) },
+            ...incomeSources.map(s => ({ label: s.name, value: Math.round(s.amount) })),
+          ]),
+      { label: 'סה"כ הכנסות', value: Math.round(totals.totalIncome) },
+      { label: null },
+      { label: 'הוצאות — על מה זה יוצא' },
+      ...(!isSimpleMode
+        ? [
+            { label: `שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`, value: Math.round(totals.totalClassActualCost) },
+            { label: `ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`, value: Math.round(totals.totalCounselingCost) },
+            { label: `תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`, value: Math.round(totals.totalClubsExpense) },
+            { label: `הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, value: Math.round(totals.totalStudentExpenses) },
+            ...(totals.totalProfDev > 0 ? [{ label: 'פיתוח מקצועי', value: Math.round(totals.totalProfDev) }] : []),
+            { label: 'שכר מנהלת', value: Math.round(principalAnnual) },
+          ]
+        : []),
+      ...catRows.map(c => ({ label: c.name, value: Math.round(c.value) })),
+      { label: 'סה"כ הוצאות', value: Math.round(totals.totalExpenses) },
+      { label: null },
+      { label: totals.isDeficit ? 'גירעון' : 'עודף', value: Math.round(totals.balance) },
+      ...(!isSimpleMode && suggestions.length > 0
+        ? [
+            { label: null },
+            { label: 'הצעות ייעול שנבחרו' },
+            ...selectedSuggestions.map(s => ({ label: s.label, value: Math.round(s.saving) })),
+            { label: 'סה"כ הצעות נבחרות', value: Math.round(suggestionsTotal) },
+            { label: 'מצב תקציב לאחר יישום ההצעות', value: Math.round(projectedBalance) },
+          ]
+        : []),
+      ...(notes.trim() ? [{ label: null }, { label: 'הערות' }, { label: notes.trim() }] : []),
+    ];
+    exportSummaryToExcel({
+      schoolName: school?.name,
+      yearLabel: currentYear?.label,
+      sheetName: 'סיכום תקציב',
+      filename: `סיכום_תקציב_${school?.name || ''}_${currentYear?.year || ''}.xlsx`,
+      rows,
+    });
+  };
+
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
       <div className="flex items-start justify-between gap-3 flex-wrap no-print">
@@ -315,10 +367,16 @@ export default function SummaryPage() {
             דף אחד עם כל התמונה — הכנסות, הוצאות והצעות הייעול — לחתימת המנהלת והשליח
           </p>
         </div>
-        <button type="button" onClick={() => window.print()} className="btn-outline btn-sm flex-shrink-0">
-          <Printer size={14} />
-          הדפסה / PDF
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button type="button" onClick={handleExportExcel} className="btn-outline btn-sm">
+            <FileSpreadsheet size={14} />
+            הורדה לאקסל
+          </button>
+          <button type="button" onClick={() => window.print()} className="btn-outline btn-sm">
+            <Printer size={14} />
+            הדפסה / PDF
+          </button>
+        </div>
       </div>
 
       {/* The document */}
