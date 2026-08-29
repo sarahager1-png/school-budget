@@ -43,8 +43,10 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
 
   const actualMonthlyCost = actualWeeklyHours * actualHourlyRate;
   const actualOperatingCost = actualMonthlyCost * PAYMENT_MONTHS;
-  // שעות בודדות הוסרו מהתחשיב (הנחיית שרה 21/7) — קיימות רק כתוספת
-  // ה-12 שעות של חיבור כיתות (ר' dualAgeMergeReport); השדה בכיתה נשמר כמידע בלבד
+  // שעות פיצול/בודדות של הכיתה — חודשיות, מתווספות לעלות ההוראה.
+  // הוסרו ב-21/7 והוחזרו ב-29/8 בהנחיית שרה: "לא רואה שנוספות לתקציב"
+  // בירושלים — שדה שנראה חי חייב להשפיע, אחרת הוא משקר.
+  const extraHoursCost = Number(classItem.extraHours || 0) * actualHourlyRate * PAYMENT_MONTHS;
   // מרכיב ייעוץ — 2 שעות חודשיות לכל כיתה (ערך רשתי אחיד, לא נערך ב-DB)
   const counselingHours = Number(constants.counselingHoursPerClass ?? DEFAULT_CONSTANTS.counselingHoursPerClass);
   const counselingCost = counselingHours * actualHourlyRate * PAYMENT_MONTHS;
@@ -53,7 +55,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
   const profDevExpense = professionalDevPerClass;
-  const totalExpenses = actualOperatingCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + profDevExpense;
+  const totalExpenses = actualOperatingCost + extraHoursCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + profDevExpense;
 
   const balance = totalIncome - totalExpenses;
 
@@ -69,6 +71,7 @@ export function calculateClassBudget(classItem, constants = DEFAULT_CONSTANTS) {
     caharonIncome,
     totalIncome,
     actualOperatingCost,
+    extraHoursCost,
     counselingHours,
     counselingCost,
     clubsExpense,

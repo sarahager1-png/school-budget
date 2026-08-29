@@ -56,7 +56,7 @@ function ClassModal({ cls, onSave, onClose }) {
           <div>
             <label className="label">שעות בודדות בחודש</label>
             <input className="input" type="number" inputMode="numeric" min="0" max="100" value={form.extraHours} onChange={e => set('extraHours', e.target.value)} placeholder="0" />
-            <p className="text-xs text-gray-400 mt-1">מתווספות לעלות ההוראה בלבד</p>
+            <p className="text-xs text-gray-400 mt-1">שעות חודשיות · מתווספות לעלות בתקציב הכיתה</p>
           </div>
         </div>
         <div>
@@ -84,6 +84,7 @@ function BudgetBreakdown({ budget }) {
     { label: 'סה״כ הכנסות', value: formatCurrency(budget.totalIncome), bold: true, positive: true },
     null,
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
+    ...(budget.extraHoursCost ? [{ label: 'שעות פיצול/בודדות', value: formatCurrency(budget.extraHoursCost), negative: true }] : []),
     ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ שבועיות)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
     ...(budget.clubsExpense > 0 ? [{ label: 'תוספת חוגים (2,000 ₪ × 10 ח׳)', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
