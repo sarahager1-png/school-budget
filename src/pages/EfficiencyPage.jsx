@@ -189,6 +189,8 @@ export default function EfficiencyPage() {
   const [tuitionRate, setTuitionRate] = useState(DEFAULT_TUITION_COLLECTION_RATE);
   const [supplementAmount, setSupplementAmount] = useState(DEFAULT_TUITION_SUPPLEMENT);
 
+  // מוכרז לפני הדוח — הדוח נועץ את הבחירות השמורות
+  const [selectedKeys, setSelectedKeys] = useState(null);
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
@@ -229,7 +231,6 @@ export default function EfficiencyPage() {
 
   // ── בחירת הצעות: ✓ על כל כרטיס. null = הכל נבחר (ברירת מחדל).
   // נשמר ב-budget_approvals — אותה בחירה בדיוק שמופיעה בסיכום ואישור ובמסמך.
-  const [selectedKeys, setSelectedKeys] = useState(null);
   const [savingSelection, setSavingSelection] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
 
