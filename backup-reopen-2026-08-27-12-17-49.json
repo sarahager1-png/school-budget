@@ -1,0 +1,1594 @@
+{
+  "takenAt": "2026-08-27T12:17:44.678Z",
+  "schools": {
+    "raanana": [
+      {
+        "id": "d41a28e2-9f86-4efe-b638-41dd57f5df79",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000001",
+        "budget_year_id": "fe820bae-eeac-4f34-af4e-172b2a117760",
+        "summary": {
+          "balance": -3112100,
+          "classes": [
+            {
+              "id": "0a94c8ee-a29b-4f02-8a38-0957fe548650",
+              "name": "כתה א2",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 11
+            },
+            {
+              "id": "532544c3-f1e7-417c-be83-d7329a595ca6",
+              "name": "כיתה ב2",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 11
+            },
+            {
+              "id": "3ba0af0b-2f5a-484b-afec-54854d45a72a",
+              "name": "כיתה ה1",
+              "extraHours": 0,
+              "gradeLevel": "ה",
+              "studentCount": 11
+            },
+            {
+              "id": "83bfca9a-c112-46a8-8ad4-e2afa9ced75b",
+              "name": "כיתה ג1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 11
+            },
+            {
+              "id": "81c520d8-1ad2-4cb6-930b-5dc3c030a121",
+              "name": "כיתה ה2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 11
+            },
+            {
+              "id": "f315f7a7-ba81-46b8-beaa-b9fd1a1e5e64",
+              "name": "כיתה ב1",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 14
+            },
+            {
+              "id": "e902c5b1-0662-4e39-b13e-dc4937b42959",
+              "name": "כיתה א1",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 14
+            },
+            {
+              "id": "75a7ef16-2de9-45f9-bd21-278479a02160",
+              "name": "כיתה ד1",
+              "extraHours": 0,
+              "gradeLevel": "ד",
+              "studentCount": 13
+            },
+            {
+              "id": "d4fb508d-c7f0-4301-a8c6-4b1040661899",
+              "name": "כיתה ג2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 13
+            },
+            {
+              "id": "02798b25-c2f9-4fe7-aefe-f43ff18d8a3e",
+              "name": "כיתה ד2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 13
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-28T13:29:03.295Z",
+          "students": 122,
+          "classCount": 10,
+          "suggestions": [
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪8,000 × 95% × 122 תלמידים)",
+              "names": null,
+              "saving": 927200,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "merge:0a94c8ee-a29b-4f02-8a38-0957fe548650+e902c5b1-0662-4e39-b13e-dc4937b42959",
+              "kind": "merge",
+              "label": "צירוף כיתות: כתה א2 + כיתה א1 (25 תל׳)",
+              "names": [
+                "כתה א2",
+                "כיתה א1"
+              ],
+              "saving": 302400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "merge:532544c3-f1e7-417c-be83-d7329a595ca6+f315f7a7-ba81-46b8-beaa-b9fd1a1e5e64",
+              "kind": "merge",
+              "label": "צירוף כיתות: כיתה ב2 + כיתה ב1 (25 תל׳)",
+              "names": [
+                "כיתה ב2",
+                "כיתה ב1"
+              ],
+              "saving": 302400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "merge:3ba0af0b-2f5a-484b-afec-54854d45a72a+81c520d8-1ad2-4cb6-930b-5dc3c030a121",
+              "kind": "merge",
+              "label": "צירוף כיתות: כיתה ה1 + כיתה ה2 (22 תל׳)",
+              "names": [
+                "כיתה ה1",
+                "כיתה ה2"
+              ],
+              "saving": 302400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "merge:83bfca9a-c112-46a8-8ad4-e2afa9ced75b+d4fb508d-c7f0-4301-a8c6-4b1040661899",
+              "kind": "merge",
+              "label": "צירוף כיתות: כיתה ג1 + כיתה ג2 (24 תל׳)",
+              "names": [
+                "כיתה ג1",
+                "כיתה ג2"
+              ],
+              "saving": 302400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "merge:02798b25-c2f9-4fe7-aefe-f43ff18d8a3e+75a7ef16-2de9-45f9-bd21-278479a02160",
+              "kind": "merge",
+              "label": "צירוף כיתות: כיתה ד1 + כיתה ד2 (26 תל׳)",
+              "names": [
+                "כיתה ד1",
+                "כיתה ד2"
+              ],
+              "saving": 302400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 122 תלמידים)",
+              "names": null,
+              "saving": 292800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 10 כיתות)",
+              "names": null,
+              "saving": 252000,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 1 שעות הוראה מכל כיתה (10 כיתות)",
+              "names": null,
+              "saving": 84000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 10 כיתות)",
+              "names": null,
+              "saving": 84000,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-3 ההוצאות הגדולות",
+              "names": null,
+              "saving": 12600,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 122)",
+              "names": null,
+              "saving": 12200,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 1244300,
+          "totalExpenses": 4356400,
+          "classCountAfter": 10,
+          "projectedBalance": -1798500,
+          "suggestionsTotal": 1313600
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "mazkeret": [
+      {
+        "id": "0c7b3cc6-09a5-4dd8-b67f-3cdd568c5941",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000002",
+        "budget_year_id": "b2c3d4e5-0000-0000-0000-000000000002",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "fe0d33bf-1cf3-4835-80a2-77dcc827c6ad",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000002",
+        "budget_year_id": "6e3afa3b-33aa-4c5e-85dc-42653ba55c6e",
+        "summary": {
+          "balance": -1143666,
+          "classes": [
+            {
+              "id": "fb5fbcf6-3cc8-4d28-99ba-4086aab29fb5",
+              "name": "כיתה א1",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 30
+            },
+            {
+              "id": "8996d7f4-e2a6-4a42-b684-bf08ad06498b",
+              "name": "כיתה ב",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 27
+            },
+            {
+              "id": "8ed7db02-95cd-441f-81bd-3780a569620d",
+              "name": "כיתה ג1",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 16
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-08-14T09:02:29.660Z",
+          "students": 73,
+          "classCount": 3,
+          "suggestions": [
+            {
+              "key": "close:8ed7db02-95cd-441f-81bd-3780a569620d",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ג1 — הכיתה הגבוהה, 16 תל׳ בלבד",
+              "names": [
+                "כיתה ג1"
+              ],
+              "saving": 247072,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 73 תלמידים)",
+              "names": null,
+              "saving": 175200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪2,500 × 80% × 73 תלמידים)",
+              "names": null,
+              "saving": 146000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 3 כיתות)",
+              "names": null,
+              "saving": 75600,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 1 שעות הוראה מכל כיתה (3 כיתות)",
+              "names": null,
+              "saving": 25200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 3 כיתות)",
+              "names": null,
+              "saving": 25200,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪250 לתלמיד × 73)",
+              "names": null,
+              "saving": 18250,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-3 ההוצאות הגדולות",
+              "names": null,
+              "saving": 9200,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 363134,
+          "totalExpenses": 1506800,
+          "classCountAfter": 3,
+          "projectedBalance": -1118466,
+          "suggestionsTotal": 25200
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ashkelon": [
+      {
+        "id": "4758e95f-f2a7-4731-ae10-a5e6c60e26d8",
+        "school_id": "b49c728e-2dde-4c14-a178-7202c8cf099b",
+        "budget_year_id": "8a6e183b-8be5-43b0-ac2e-9ad72fb81221",
+        "summary": {
+          "balance": -1558296,
+          "classes": [
+            {
+              "id": "49438dae-5fb8-4302-9e86-4f52bbe9328e",
+              "name": "ב",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 27
+            },
+            {
+              "id": "1e50cfc6-0a6d-452c-af10-5b04222e6f56",
+              "name": "ג",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 18
+            },
+            {
+              "id": "5507cd93-c5eb-45e5-92f0-68ce239263ff",
+              "name": "כיתה א2",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 30
+            },
+            {
+              "id": "f2006f2b-c9e7-4a51-815a-d6bd99f1adcb",
+              "name": "כיתה א 1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 27
+            },
+            {
+              "id": "64d1fe15-e80a-48c8-965a-4cfe1048d9f0",
+              "name": "כיתה א 3",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 23
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-27T11:05:28.913Z",
+          "students": 125,
+          "classCount": 5,
+          "suggestions": [
+            {
+              "key": "tuition",
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 125 תלמידים)",
+              "saving": 300000,
+              "selected": false
+            },
+            {
+              "key": "tuition-supplement",
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 125 תלמידים)",
+              "saving": 300000,
+              "selected": false
+            },
+            {
+              "key": "close:1e50cfc6-0a6d-452c-af10-5b04222e6f56",
+              "label": "סגירת כיתה ג — הכיתה הגבוהה, 18 תל׳ בלבד",
+              "saving": 266756,
+              "selected": false
+            },
+            {
+              "key": "partaniyot",
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 5 כיתות)",
+              "saving": 126000,
+              "selected": true
+            },
+            {
+              "key": "threshold:1e50cfc6-0a6d-452c-af10-5b04222e6f56",
+              "label": "ג: עוד 3 תלמידים לתקן מלא",
+              "saving": 53274,
+              "selected": false
+            },
+            {
+              "key": "principal-teaching",
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "saving": 50400,
+              "selected": true
+            },
+            {
+              "key": "hours-cut",
+              "label": "הורדת שעת הוראה אחת מכל כיתה (5 כיתות)",
+              "saving": 42000,
+              "selected": true
+            },
+            {
+              "key": "shabbat",
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 5 כיתות)",
+              "saving": 42000,
+              "selected": true
+            },
+            {
+              "key": "parents",
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 125)",
+              "saving": 12500,
+              "selected": false
+            },
+            {
+              "key": "trim",
+              "label": "קיצוץ 10% ב-2 ההוצאות הגדולות",
+              "saving": 7040,
+              "selected": false
+            }
+          ],
+          "totalIncome": 644950,
+          "totalExpenses": 2203246,
+          "projectedBalance": -1297896,
+          "suggestionsTotal": 260400
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "or-akiva": [
+      {
+        "id": "d66b5dfb-69c5-461b-9177-c1e1f1f7d531",
+        "school_id": "4d6ae712-c192-4955-9275-2e2e65855b9f",
+        "budget_year_id": "479ecc29-249b-48b4-9ba2-d2d3ff034dd3",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "4c54b976-e682-49cc-a0e7-4d23dada8a92",
+        "school_id": "4d6ae712-c192-4955-9275-2e2e65855b9f",
+        "budget_year_id": "2d26e906-f749-4c1f-83a0-9b895742096b",
+        "summary": {
+          "balance": -1293250,
+          "classes": [
+            {
+              "id": "510a323c-2de2-4d4f-9a2c-4e9419cefc7e",
+              "name": "כיתה א",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 23
+            },
+            {
+              "id": "23c0f9ea-27c6-428f-bf11-9bbf1a407344",
+              "name": "כיתה ב1",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 26
+            },
+            {
+              "id": "36d43605-55ca-49a2-95eb-6bec281709c4",
+              "name": "כיתה ג2",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 25
+            },
+            {
+              "id": "b9dffd92-3926-43a4-8e1d-17dcb2a990c7",
+              "name": "כיתה ב2",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 9
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-08-13T10:56:03.860Z",
+          "students": 83,
+          "classCount": 4,
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 1,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          },
+          "suggestions": [
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 83 תלמידים)",
+              "names": null,
+              "saving": 199200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 83 תלמידים)",
+              "names": null,
+              "saving": 199200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 4 כיתות)",
+              "names": null,
+              "saving": 100800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "threshold:b9dffd92-3926-43a4-8e1d-17dcb2a990c7",
+              "kind": null,
+              "label": "כיתה ב2: עוד 2 תלמידים לחצי תקן",
+              "names": null,
+              "saving": 52500,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 1 שעות הוראה מכל כיתה (4 כיתות)",
+              "names": null,
+              "saving": 33600,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 4 כיתות)",
+              "names": null,
+              "saving": 33600,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 83)",
+              "names": null,
+              "saving": 8300,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 403950,
+          "totalExpenses": 1697200,
+          "classCountAfter": 4,
+          "projectedBalance": -1209250,
+          "suggestionsTotal": 84000
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "jerusalem": [
+      {
+        "id": "edc16521-42d2-4370-bf85-239065715c5c",
+        "school_id": "a66c14e7-d22f-4c7a-90a5-b31da83da3dc",
+        "budget_year_id": "494b4482-698c-43a9-ac70-ab1c5084b040",
+        "summary": {
+          "balance": -1544866,
+          "classes": [
+            {
+              "id": "5835cc85-30e4-44ca-85ad-08970913863c",
+              "name": "כיתה א",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 22
+            },
+            {
+              "id": "520f9c48-d71e-4d60-8830-3d6f324a6430",
+              "name": "כיתה ב ",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 17
+            },
+            {
+              "id": "df7567a1-7c97-48c2-8fdf-13dff2570c83",
+              "name": "כיתה ג",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 14
+            },
+            {
+              "id": "99e29fb7-769d-40f4-99be-ef459367b56e",
+              "name": "כיתה ד",
+              "extraHours": 0,
+              "gradeLevel": "ד",
+              "studentCount": 11
+            },
+            {
+              "id": "33aa238e-4d0f-49e3-8606-2aacd539039d",
+              "name": "כיתה ה",
+              "extraHours": 0,
+              "gradeLevel": "ה",
+              "studentCount": 9
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-28T16:55:54.359Z",
+          "students": 73,
+          "classCount": 5,
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 1,
+            "tuitionRate": 90,
+            "parentAmount": 1000,
+            "shabbatHours": 1,
+            "tuitionAmount": 2500,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 2500
+          },
+          "suggestions": [
+            {
+              "key": "close:33aa238e-4d0f-49e3-8606-2aacd539039d",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ה — הכיתה הגבוהה, 9 תל׳ בלבד",
+              "names": [
+                "כיתה ה"
+              ],
+              "saving": 192978,
+              "selected": true,
+              "classDelta": -1
+            },
+            {
+              "key": "dual:33aa238e-4d0f-49e3-8606-2aacd539039d+99e29fb7-769d-40f4-99be-ef459367b56e",
+              "kind": "dual",
+              "label": "יצירת תקן — חיבור כיתה ד + כיתה ה (20 תל׳, כולל תוספת 12 שעות שבועיות)",
+              "names": [
+                "ד",
+                "ה"
+              ],
+              "saving": 182400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪2,500 × 90% × 73 תלמידים)",
+              "names": null,
+              "saving": 164250,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪2,500 × 80% × 73 תלמידים)",
+              "names": null,
+              "saving": 146000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "close:99e29fb7-769d-40f4-99be-ef459367b56e",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ד — הכיתה הגבוהה, 11 תל׳ בלבד",
+              "names": [
+                "כיתה ד"
+              ],
+              "saving": 139862,
+              "selected": true,
+              "classDelta": -1
+            },
+            {
+              "key": "close:df7567a1-7c97-48c2-8fdf-13dff2570c83",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ג — הכיתה הגבוהה, 14 תל׳ בלבד",
+              "names": [
+                "כיתה ג"
+              ],
+              "saving": 139388,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "dual:520f9c48-d71e-4d60-8830-3d6f324a6430+df7567a1-7c97-48c2-8fdf-13dff2570c83",
+              "kind": "dual",
+              "label": "חיבור כיתות: כיתה ב  + כיתה ג (31 תל׳, כולל תוספת 12 שעות שבועיות)",
+              "names": [
+                "ב",
+                "ג"
+              ],
+              "saving": 129600,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 5 כיתות)",
+              "names": null,
+              "saving": 81000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪1,000 לתלמיד × 73)",
+              "names": null,
+              "saving": 73000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "transport-parents",
+              "kind": null,
+              "label": "הסעות בגביית הורים — הסרת העלות מהתקציב",
+              "names": null,
+              "saving": 70800,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-2 ההוצאות הגדולות",
+              "names": null,
+              "saving": 50400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 32400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 1 שעות הוראה מכל כיתה (5 כיתות)",
+              "names": null,
+              "saving": 27000,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 5 כיתות)",
+              "names": null,
+              "saving": 27000,
+              "selected": true,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 363134,
+          "totalExpenses": 1908000,
+          "classCountAfter": 3,
+          "projectedBalance": -890576,
+          "suggestionsTotal": 654290
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "kiryat-bialik": [
+      {
+        "id": "7deb8255-cbf8-4066-af66-681b57bfeb30",
+        "school_id": "dda059cb-ef61-4fe0-89e2-b1dfb7409473",
+        "budget_year_id": "9b2459a3-722c-4e3d-bf9f-2e5e2b4e8fc2",
+        "summary": {
+          "balance": -2265144,
+          "classes": [
+            {
+              "id": "2c14a83a-5cab-4aca-96ba-a185173bd2e6",
+              "name": "א בנים ",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 16
+            },
+            {
+              "id": "c8255e12-2710-466a-944a-a478ceb67c54",
+              "name": "א בנות",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 13
+            },
+            {
+              "id": "eb65a319-f492-49af-abab-0a7d7416fe71",
+              "name": "ב בנים",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 17
+            },
+            {
+              "id": "c2010b2a-d3ef-412e-931c-e3f8ee183032",
+              "name": "ב בנות",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 20
+            },
+            {
+              "id": "51080f43-6e69-4819-ad32-811cb7a5f9e8",
+              "name": "ג בנים",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 14
+            },
+            {
+              "id": "8c2b6615-7ab1-45a0-94c8-53d9524a2bee",
+              "name": "ג בנות",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 20
+            },
+            {
+              "id": "6b0b31ea-cbfd-4d26-8c0e-afa7d3840320",
+              "name": "ד",
+              "extraHours": 0,
+              "gradeLevel": "ד",
+              "studentCount": 21
+            },
+            {
+              "id": "5a935e74-18f3-498b-b8eb-519bb7d77596",
+              "name": "ה",
+              "extraHours": 0,
+              "gradeLevel": "ה",
+              "studentCount": 11
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-27T12:34:46.495Z",
+          "students": 132,
+          "classCount": 8,
+          "suggestions": [
+            {
+              "key": "merge:2c14a83a-5cab-4aca-96ba-a185173bd2e6+c8255e12-2710-466a-944a-a478ceb67c54",
+              "kind": "merge",
+              "label": "צירוף כיתות: א בנים  + א בנות (29 תל׳)",
+              "names": [
+                "א בנים ",
+                "א בנות"
+              ],
+              "saving": 322400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 132 תלמידים)",
+              "names": null,
+              "saving": 316800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 132 תלמידים)",
+              "names": null,
+              "saving": 316800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "close:51080f43-6e69-4819-ad32-811cb7a5f9e8",
+              "kind": "close",
+              "label": "סגירת כיתה ג בנים — הכיתה הגבוהה, 14 תל׳ בלבד",
+              "names": [
+                "ג בנים"
+              ],
+              "saving": 267388,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 8 כיתות)",
+              "names": null,
+              "saving": 201600,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "dual:5a935e74-18f3-498b-b8eb-519bb7d77596+6b0b31ea-cbfd-4d26-8c0e-afa7d3840320",
+              "kind": "dual",
+              "label": "חיבור כיתות: ד + ה (32 תל׳, כולל תוספת 12 שעות שבועיות)",
+              "names": [
+                "ד",
+                "ה"
+              ],
+              "saving": 168800,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת שעת הוראה אחת מכל כיתה (8 כיתות)",
+              "names": null,
+              "saving": 67200,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 8 כיתות)",
+              "names": null,
+              "saving": 67200,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "threshold:eb65a319-f492-49af-abab-0a7d7416fe71",
+              "kind": null,
+              "label": "ב בנים: עוד 4 תלמידים לתקן מלא",
+              "names": null,
+              "saving": 53432,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "threshold:c2010b2a-d3ef-412e-931c-e3f8ee183032",
+              "kind": null,
+              "label": "ב בנות: עוד 1 תלמידים לתקן מלא",
+              "names": null,
+              "saving": 52958,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "threshold:8c2b6615-7ab1-45a0-94c8-53d9524a2bee",
+              "kind": null,
+              "label": "ג בנות: עוד 1 תלמידים לתקן מלא",
+              "names": null,
+              "saving": 52958,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 132)",
+              "names": null,
+              "saving": 13200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-2 ההוצאות הגדולות",
+              "names": null,
+              "saving": 11000,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 990456,
+          "totalExpenses": 3255600,
+          "classCountAfter": 8,
+          "projectedBalance": -1878744,
+          "suggestionsTotal": 386400
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ganei-tikva": [
+      {
+        "id": "7dc28afd-9256-493d-9ef5-3f0d8f802d64",
+        "school_id": "45f146eb-f5e6-4515-95ae-dd9cd7e62f4e",
+        "budget_year_id": "2a2c0724-b65d-4bcf-b004-bbd7e91a95d4",
+        "summary": {
+          "balance": -2943142,
+          "classes": [
+            {
+              "id": "5fa97767-ffea-4313-9391-8d0d77331c95",
+              "name": "כיתה א1",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 21
+            },
+            {
+              "id": "8dde932c-9588-4810-bca2-4fb87d55bbcd",
+              "name": "כיתה א2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 21
+            },
+            {
+              "id": "b5010517-9b77-48e8-a2ea-14b80e8fce22",
+              "name": "כיתה ב1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 21
+            },
+            {
+              "id": "a62ceb24-b49e-456d-bb12-ba5326bde826",
+              "name": "כיתה ב2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 22
+            },
+            {
+              "id": "eb8dfb38-d9fb-450e-9bec-ce7f893aa9f7",
+              "name": "כיתה ג1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 21
+            },
+            {
+              "id": "b0d91a7b-f4ab-49eb-bf49-5bb2ca6e7bf8",
+              "name": "כיתה ג2",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 21
+            },
+            {
+              "id": "9c7ba47e-66db-44d6-b755-7fd59a2a92a9",
+              "name": "כיתה ד1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 24
+            },
+            {
+              "id": "d36a50b9-6eae-4e4a-b7c0-6fa09661d0f6",
+              "name": "כיתה ה1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 12
+            },
+            {
+              "id": "9902fea5-8404-4733-91b1-4b9b30162ef0",
+              "name": "כיתה ו1",
+              "extraHours": 0,
+              "gradeLevel": "",
+              "studentCount": 18
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-30T23:23:48.417Z",
+          "students": 181,
+          "classCount": 9,
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 2,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          },
+          "suggestions": [
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 181 תלמידים)",
+              "names": null,
+              "saving": 434400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 181 תלמידים)",
+              "names": null,
+              "saving": 434400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 9 כיתות)",
+              "names": null,
+              "saving": 226800,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "dual:9902fea5-8404-4733-91b1-4b9b30162ef0+d36a50b9-6eae-4e4a-b7c0-6fa09661d0f6",
+              "kind": "dual",
+              "label": "חיבור כיתות: כיתה ה1 + כיתה ו1 (30 תל׳, כולל תוספת 12 שעות שבועיות)",
+              "names": [
+                "ה",
+                "ו"
+              ],
+              "saving": 221600,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 2 שעות הוראה מכל כיתה (9 כיתות)",
+              "names": null,
+              "saving": 151200,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 9 כיתות)",
+              "names": null,
+              "saving": 75600,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-3 ההוצאות הגדולות",
+              "names": null,
+              "saving": 50439,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "transport-parents",
+              "kind": null,
+              "label": "הסעות בגביית הורים — הסרת העלות מהתקציב",
+              "names": null,
+              "saving": 28776,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 181)",
+              "names": null,
+              "saving": 18100,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 1877174,
+          "totalExpenses": 4820316,
+          "classCountAfter": 9,
+          "projectedBalance": -2565142,
+          "suggestionsTotal": 378000
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ramat-yishai": [
+      {
+        "id": "28999962-dae9-428b-8460-cc1968814efb",
+        "school_id": "00bcebe9-1442-42ea-9b43-605369a600e3",
+        "budget_year_id": "12e179b2-c30d-4eeb-88a5-89873f103ea5",
+        "summary": {
+          "balance": -1365898,
+          "classes": [
+            {
+              "id": "5973ba4e-dd01-41b6-824a-912a6f119802",
+              "name": "א1",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 20
+            },
+            {
+              "id": "2b7b765e-0046-4ca6-aa56-c7c28b5b501e",
+              "name": "ב1",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 21
+            },
+            {
+              "id": "ab5db7d4-ad85-4caf-82c3-7e9dae77c4ae",
+              "name": "ג ",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 13
+            },
+            {
+              "id": "b5d5a4a3-8b89-42f0-9470-776740fb825a",
+              "name": "כיתה ד",
+              "extraHours": 12,
+              "gradeLevel": "ד",
+              "studentCount": 15
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-07-27T11:00:59.310Z",
+          "students": 69,
+          "classCount": 4,
+          "suggestions": [
+            {
+              "key": "dual:ab5db7d4-ad85-4caf-82c3-7e9dae77c4ae+b5d5a4a3-8b89-42f0-9470-776740fb825a",
+              "label": "חיבור כיתות: ג  + כיתה ד (28 תל׳, כולל תוספת 12 שעות שבועיות)",
+              "saving": 221600,
+              "selected": true
+            },
+            {
+              "key": "tuition",
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 69 תלמידים)",
+              "saving": 165600,
+              "selected": true
+            },
+            {
+              "key": "tuition-supplement",
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 69 תלמידים)",
+              "saving": 165600,
+              "selected": false
+            },
+            {
+              "key": "partaniyot",
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 4 כיתות)",
+              "saving": 100800,
+              "selected": true
+            },
+            {
+              "key": "principal-teaching",
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "saving": 50400,
+              "selected": true
+            },
+            {
+              "key": "hours-cut",
+              "label": "הורדת שעת הוראה אחת מכל כיתה (4 כיתות)",
+              "saving": 33600,
+              "selected": true
+            },
+            {
+              "key": "shabbat",
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 4 כיתות)",
+              "saving": 33600,
+              "selected": true
+            },
+            {
+              "key": "trim",
+              "label": "קיצוץ 10% ב-2 ההוצאות הגדולות",
+              "saving": 8000,
+              "selected": false
+            },
+            {
+              "key": "parents",
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 69)",
+              "saving": 6900,
+              "selected": false
+            }
+          ],
+          "totalIncome": 410502,
+          "totalExpenses": 1776400,
+          "projectedBalance": -760298,
+          "suggestionsTotal": 605600
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "afula": [
+      {
+        "id": "d5ea16b5-11cc-4edd-82b3-d46d8debda97",
+        "school_id": "35ab2d06-0db4-4424-82d7-9ce6d2af0738",
+        "budget_year_id": "a8f3fbfe-40b4-490b-bc1f-a356119fbe28",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "25814905-16e6-4712-8c1a-501c685b0cb1",
+        "school_id": "35ab2d06-0db4-4424-82d7-9ce6d2af0738",
+        "budget_year_id": "4f1772a9-5961-4506-a98e-aaffb06af783",
+        "summary": {
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 2,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          }
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "herzliya": [
+      {
+        "id": "a898ae87-d706-4f8f-8e07-2fa5f71d204b",
+        "school_id": "b50409aa-05eb-46c6-8d2b-695799f10151",
+        "budget_year_id": "d1a0fb55-23fe-4434-b90e-807c2ddec542",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "647b33f9-fe69-4d03-94cc-7393abcbb551",
+        "school_id": "b50409aa-05eb-46c6-8d2b-695799f10151",
+        "budget_year_id": "c8b1dd99-bba0-4cd4-bbad-cf5a0bea5ba0",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "haifa": [
+      {
+        "id": "81ad696c-de82-42fa-92e7-f62fbf1a49e0",
+        "school_id": "3d0368de-83db-4d52-b604-c3898749dfe9",
+        "budget_year_id": "211575c9-e20b-407f-b4c8-403cb5acb63d",
+        "summary": {
+          "balance": -2491032,
+          "classes": [
+            {
+              "id": "d443954d-1d92-44bf-954e-22b10605b65b",
+              "name": "כיתה א",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 20
+            },
+            {
+              "id": "a4040c68-6ba7-4388-a3c9-ea039e747ddf",
+              "name": "כיתה ב",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 11
+            },
+            {
+              "id": "aff7b927-c9cf-44a3-aca4-7c9e1d4c5bb4",
+              "name": "כיתה ג",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 20
+            },
+            {
+              "id": "5f672062-ca09-4de2-b497-c0c1b1cc4b03",
+              "name": "כיתה ד",
+              "extraHours": 0,
+              "gradeLevel": "ד",
+              "studentCount": 10
+            },
+            {
+              "id": "1aab5b66-8bf5-4fd9-bd61-f9b0b7be10ef",
+              "name": "כיתה ו",
+              "extraHours": 0,
+              "gradeLevel": "ו",
+              "studentCount": 5
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-08-10T20:06:19.479Z",
+          "students": 66,
+          "classCount": 5,
+          "draftParams": {
+            "trimPct": 5,
+            "hoursCut": 1,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 15,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          },
+          "suggestions": [
+            {
+              "key": "transport-parents",
+              "kind": null,
+              "label": "הסעות בגביית הורים — הסרת העלות מהתקציב",
+              "names": null,
+              "saving": 372660,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "close:1aab5b66-8bf5-4fd9-bd61-f9b0b7be10ef",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ו — הכיתה הגבוהה, 5 תל׳ בלבד",
+              "names": [
+                "כיתה ו"
+              ],
+              "saving": 233610,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "close:5f672062-ca09-4de2-b497-c0c1b1cc4b03",
+              "kind": "close",
+              "label": "סגירת כיתה כיתה ד — הכיתה הגבוהה, 10 תל׳ בלבד",
+              "names": [
+                "כיתה ד"
+              ],
+              "saving": 232820,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 66 תלמידים)",
+              "names": null,
+              "saving": 158400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 66 תלמידים)",
+              "names": null,
+              "saving": 158400,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 5 כיתות)",
+              "names": null,
+              "saving": 90000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "dual:5f672062-ca09-4de2-b497-c0c1b1cc4b03+aff7b927-c9cf-44a3-aca4-7c9e1d4c5bb4",
+              "kind": "dual",
+              "label": "יצירת תקן — חיבור כיתה ג + כיתה ד (30 תל׳, כולל תוספת 27 שעות שבועיות)",
+              "names": [
+                "ג",
+                "ד"
+              ],
+              "saving": 72400,
+              "selected": false,
+              "classDelta": -1
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 36000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 5% ב-3 ההוצאות הגדולות",
+              "names": null,
+              "saving": 33635,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 1 שעות הוראה מכל כיתה (5 כיתות)",
+              "names": null,
+              "saving": 30000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 5 כיתות)",
+              "names": null,
+              "saving": 30000,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 66)",
+              "names": null,
+              "saving": 6600,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 403628,
+          "totalExpenses": 2894660,
+          "classCountAfter": 5,
+          "projectedBalance": -2491032,
+          "suggestionsTotal": 0
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "beer-sheva": []
+  }
+}

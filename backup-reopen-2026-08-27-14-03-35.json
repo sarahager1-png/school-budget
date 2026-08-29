@@ -1,0 +1,336 @@
+{
+  "takenAt": "2026-08-27T14:03:26.065Z",
+  "schools": {
+    "raanana": [
+      {
+        "id": "d41a28e2-9f86-4efe-b638-41dd57f5df79",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000001",
+        "budget_year_id": "fe820bae-eeac-4f34-af4e-172b2a117760",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "mazkeret": [
+      {
+        "id": "0c7b3cc6-09a5-4dd8-b67f-3cdd568c5941",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000002",
+        "budget_year_id": "b2c3d4e5-0000-0000-0000-000000000002",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "fe0d33bf-1cf3-4835-80a2-77dcc827c6ad",
+        "school_id": "a1b2c3d4-0000-0000-0000-000000000002",
+        "budget_year_id": "6e3afa3b-33aa-4c5e-85dc-42653ba55c6e",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ashkelon": [
+      {
+        "id": "4758e95f-f2a7-4731-ae10-a5e6c60e26d8",
+        "school_id": "b49c728e-2dde-4c14-a178-7202c8cf099b",
+        "budget_year_id": "8a6e183b-8be5-43b0-ac2e-9ad72fb81221",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "or-akiva": [
+      {
+        "id": "d66b5dfb-69c5-461b-9177-c1e1f1f7d531",
+        "school_id": "4d6ae712-c192-4955-9275-2e2e65855b9f",
+        "budget_year_id": "479ecc29-249b-48b4-9ba2-d2d3ff034dd3",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "4c54b976-e682-49cc-a0e7-4d23dada8a92",
+        "school_id": "4d6ae712-c192-4955-9275-2e2e65855b9f",
+        "budget_year_id": "2d26e906-f749-4c1f-83a0-9b895742096b",
+        "summary": {
+          "balance": -1475250,
+          "classes": [
+            {
+              "id": "510a323c-2de2-4d4f-9a2c-4e9419cefc7e",
+              "name": "כיתה א",
+              "extraHours": 0,
+              "gradeLevel": "א",
+              "studentCount": 23
+            },
+            {
+              "id": "23c0f9ea-27c6-428f-bf11-9bbf1a407344",
+              "name": "כיתה ב1",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 26
+            },
+            {
+              "id": "36d43605-55ca-49a2-95eb-6bec281709c4",
+              "name": "כיתה ג2",
+              "extraHours": 0,
+              "gradeLevel": "ג",
+              "studentCount": 25
+            },
+            {
+              "id": "b9dffd92-3926-43a4-8e1d-17dcb2a990c7",
+              "name": "כיתה ב2",
+              "extraHours": 0,
+              "gradeLevel": "ב",
+              "studentCount": 9
+            }
+          ],
+          "version": 1,
+          "closedAt": "2026-08-27T13:46:04.230Z",
+          "students": 83,
+          "classCount": 4,
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 4,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          },
+          "suggestions": [
+            {
+              "key": "tuition",
+              "kind": null,
+              "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 83 תלמידים)",
+              "names": null,
+              "saving": 199200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "tuition-supplement",
+              "kind": null,
+              "label": "תוספת שכר לימוד (₪3,000 × 80% × 83 תלמידים)",
+              "names": null,
+              "saving": 199200,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "hours-cut",
+              "kind": null,
+              "label": "הורדת 4 שעות הוראה מכל כיתה (4 כיתות)",
+              "names": null,
+              "saving": 134400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "partaniyot",
+              "kind": null,
+              "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 4 כיתות)",
+              "names": null,
+              "saving": 100800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "threshold:b9dffd92-3926-43a4-8e1d-17dcb2a990c7",
+              "kind": null,
+              "label": "כיתה ב2: עוד 2 תלמידים לחצי תקן",
+              "names": null,
+              "saving": 52500,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "principal-teaching",
+              "kind": null,
+              "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+              "names": null,
+              "saving": 50400,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "shabbat",
+              "kind": null,
+              "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 4 כיתות)",
+              "names": null,
+              "saving": 33600,
+              "selected": true,
+              "classDelta": 0
+            },
+            {
+              "key": "trim",
+              "kind": null,
+              "label": "קיצוץ 10% ב-3 ההוצאות הגדולות",
+              "names": null,
+              "saving": 17800,
+              "selected": false,
+              "classDelta": 0
+            },
+            {
+              "key": "parents",
+              "kind": null,
+              "label": "השתתפות הורים שנתית (₪100 לתלמיד × 83)",
+              "names": null,
+              "saving": 8300,
+              "selected": false,
+              "classDelta": 0
+            }
+          ],
+          "totalIncome": 403950,
+          "totalExpenses": 1879200,
+          "classCountAfter": 4,
+          "projectedBalance": -1256850,
+          "suggestionsTotal": 218400
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "jerusalem": [
+      {
+        "id": "edc16521-42d2-4370-bf85-239065715c5c",
+        "school_id": "a66c14e7-d22f-4c7a-90a5-b31da83da3dc",
+        "budget_year_id": "494b4482-698c-43a9-ac70-ab1c5084b040",
+        "summary": {
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 1,
+            "tuitionRate": 90,
+            "parentAmount": 1000,
+            "shabbatHours": 1,
+            "tuitionAmount": 2500,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 2500
+          }
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "kiryat-bialik": [
+      {
+        "id": "7deb8255-cbf8-4066-af66-681b57bfeb30",
+        "school_id": "dda059cb-ef61-4fe0-89e2-b1dfb7409473",
+        "budget_year_id": "9b2459a3-722c-4e3d-bf9f-2e5e2b4e8fc2",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ganei-tikva": [
+      {
+        "id": "7dc28afd-9256-493d-9ef5-3f0d8f802d64",
+        "school_id": "45f146eb-f5e6-4515-95ae-dd9cd7e62f4e",
+        "budget_year_id": "2a2c0724-b65d-4bcf-b004-bbd7e91a95d4",
+        "summary": {
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 2,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          }
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "ramat-yishai": [
+      {
+        "id": "28999962-dae9-428b-8460-cc1968814efb",
+        "school_id": "00bcebe9-1442-42ea-9b43-605369a600e3",
+        "budget_year_id": "12e179b2-c30d-4eeb-88a5-89873f103ea5",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "afula": [
+      {
+        "id": "d5ea16b5-11cc-4edd-82b3-d46d8debda97",
+        "school_id": "35ab2d06-0db4-4424-82d7-9ce6d2af0738",
+        "budget_year_id": "a8f3fbfe-40b4-490b-bc1f-a356119fbe28",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "25814905-16e6-4712-8c1a-501c685b0cb1",
+        "school_id": "35ab2d06-0db4-4424-82d7-9ce6d2af0738",
+        "budget_year_id": "4f1772a9-5961-4506-a98e-aaffb06af783",
+        "summary": {
+          "draftParams": {
+            "trimPct": 10,
+            "hoursCut": 2,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 0,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          }
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "herzliya": [
+      {
+        "id": "a898ae87-d706-4f8f-8e07-2fa5f71d204b",
+        "school_id": "b50409aa-05eb-46c6-8d2b-695799f10151",
+        "budget_year_id": "d1a0fb55-23fe-4434-b90e-807c2ddec542",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      },
+      {
+        "id": "647b33f9-fe69-4d03-94cc-7393abcbb551",
+        "school_id": "b50409aa-05eb-46c6-8d2b-695799f10151",
+        "budget_year_id": "c8b1dd99-bba0-4cd4-bbad-cf5a0bea5ba0",
+        "summary": null,
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "haifa": [
+      {
+        "id": "81ad696c-de82-42fa-92e7-f62fbf1a49e0",
+        "school_id": "3d0368de-83db-4d52-b604-c3898749dfe9",
+        "budget_year_id": "211575c9-e20b-407f-b4c8-403cb5acb63d",
+        "summary": {
+          "draftParams": {
+            "trimPct": 5,
+            "hoursCut": 1,
+            "tuitionRate": 80,
+            "parentAmount": 100,
+            "shabbatHours": 1,
+            "tuitionAmount": 3000,
+            "dualAddedHours": 15,
+            "principalHours": 6,
+            "partaniyotHours": 3,
+            "supplementAmount": 3000
+          }
+        },
+        "principal_signed_at": null,
+        "courier_signed_at": null
+      }
+    ],
+    "beer-sheva": []
+  }
+}

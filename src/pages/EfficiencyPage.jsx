@@ -16,7 +16,7 @@ import {
   DEFAULT_SHABBAT_WEEKLY_HOURS, DEFAULT_PARENT_CONTRIBUTION,
   DEFAULT_PARTANIYOT_HOURS, DEFAULT_PRINCIPAL_TEACHING_WEEKLY_HOURS, TEACHER_POSITION_HOURS,
   DEFAULT_TUITION_AMOUNT, DEFAULT_TUITION_COLLECTION_RATE, DEFAULT_TUITION_SUPPLEMENT,
-  normalizeSuggestionKey, buildSuggestionRows, buildPlanSnapshot,
+  normalizeSuggestionKey,
 } from '../lib/efficiency.js';
 import { useBudgetClosed } from '../lib/useBudgetClosed.js';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -192,7 +192,10 @@ export default function EfficiencyPage() {
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
-    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + dualAddedHours);
+    // הבחירות השמורות נעוצות — הצעה שנבחרה מוצגת גם כשהאופטימיזציה
+    // מעדיפה קומבינציה אחרת (ג+ד ברמת ישי, שכבר מבוצעת בפועל)
+    const pinned = new Set([...(selectedKeys || [])].filter(k => k.startsWith('dual:')));
+    const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + dualAddedHours, pinned);
     const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
     const allMergedIds = new Set([...mergedIds, ...dualMergedIds]);
     return {
@@ -213,7 +216,7 @@ export default function EfficiencyPage() {
       tuition: tuitionReport(classes, tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate),
       supplement: tuitionSupplementReport(classes, supplementAmount),
     };
-  }, [classes, expenses, expenseCategories, constants, dualAddedHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount]);
+  }, [classes, expenses, expenseCategories, constants, dualAddedHours, shabbatHours, parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount, selectedKeys]);
 
   const totals = useMemo(
     () => calculateSchoolTotals(classes, incomeSources, expenses, constants, expenseCategories),
@@ -248,8 +251,9 @@ export default function EfficiencyPage() {
     ...(top.rows.length > 0 ? ['trim'] : []),
   ], [report]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // אחרי שמירה התוכנית נעולה: הסימון מוצג מהסנפשוט שנשמר ואי אפשר לשנותו.
-  // closedNow מסמן נעילה שקרתה בשמירה הנוכחית, בלי לטעון מחדש מהמסד.
+  // שמירה אינה נועלת עוד (LOCK_BUDGET_ON_SAVE כבוי ב-efficiency.js): הסימון
+  // נשאר בר-שינוי, וגם closedSaved וגם closedNow נשארים false. הענפים שלמטה
+  // נשמרו כמות שהם כדי שהחזרת הדגל תחזיר את ההתנהגות הישנה במלואה.
   const { closed: closedSaved, plan: frozenPlan, reopen } = useBudgetClosed(user?.schoolId, currentYear?.id);
   const [closedNow, setClosedNow] = useState(false);
   const [reopened, setReopened] = useState(false);
@@ -354,11 +358,10 @@ export default function EfficiencyPage() {
     parentAmount, partaniyotHours, principalHours, tuitionMonthly, tuitionRate, supplementAmount,
   ]);
 
-  // השמירה היא רגע ההקפאה: נשמר סנפשוט מלא — הצעות, סכומים, מצבת כיתות
-  // ומספרי תלמידים — ומאותו רגע התקציב נעול ואינו משתנה עוד, לא מהמנוע
-  // ולא מעריכה במסכים אחרים (האכיפה עצמה במסד, migration_v20).
+  // השמירה שומרת את הבחירה ואת הכוונון — ותו לא. אין הקפאה ואין נעילה:
+  // המספרים ממשיכים להתעדכן מהמנוע ומהעריכה במסכים האחרים, ואפשר לשמור
+  // שוב בכל עת. ר' LOCK_BUDGET_ON_SAVE ב-efficiency.js.
   const saveSelection = async () => {
-    if (closed) return notify('התקציב כבר נשמר ונעול — לפתיחה מחדש יש לפנות לרשת', 'error');
     setSavingSelection(true);
     const now = new Date().toISOString();
     // אותם ערכים מכוונים בדיוק כמו הכרטיסים למעלה — אחרת הסנפשוט הקפוא
@@ -367,31 +370,20 @@ export default function EfficiencyPage() {
       dualAddedHours, hoursCut, trimPct, shabbatHours, parentAmount, partaniyotHours,
       principalHours, tuitionAmount: tuitionMonthly * TUITION_SUGGESTION_MONTHS, tuitionRate, supplementAmount,
     };
-    const rows = buildSuggestionRows(classes, expenses, expenseCategories, constants, draftParams);
     const keys = selectedKeys == null ? allKeys : [...selectedKeys];
     const { data, error } = await supabase.from('budget_approvals').upsert({
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
       selected_suggestion_keys: keys,
-      // draftParams נשמר גם בתוך הסנפשוט הקפוא — כדי שפתיחה מחדש (useBudgetClosed.reopen)
-      // תוכל להחזיר בדיוק את אותו כוונון, במקום לאבד אותו ולחזור לברירות מחדל
-      summary: {
-        ...buildPlanSnapshot({
-          rows,
-          selectedKeys: new Set(keys),
-          totals,
-          classes,
-          closedAt: now,
-        }),
-        draftParams,
-      },
+      // ב-summary נשמר הכוונון בלבד. סנפשוט ההקפאה אינו נכתב עוד — הוא
+      // הדגל שלפיו המסד חוסם עריכה (migration_v20), והתקציב לא נועל עוד.
+      summary: { draftParams },
       updated_at: now,
     }, { onConflict: 'school_id,budget_year_id' }).select().single();
     setSavingSelection(false);
     if (isMissingTableError(error)) return notify('שמירת הבחירה עדיין לא הופעלה במוסד זה — יש לפנות לתמיכה', 'error');
     if (error || !data) return saveFailed(error);
-    setClosedNow(true);
-    notify('נשמר ונעול ✓ — התקציב לא ישתנה עוד');
+    notify('הבחירה נשמרה ✓ — התקציב נשאר פתוח לעריכה');
   };
 
   const totalPotential =
@@ -451,9 +443,9 @@ export default function EfficiencyPage() {
 
       {confirmSave && (
         <ConfirmDialog
-          title="נעילת התקציב"
-          message="זו פעולה סופית — מרגע השמירה התקציב ננעל ולא ניתן לשנות עוד כיתות, הכנסות, הוצאות או הגדרות, גם אם רק בודקים הצעות. אם עדיין בודקים אפשרויות ולא סוגרים את השנה בפועל, אין צורך ללחוץ כאן — הסימון ✓ על הכרטיסים מספיק כדי לראות את ההשפעה על המספרים."
-          confirmLabel="נעילה סופית ✓"
+          title="שמירת הבחירה"
+          message="הבחירה בהצעות והכוונון יישמרו, והסיכום והאישור יציגו אותם. התקציב נשאר פתוח לעריכה — אפשר לשנות ולשמור שוב בכל עת, ושום נתון לא ננעל."
+          confirmLabel="שמירה ✓"
           onConfirm={saveSelection}
           onClose={() => setConfirmSave(false)}
         />

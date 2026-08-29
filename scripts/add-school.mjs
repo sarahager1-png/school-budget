@@ -201,9 +201,14 @@ async function main() {
   }
   await runSql(ref, seedSql(name, mode), 'seed (בית ספר + שנים + קטגוריות)');
 
+  // 4.5 site_url — בלי זה קישורי הקסם (כפתור הפתיחה במבט רשת) מפנים ל-localhost:3000
+  const surge = `chabad-${slug}-budget.surge.sh`;
+  console.log('4.5) מגדיר auth site_url...');
+  await api('PATCH', `/projects/${ref}/config/auth`, { site_url: `https://${surge}` });
+  console.log(`   ✓ site_url = https://${surge}`);
+
   // 5. env files
   console.log('5) כותב קבצי env...');
-  const surge = `chabad-${slug}-budget.surge.sh`;
   fs.writeFileSync(path.join(root, `.env.${slug}`),
 `# ${name} — build config (loaded by \`vite build --mode ${slug}\`)
 VITE_SUPABASE_URL=https://${ref}.supabase.co

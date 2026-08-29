@@ -493,8 +493,12 @@ export function shortClassLabel(c) {
 // זהה למספר שהמנהלת חתמה עליו, גם אחרי שינוי בהיגיון המנוע.
 export const PLAN_SNAPSHOT_VERSION = 1;
 
+// נעילה כבויה — כמו ב-src/lib/efficiency.js. מרגע ההכרעה (27.8.2026)
+// לא נשמר סנפשוט הקפאה בכלל, ומבט רשת מציג תמיד את המספרים החיים.
+export const LOCK_BUDGET_ON_SAVE = false;
+
 export function isPlanClosed(summary) {
-  return Array.isArray(summary?.suggestions);
+  return LOCK_BUDGET_ON_SAVE && Array.isArray(summary?.suggestions);
 }
 
 export function planFromSnapshot(summary) {

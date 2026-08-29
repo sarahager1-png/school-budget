@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Plus, Trash2, CheckCircle, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, PAYMENT_MONTHS, OFEK_RATES } from '../data/constants.js';
+import { CONSTANTS_LABELS, ROLES, SCHOOL_MODES, MANAGERS, PAYMENT_MONTHS, OFEK_RATES, ofekMode, ofekBlendedRate, nonOfekUnits, nonOfekTeacherAnnualCost } from '../data/constants.js';
 import { classGradeIndex } from '../lib/efficiency.js';
 import { formatCurrency } from '../lib/calculations.js';
 import { schoolYearLabel } from '../lib/hebrewYear.js';
@@ -193,6 +193,10 @@ function FinancialTab() {
   const { constants, setConstants, classes, user } = useApp();
   const canEdit = MANAGERS.includes(user?.role);
   const [form, setForm] = useState({ ...constants });
+  // נפתח בלחיצה על "חלק וחלק" — כדי שהשדות יופיעו עוד לפני שהוזנו מספרים
+  const [mixOpen, setMixOpen] = useState(false);
+  // איך מתארים את צד העולם הישן: לפי מספר מורות או לפי סכום שכר שנתי
+  const [byAmount, setByAmount] = useState(() => Number(constants.nonOfekAmount) > 0);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: Number(v) }));
 
@@ -201,11 +205,39 @@ function FinancialTab() {
   const monthlyActual = form.actualWeeklyHours * form.actualHourlyRate;
   const annualActual = monthlyActual * PAYMENT_MONTHS;
 
-  const setOfek = (yes) => setForm(p => ({
-    ...p,
-    ofekSalary: yes,
-    actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
-  }));
+  // כן/לא — מסלול אחיד לכל המורות; מאפס את שדות ה"חלק וחלק"
+  const setOfek = (yes) => {
+    setMixOpen(false);
+    setForm(p => ({
+      ...p,
+      ofekSalary: yes,
+      ofekTeachers: 0,
+      nonOfekTeachers: 0,
+      nonOfekAmount: 0,
+      actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
+    }));
+  };
+
+  // "חלק וחלק" — התעריף בפועל הוא ממוצע משוקלל בין שני המסלולים, ולכן כל
+  // שינוי בשדות מעדכן אותו מיד. ofekSalary נשאר true כדי ששאלת דף הבית לא תחזור.
+  const setMix = (patch) => setForm(p => {
+    const next = { ...p, ...patch, ofekSalary: true };
+    const rate = ofekBlendedRate(next);
+    return rate == null ? next : { ...next, actualHourlyRate: rate };
+  });
+  const setMixCount = (key, value) => setMix({ [key]: Math.max(0, Math.round(Number(value) || 0)) });
+
+  // מעבר בין שתי הדרכים לתאר את צד העולם הישן — מנקה את השדה השני,
+  // כדי שלא יישארו שני מקורות סותרים לאותו נתון
+  const useCounts = () => { setByAmount(false); setMix({ nonOfekAmount: 0 }); };
+  const useAmount = () => { setByAmount(true); setMix({ nonOfekTeachers: 0 }); };
+
+  const mode = ofekMode(form);
+  const showMix = mixOpen || mode === 'mixed';
+  const showAmount = byAmount || Number(form.nonOfekAmount) > 0;
+  const mixRate = ofekBlendedRate(form);
+  const oldUnits = nonOfekUnits(form);
+  const teacherAnnual = nonOfekTeacherAnnualCost(form.actualWeeklyHours);
 
   // שכבות שאפשר להוסיף כהצעת "סגירת כיתה" נפרדת — כל שכבה קיימת מלבד
   // הגבוהה ביותר (היא תמיד נבדקת אוטומטית, ר' closeClassReport)
@@ -228,24 +260,122 @@ function FinancialTab() {
       {/* שכר אופק — קובע את תעריף עלות ההוראה */}
       <div className="card p-4 border border-gold-200">
         <label className="label">שכר אופק חדש?</label>
-        <p className="text-xs text-gray-400 mb-3">קובע את תעריף השעה בעלות ההוראה: כן = {OFEK_RATES.yes} ₪, לא = {OFEK_RATES.no} ₪. לא לשכוח לשמור למטה.</p>
-        <div className="flex gap-2">
+        <p className="text-xs text-gray-400 mb-3">קובע את תעריף השעה בעלות ההוראה: כן = {OFEK_RATES.yes} ₪, לא = {OFEK_RATES.no} ₪. אם חלק מהמורות באופק וחלק בעולם הישן — בוחרים "חלק וחלק", לפי מספר מורות או לפי סכום השכר השנתי של צוות העולם הישן, והתעריף מחושב כממוצע משוקלל. לא לשכוח לשמור למטה.</p>
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setOfek(true)}
-            aria-pressed={form.ofekSalary === true}
-            className={form.ofekSalary === true ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+            aria-pressed={mode === true}
+            className={mode === true ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
           >
-            כן — אופק חדש ({OFEK_RATES.yes} ₪)
+            כן — כולן באופק ({OFEK_RATES.yes} ₪)
           </button>
           <button
             onClick={() => setOfek(false)}
-            aria-pressed={form.ofekSalary === false}
-            className={form.ofekSalary === false ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+            aria-pressed={mode === false}
+            className={mode === false ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
           >
-            לא ({OFEK_RATES.no} ₪)
+            לא — כולן בעולם הישן ({OFEK_RATES.no} ₪)
+          </button>
+          <button
+            onClick={() => setMixOpen(true)}
+            aria-pressed={mode === 'mixed'}
+            className={mode === 'mixed' ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+          >
+            חלק וחלק
           </button>
         </div>
-        {form.ofekSalary == null && (
+
+        {showMix && (
+          <div className="mt-3 max-w-md space-y-3">
+            <div>
+              <label className="label">מורות בשכר אופק ({OFEK_RATES.yes} ₪ לשעה)</label>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={form.ofekTeachers ?? 0}
+                onChange={e => setMixCount('ofekTeachers', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                <label className="label mb-0">צוות בעולם הישן ({OFEK_RATES.no} ₪ לשעה)</label>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={useCounts}
+                    aria-pressed={!showAmount}
+                    className={!showAmount ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+                  >
+                    לפי מספר מורות
+                  </button>
+                  <button
+                    type="button"
+                    onClick={useAmount}
+                    aria-pressed={showAmount}
+                    className={showAmount ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+                  >
+                    לפי סכום שנתי
+                  </button>
+                </div>
+              </div>
+              {showAmount ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    className="input flex-1"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    inputMode="numeric"
+                    placeholder="למשל 300000"
+                    value={form.nonOfekAmount ?? 0}
+                    onChange={e => setMix({ nonOfekAmount: Math.max(0, Number(e.target.value) || 0) })}
+                  />
+                  <span className="text-xs text-gray-400 flex-shrink-0">₪ לשנה</span>
+                </div>
+              ) : (
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={form.nonOfekTeachers ?? 0}
+                  onChange={e => setMixCount('nonOfekTeachers', e.target.value)}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {showMix && (
+          mode === 'mixed'
+            ? (
+              <div className="mt-2 space-y-1">
+                {showAmount && (
+                  <p className="text-xs text-gray-500">
+                    {formatCurrency(form.nonOfekAmount)} בשנה ≈ {oldUnits.toFixed(1)} מורות בעולם הישן
+                    ({OFEK_RATES.no} ₪ × {form.actualWeeklyHours} שעות × {PAYMENT_MONTHS} חודשים = {formatCurrency(teacherAnnual)} למורה)
+                  </p>
+                )}
+                <p className="text-xs text-teal-700">
+                  תעריף משוקלל: <strong>{mixRate} ₪ לשעה</strong> במקום {OFEK_RATES.yes} ₪ —
+                  מוריד את עלות ההוראה ב-{Math.round((1 - mixRate / OFEK_RATES.yes) * 100)}%.
+                  הסכום הוא חלק מעלות ההוראה, לא תוספת עליה.
+                </p>
+              </div>
+            )
+            : (
+              <p className="text-xs text-gold-700 mt-2">
+                {showAmount
+                  ? 'מלאי מספר מורות באופק וגם סכום שנתי לצוות העולם הישן'
+                  : 'מלאי מספר מורות בשני המסלולים כדי לחשב תעריף משוקלל'}
+              </p>
+            )
+        )}
+
+        {mode == null && (
           <p className="text-xs text-gold-700 mt-2">טרם נבחר — המערכת תמשיך לשאול בדף הבית</p>
         )}
       </div>

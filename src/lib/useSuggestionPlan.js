@@ -43,8 +43,8 @@ export function useSuggestionPlan({
   // draftParams — הכוונון שנעשה במסך הייעול (שכר לימוד, שעות וכו'), כדי שדף
   // הבית יראה את אותם סכומים כמו מסך הייעול והסיכום, לא ברירת מחדל רשתית
   const suggestions = useMemo(
-    () => (enabled ? buildSuggestionRows(classes, expenses, expenseCategories, constants, draftParams || {}) : []),
-    [enabled, classes, expenses, expenseCategories, constants, draftParams],
+    () => (enabled ? buildSuggestionRows(classes, expenses, expenseCategories, constants, draftParams || {}, selectedKeys ? [...selectedKeys] : []) : []),
+    [enabled, classes, expenses, expenseCategories, constants, draftParams, selectedKeys],
   );
   const selected = useMemo(
     () => selectedSuggestions(suggestions, selectedKeys),

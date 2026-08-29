@@ -79,6 +79,13 @@
       "ref": "ygmwcdxthcmvrdrbtwuy",
       "surge": "chabad-haifa-budget.surge.sh",
       "mode": "full"
+    },
+    {
+      "slug": "beer-sheva",
+      "name": "שלהבות באר שבע",
+      "ref": "xkhlvlrjcpvthmcmpokj",
+      "surge": "chabad-beer-sheva-budget.surge.sh",
+      "mode": "full"
     }
   ]
 }

@@ -31,6 +31,7 @@ const SCHOOLS: School[] = [
   { slug: 'herzliya', name: 'שלהבות הרצליה', ref: 'qawlduxrovrodmxpehvv', url: 'https://chabad-herzliya-budget.surge.sh' },
   { slug: 'haifa', name: 'שלהבות חיפה', ref: 'ygmwcdxthcmvrdrbtwuy', url: 'https://chabad-haifa-budget.surge.sh' },
   { slug: 'raanana-girls', name: 'בית חינוך רעננה - בנות', ref: 'dqxwsovaryixondmhgyz', url: 'https://chabad-raanana-girls-budget.surge.sh' },
+  { slug: 'beer-sheva', name: 'שלהבות באר שבע', ref: 'xkhlvlrjcpvthmcmpokj', url: 'https://chabad-beer-sheva-budget.surge.sh' },
 ];
 
 const PAYMENT_MONTHS = 12;
@@ -77,11 +78,14 @@ async function fetchSchool(s: School, key: string) {
   // המספרים שנשמרו ולא מחשב מחדש — אחרת שינוי במנוע היה מזיז תקציב נעול.
   let selectedKeys: Set<string> | null = null;
   let frozenSummary: unknown = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let approvalRow: any = null;
   try {
-    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary&limit=1`);
-    const keys = rows?.[0]?.selected_suggestion_keys;
+    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary,notes,principal_name,courier_name&limit=1`);
+    approvalRow = rows?.[0] ?? null;
+    const keys = approvalRow?.selected_suggestion_keys;
     if (Array.isArray(keys)) selectedKeys = new Set(keys.map(normalizeSuggestionKey));
-    frozenSummary = rows?.[0]?.summary ?? null;
+    frozenSummary = approvalRow?.summary ?? null;
   } catch { /* טבלה שעוד לא הוקמה — ברירת מחדל */ }
   const c = constRows[0] ?? {};
   const mode = schoolRows[0]?.mode === 'simple' ? 'simple' : 'full';
@@ -265,6 +269,18 @@ async function fetchSchool(s: School, key: string) {
     balance: frozenTotals ? frozenTotals.balance : balance,
     principalMonthly: principal ? Number(principal.amount) : 0,
     classes: classRows,
+    // הנתונים הגולמיים למסמך המרכז שבפורטל. ההמרה למבנה שהמסמך עובד איתו
+    // נעשית בדפדפן (report-data.mjs), כדי שלא יהיו כאן שתי המרות נפרדות.
+    raw: {
+      yearId: year.id,
+      disableClubs: s.disableClubs === true,
+      classes, income, expenses, categories: cats, constants: c,
+      notes: approvalRow?.notes ?? '',
+      selectedKeys: approvalRow?.selected_suggestion_keys ?? null,
+      draftParams: draftParams,
+      principalName: approvalRow?.principal_name ?? '',
+      courierName: approvalRow?.courier_name ?? '',
+    },
   };
 }
 
@@ -281,6 +297,123 @@ async function launchLink(ref: string, key: string) {
   const j = await r.json();
   if (!r.ok || !j.action_link) throw new Error(`generate_link: ${r.status}`);
   return j.action_link as string;
+}
+
+// ── המסמך המרכז שבפורטל ─────────────────────────────────────
+// תרחיש = עותק עבודה של ההנהלה. הוא נשמר בפרויקט שבו יושבת הפונקציה
+// (טבלת hub_scenarios) ואינו נוגע בנתוני בית הספר. רק "החלה על המערכת"
+// כותבת בפועל, ורק את מה שנשלח במפורש.
+const HUB_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const HUB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+async function hubRest(path: string, init: RequestInit = {}) {
+  const r = await fetch(`${HUB_URL}/rest/v1/${path}`, {
+    ...init,
+    headers: {
+      apikey: HUB_KEY, Authorization: `Bearer ${HUB_KEY}`,
+      'content-type': 'application/json', ...(init.headers ?? {}),
+    },
+  });
+  if (!r.ok) throw new Error(`hub ${path}: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  return r.status === 204 ? null : await r.json();
+}
+
+async function scenarioGet(slug: string) {
+  try {
+    const rows = await hubRest(`hub_scenarios?slug=eq.${slug}&select=state,updated_at&limit=1`);
+    return rows?.[0] ?? null;
+  } catch { return null; }   // הטבלה עוד לא הוקמה — הפורטל ימשיך בלי תרחיש שמור
+}
+
+async function scenarioSave(slug: string, state: unknown) {
+  await hubRest('hub_scenarios', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ slug, state, updated_at: new Date().toISOString() }),
+  });
+  return true;
+}
+
+// שדות בסיס החישוב שההחלה רשאית לכתוב. כל שדה אחר בקבועים לא נגע.
+const BASIS_COLUMNS: Record<string, string> = {
+  actualHourlyRate: 'actual_hourly_rate',
+  actualWeeklyHours: 'actual_weekly_hours',
+  ministryHourlyRate: 'ministry_hourly_rate',
+  fullClassStudentThreshold: 'full_class_student_threshold',
+  halfClassStudentThreshold: 'half_class_student_threshold',
+  ministryGrantPerStudent: 'ministry_grant_per_student',
+  incomePerStudent: 'income_per_student',
+  incomePerStudentTalan: 'income_per_student_talan',
+  expensePerStudent: 'expense_per_student',
+  counselingHoursPerClass: 'counseling_hours_per_class',
+  clubsMonthlyExpensePerClass: 'clubs_monthly_expense_per_class',
+  professionalDevPerClass: 'professional_dev_per_class',
+};
+
+// deno-lint-ignore no-explicit-any
+async function applyToSchool(ref: string, key: string, state: any) {
+  const base = `https://${ref}.supabase.co/rest/v1`;
+  const h = { apikey: key, Authorization: `Bearer ${key}`, 'content-type': 'application/json' };
+  const call = async (path: string, init: RequestInit) => {
+    const r = await fetch(`${base}/${path}`, { ...init, headers: { ...h, ...(init.headers ?? {}) } });
+    if (!r.ok) throw new Error(`${path}: ${r.status} ${(await r.text()).slice(0, 300)}`);
+    return r;
+  };
+  const yearId = state.yearId;
+  if (!yearId) throw new Error('חסרה שנת תקציב');
+  const schools = await (await fetch(`${base}/schools?select=id&limit=1`, { headers: h })).json();
+  const schoolId = schools?.[0]?.id;
+  if (!schoolId) throw new Error('לא נמצא בית הספר');
+
+  const counts = { updated: 0, inserted: 0, deleted: 0 };
+  const patch = async (table: string, id: string, body: unknown) => {
+    await call(`${table}?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    counts.updated++;
+  };
+  const insert = async (table: string, body: Record<string, unknown>) => {
+    await call(table, { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ ...body, school_id: schoolId, budget_year_id: yearId }) });
+    counts.inserted++;
+  };
+  const remove = async (table: string, ids: string[]) => {
+    for (const id of ids ?? []) {
+      await call(`${table}?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+      counts.deleted++;
+    }
+  };
+
+  // deno-lint-ignore no-explicit-any
+  for (const c of state.classes ?? []) {
+    const body = { name: c.name, grade_level: c.gradeLevel || null, student_count: Number(c.studentCount) || 0 };
+    if (c.id) await patch('classes', c.id, body); else await insert('classes', body);
+  }
+  // deno-lint-ignore no-explicit-any
+  for (const s of state.incomeSources ?? []) {
+    const body = { name: s.name, amount: Number(s.amount) || 0 };
+    if (s.id) await patch('income_sources', s.id, body); else await insert('income_sources', body);
+  }
+  // deno-lint-ignore no-explicit-any
+  for (const e of state.expenses ?? []) {
+    const body = { name: e.name, amount: Number(e.amount) || 0, period: e.period || 'yearly', category_id: e.categoryId ?? null };
+    if (e.id) await patch('expenses', e.id, body); else await insert('expenses', body);
+  }
+  await remove('classes', state.removed?.classes);
+  await remove('income_sources', state.removed?.income);
+  await remove('expenses', state.removed?.expenses);
+
+  if (state.constants) {
+    const body: Record<string, unknown> = {};
+    for (const [camel, col] of Object.entries(BASIS_COLUMNS)) {
+      if (state.constants[camel] != null) body[col] = state.constants[camel];
+    }
+    if (Object.keys(body).length) {
+      await call(`financial_constants?budget_year_id=eq.${yearId}`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ ...body, updated_at: new Date().toISOString() }),
+      });
+      counts.updated++;
+    }
+  }
+  return { ok: true, ...counts };
 }
 
 Deno.serve(async (req) => {
@@ -303,6 +436,23 @@ Deno.serve(async (req) => {
       return json({ error: String(e) }, 500);
     }
   }
+  // המסמך המרכז: קריאת תרחיש, שמירתו, והחלה מבוקרת על מערכת בית הספר
+  if (body.action) {
+    const s = SCHOOLS.find((x) => x.slug === body.slug);
+    if (!s) return json({ error: 'unknown school' }, 400);
+    try {
+      if (body.action === 'scenario:get') return json({ scenario: await scenarioGet(s.slug) });
+      if (body.action === 'scenario:save') return json({ ok: await scenarioSave(s.slug, body.state) });
+      if (body.action === 'scenario:apply') {
+        if (!keys[s.ref]) return json({ error: 'no key' }, 400);
+        return json(await applyToSchool(s.ref, keys[s.ref], body.state));
+      }
+    } catch (e) {
+      return json({ error: String(e) }, 500);
+    }
+    return json({ error: 'unknown action' }, 400);
+  }
+
   const schools = await Promise.all(
     SCHOOLS.map(async (s) => {
       try {

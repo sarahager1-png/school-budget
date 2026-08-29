@@ -22,6 +22,11 @@ function mapConstantsFromDB(row) {
     actualWeeklyHours: row.actual_weekly_hours,
     actualHourlyRate: Number(row.actual_hourly_rate),
     ofekSalary: row.ofek_salary ?? null,
+    // "חלק וחלק" (מיגרציה v25) — במוסד שהעמודות עוד לא הוקמו בו נשאר 0/0,
+    // כלומר בדיוק ההתנהגות הישנה של שאלת הכן/לא
+    ofekTeachers: Number(row.ofek_teachers ?? 0),
+    nonOfekTeachers: Number(row.non_ofek_teachers ?? 0),
+    nonOfekAmount: Number(row.non_ofek_amount ?? 0),
     incomePerStudent: Number(row.income_per_student),
     incomePerStudentTalan: Number(row.income_per_student_talan ?? 885),
     expensePerStudent: Number(row.expense_per_student),
@@ -47,6 +52,20 @@ function mapConstantsFromDB(row) {
   };
 }
 
+// עמודות שנוספו במיגרציות מאוחרות ואינן קיימות בהכרח בכל 12 המסדים.
+// המפתח הוא שם העמודה במסד, הערך הוא איך לקרוא לה למשתמשת כשהיא נשמטת.
+const OPTIONAL_CONSTANT_COLS = {
+  counseling_hours_per_class: 'שעות הייעוץ',
+  clubs_monthly_expense_per_class: 'תוספת החוגים',
+  ofek_teachers: 'פילוח אופק/עולם ישן',
+  non_ofek_teachers: 'פילוח אופק/עולם ישן',
+};
+
+const isMissingColumnError = (error) => !!error && (
+  error.code === '42703' || error.code === 'PGRST204' ||
+  /column .* does not exist|schema cache/i.test(error.message || '')
+);
+
 function mapConstantsToDB(c) {
   return {
     school_weeks: c.schoolWeeks,
@@ -58,6 +77,9 @@ function mapConstantsToDB(c) {
     actual_weekly_hours: c.actualWeeklyHours,
     actual_hourly_rate: c.actualHourlyRate,
     ofek_salary: c.ofekSalary ?? null,
+    ofek_teachers: c.ofekTeachers ?? 0,
+    non_ofek_teachers: c.nonOfekTeachers ?? 0,
+    non_ofek_amount: c.nonOfekAmount ?? 0,
     income_per_student: c.incomePerStudent,
     income_per_student_talan: c.incomePerStudentTalan,
     expense_per_student: c.expensePerStudent,
@@ -531,21 +553,31 @@ export function AppProvider({ children }) {
       ? supabase.from('financial_constants').update(payload).eq('id', existing.id)
       : supabase.from('financial_constants').insert(payload));
 
-    let { error } = await write(dbData);
-    // עמודה שעוד לא הוקמה במוסד (למשל counseling_hours_per_class לפני מיגרציה
-    // v21) לא תפיל את שמירת כל הקבועים — שומרים בלעדיה ומתריעים על השדה בלבד.
-    const missingCol = error && (error.code === '42703' || /column .* does not exist|schema cache/i.test(error.message || ''));
-    if (missingCol) {
-      const { counseling_hours_per_class: _c, clubs_monthly_expense_per_class: _k, ...withoutNew } = dbData;
-      ({ error } = await write(withoutNew));
-      if (!error) {
-        await syncPrincipalSalaryExpense(newConstants.principalMonthlySalary);
-        return notify('הקבועים נשמרו ✓ — שעות הייעוץ ותוספת החוגים עדיין לא הופעלו במוסד זה', 'error');
-      }
+    // עמודה שעוד לא הוקמה במוסד (מיגרציה שטרם הורצה שם) לא תפיל את שמירת כל
+    // הקבועים: מסירים בדיוק את העמודה שהמסד לא מכיר ומנסים שוב, עד שהשמירה
+    // עוברת. הגרסה הקודמת הסירה רשימה קבועה של שתי עמודות — וכשנוספה עמודה
+    // שלישית (ofek_teachers, מיגרציה v25) הניסיון החוזר נפל שוב והמשתמשת ראתה
+    // "בדקי את החיבור" על מסד תקין לגמרי.
+    let payload = dbData;
+    let { error } = await write(payload);
+    const dropped = [];
+    while (isMissingColumnError(error) && Object.keys(payload).some(k => k in OPTIONAL_CONSTANT_COLS)) {
+      const named = Object.keys(OPTIONAL_CONSTANT_COLS)
+        .find(c => c in payload && (error.message || '').includes(c));
+      const drop = named ? [named] : Object.keys(OPTIONAL_CONSTANT_COLS).filter(c => c in payload);
+      payload = { ...payload };
+      for (const col of drop) { delete payload[col]; dropped.push(OPTIONAL_CONSTANT_COLS[col]); }
+      ({ error } = await write(payload));
     }
     if (error) return saveFailed(error);
     await syncPrincipalSalaryExpense(newConstants.principalMonthlySalary);
-    notify('הקבועים נשמרו ✓');
+    const inactive = [...new Set(dropped)];
+    notify(
+      inactive.length
+        ? `הקבועים נשמרו ✓ — ${inactive.join(', ')} עדיין לא הופעלו במוסד זה`
+        : 'הקבועים נשמרו ✓',
+      inactive.length ? 'error' : 'success',
+    );
   };
 
   // ── School ───────────────────────────────────────────────────

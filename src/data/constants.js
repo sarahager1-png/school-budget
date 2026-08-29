@@ -6,6 +6,58 @@ export const PAYMENT_MONTHS = 12;
 // ofekSalary === null ⇒ טרם נענתה — המערכת שואלת בדף הבית עד שעונים.
 export const OFEK_RATES = { yes: 700, no: 450 };
 
+// חלק מהמורות באופק וחלק בעולם הישן (מיגרציה v25): התעריף בפועל הוא ממוצע
+// משוקלל בין שני המסלולים. את הצד של העולם הישן אפשר לתאר בשתי דרכים —
+// מספר מורות, או סכום שכר שנתי (כשיודעים כמה הוא עולה אבל לא כמה מורות).
+// הסכום הוא *חלק* מעלות ההוראה שכבר מחושבת, לא תוספת עליה: הוא מוריד את
+// התעריף המשוקלל, ולכן סה"כ ההוצאות לא גדל ואין כפל ספירה.
+
+// כמה עולה מורה אחת בעולם הישן לשנה, לפי אותו מודל של עלות ההוראה:
+// 450 ₪ × 34 שעות חודשיות × 12 חודשים = 183,600 ₪. זו יחידת ההמרה של הסכום.
+export function nonOfekTeacherAnnualCost(actualWeeklyHours) {
+  const hours = Number(actualWeeklyHours) || DEFAULT_CONSTANTS.actualWeeklyHours;
+  return OFEK_RATES.no * hours * PAYMENT_MONTHS;
+}
+
+// סכום שנתי ⇒ כמה מורות בעולם הישן הוא שווה (יכול לצאת שבר, וזה בסדר —
+// זה משקל בממוצע, לא מספר אנשים)
+export function nonOfekTeachersFromAmount(amount, actualWeeklyHours) {
+  const a = Math.max(0, Number(amount) || 0);
+  const unit = nonOfekTeacherAnnualCost(actualWeeklyHours);
+  return unit > 0 ? a / unit : 0;
+}
+
+// המשקל של צד העולם הישן — לפי הסכום אם הוזן, אחרת לפי ספירת המורות
+export function nonOfekUnits(c) {
+  const amount = Number(c?.nonOfekAmount) || 0;
+  return amount > 0
+    ? nonOfekTeachersFromAmount(amount, c?.actualWeeklyHours)
+    : Math.max(0, Number(c?.nonOfekTeachers) || 0);
+}
+
+export function isOfekMixed(c) {
+  return Number(c?.ofekTeachers) > 0 && nonOfekUnits(c) > 0;
+}
+
+// הפרימיטיב: ממוצע משוקלל בין שני המסלולים. null כששני המשקלים ריקים.
+export function blendedOfekRate(ofekUnits, nonOfekUnits) {
+  const ofek = Math.max(0, Number(ofekUnits) || 0);
+  const old = Math.max(0, Number(nonOfekUnits) || 0);
+  if (ofek + old === 0) return null;
+  return Math.round((ofek * OFEK_RATES.yes + old * OFEK_RATES.no) / (ofek + old));
+}
+
+// התעריף המשוקלל של מוסד לפי הקבועים שלו (ספירה או סכום — לפי מה שהוזן)
+export function ofekBlendedRate(c) {
+  return blendedOfekRate(Math.max(0, Number(c?.ofekTeachers) || 0), nonOfekUnits(c));
+}
+
+// המצב שנבחר בפועל: 'mixed' | true | false | null (טרם נענתה)
+export function ofekMode(c) {
+  if (isOfekMixed(c)) return 'mixed';
+  return c?.ofekSalary ?? null;
+}
+
 // מרכיב ייעוץ: שעות ייעוץ לכיתה בחודש — עלות בתחשיב כל כיתה.
 // נערך במסך ההגדרות ונשמר בעמודה counseling_hours_per_class (מיגרציה v21).
 // הערך כאן הוא ברירת המחדל למוסד שעוד לא קבע ערך משלו.
@@ -32,6 +84,9 @@ export const DEFAULT_CONSTANTS = {
   actualWeeklyHours: 34,
   actualHourlyRate: 700,
   ofekSalary: null,
+  ofekTeachers: 0,     // מצב "חלק וחלק" — כמה מורות בשכר אופק
+  nonOfekTeachers: 0,  // מצב "חלק וחלק" — כמה מורות בעולם הישן
+  nonOfekAmount: 0,    // מצב "חלק וחלק" — שכר שנתי לצוות העולם הישן (₪), חלופה לספירה
   incomePerStudent: 350,
   incomePerStudentTalan: 885,
   expensePerStudent: 1200,
@@ -72,10 +127,10 @@ export const HEBREW_MONTHS = [
 // כלל רשת: הוצאות פעילויות ואירועים עד 1,400 ₪ לתלמיד לשנה
 export const EVENTS_CAP_PER_STUDENT = 1400;
 
-// הערה קבועה שמופיעה על כל סיכום תקציב (מסך + מסמך מודפס)
-export const SUMMARY_DISCLAIMER =
-  'בתנאי מוכש"ר. אינו כולל עלויות שכר לעובדי צהרונים, מזכירות, אב בית וניקיון; ' +
-  'אינו כולל אחזקת מבנה, שיפוצים ותיקונים וכד׳, ריהוט וציוד קבוע.';
+// הערה קבועה שמופיעה על כל סיכום תקציב (מסך + מסמך מודפס). פירוט מה התקציב אינו כולל (שכר צהרונים,
+// מזכירות, אב בית וניקיון, אחזקת מבנה, שיפוצים, ריהוט וציוד) הוסר מהמסמך
+// הראשי ב-27.8.2026 לבקשת שרה — נשאר תנאי המוכש"ר בלבד.
+export const SUMMARY_DISCLAIMER = 'בתנאי מוכש"ר.';
 
 export const REQUEST_STATUS = {
   pending: { label: 'ממתין', color: 'bg-gold-100 text-gold-700', dot: 'bg-gold-500' },
@@ -104,7 +159,12 @@ export const ROLES = {
 };
 
 export const ALL_ROLES = ['principal', 'admin', 'courier'];
-export const MANAGERS = ['principal', 'admin'];
+// VITE_COURIER_FULL_EDIT=1 בקובץ ‎.env.<slug>‎ (כיום: מזכרת בתיה) — השליח מקבל
+// עריכה מלאה כמו מנהלת: כיתות, הגדרות, גבייה, משכורות. חייב ללכת יחד עם
+// migration_v24 על אותו בית ספר, אחרת ה-RLS ידחה את הכתיבות בשקט.
+// (import.meta.env?. — הקובץ מיובא גם מסקריפטים ב-Node, שם אין env של Vite)
+const COURIER_FULL_EDIT = import.meta.env?.VITE_COURIER_FULL_EDIT === '1';
+export const MANAGERS = COURIER_FULL_EDIT ? ['principal', 'admin', 'courier'] : ['principal', 'admin'];
 // שאר התקציב (הכנסות + הוצאות) — בעריכת השליח; המנהלת נשארת עם "מערכת ה-1200" (כיתות/הגדרות)
 export const INCOME_EXPENSE_EDITORS = ['courier', 'admin'];
 

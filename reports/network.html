@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>תקציב הרשת — מסמך מרכז שנת תשפ&quot;ז (2026-2027)</title>
+<style>
+  body { margin: 0; background: #eef1f0; }
+  .sheet { max-width: 210mm; margin: 24px auto; background: #fff; padding: 20mm 16mm; box-shadow: 0 10px 40px -20px rgba(0,0,0,.45); }
+  .back { display: block; max-width: 210mm; margin: 16px auto -8px; font: 14px 'Heebo','Segoe UI',Arial,sans-serif; color: #0d6e63; direction: rtl; }
+  .doc-toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 14px; }
+  .doc-toolbar button { font: inherit; font-size: 13.5px; padding: 8px 16px; border-radius: 8px; cursor: pointer; background: #0d6e63; color: #fff; border: 0; }
+  
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+  * { box-sizing: border-box; }
+  .doc { color: #16211f; direction: rtl; font-family: 'Heebo','Segoe UI',Arial,sans-serif; font-size: 14px; line-height: 1.55; }
+  .doc .bh { display: flex; position: static; justify-content: space-between; font-size: 12px; color: #6b7a77; font-weight: 400; }
+  .doc h1 { font-size: 25px; margin: 4px 0 2px; font-weight: 800; }
+  .doc .sub-title { color: #4b5c59; margin: 0; font-weight: 500; }
+  .doc .counts { color: #0d6e63; font-weight: 700; margin: 6px 0 0; }
+  .doc-head { text-align: center; border-bottom: 2px solid #0d6e63; padding-bottom: 12px; margin-bottom: 18px; }
+
+  .doc-toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 14px; flex-wrap: wrap; }
+  .doc-toolbar button {
+    font: inherit; font-size: 13.5px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    background: #0d6e63; color: #fff; border: 0;
+  }
+  .doc-toolbar button.warn { background: #fff; color: #b45309; border: 1px solid #f0d9ae; }
+  .doc-toolbar button:disabled { opacity: .6; cursor: default; }
+
+  .doc-banner { background: #fef6e7; border: 1px solid #f0d9ae; color: #7a5b16; border-radius: 10px; padding: 8px 12px; margin-bottom: 14px; font-size: 13px; }
+  .doc-banner.hidden { display: none; }
+  .doc-banner .link { background: none; border: 0; color: #0d6e63; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .kpi { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; text-align: center; }
+  .kpi span { display: block; font-size: 11.5px; color: #6b7a77; }
+  .kpi b { font-size: 19px; font-variant-numeric: tabular-nums; }
+  .kpi.inc b { color: #14804a; } .kpi.exp b { color: #c02626; }
+  .kpi.bal.pos b { color: #0d6e63; } .kpi.bal.neg b { color: #c02626; }
+
+  .doc h2 { font-size: 15px; margin: 22px 0 6px; padding-bottom: 5px; border-bottom: 2px solid #cfe0dc; }
+  .doc table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .doc td, .doc th { padding: 5px 4px; border-bottom: 1px solid #eef1f0; vertical-align: top; }
+  .doc th { text-align: right; font-size: 11.5px; color: #6b7a77; font-weight: 600; border-bottom: 1px solid #cfe0dc; }
+  .doc .num { text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* היררכיה: סעיף ראשי מודגש, והפירוט שמתחתיו נסוג פנימה ובאפור */
+  .doc tr.line td { font-weight: 600; }
+  .doc tr.group td { background: #f4f8f7; border-top: 1px solid #dde5e3; }
+  .doc tr.sub td { color: #6b7a77; font-weight: 400; font-size: 12.5px; padding-right: 26px; border-bottom: 0; padding-top: 1px; padding-bottom: 1px; }
+  .doc tr.sub td:first-child { border-inline-start: 0; position: relative; }
+  .doc tr.sub td:first-child::before { content: "—"; position: absolute; right: 12px; color: #c3cfcc; }
+  .doc tr.total td { font-weight: 800; border-top: 2px solid #cfe0dc; border-bottom: 0; padding-top: 8px; }
+  .doc tr.unpicked td { color: #a8b4b1; text-decoration: line-through; }
+  .doc .pos { color: #14804a; } .doc .neg { color: #c02626; }
+
+  .doc input.cell {
+    font: inherit; text-align: left; border: 1px solid #dde5e3; border-radius: 6px;
+    padding: 2px 6px; width: 130px; background: #fbfdfc; font-variant-numeric: tabular-nums;
+  }
+  .doc input.cell.wide { width: 150px; text-align: right; }
+  .doc input.cell.narrow { width: 64px; }
+  .doc input.cell:focus { outline: 2px solid #0d6e63; outline-offset: 1px; }
+  .doc button.x { border: 0; background: none; color: #c9a0a0; cursor: pointer; font-size: 12px; padding: 0 6px; }
+  .doc button.x:hover { color: #c02626; }
+  .doc button.add { font: inherit; font-size: 13px; background: none; border: 1px dashed #cfe0dc; color: #0d6e63; border-radius: 8px; padding: 6px 12px; cursor: pointer; margin-bottom: 10px; }
+
+  .ratios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .ratios div { border: 1px solid #e3ebe9; background: #f6f9f8; border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .ratios span { font-size: 11.5px; color: #6b7a77; }
+  .ratios b { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .doc .print-val { display: none; }
+  .doc .tag { font-size: 10.5px; color: #9a6b00; background: #fef6e7; border: 1px solid #f0d9ae; border-radius: 5px; padding: 0 5px; white-space: nowrap; }
+  .doc .scope-note { color: #6b7a77; font-size: 12px; margin: 6px 0 0; }
+  .doc .table-note { color: #6b7a77; font-size: 11.5px; margin: 2px 0 12px; line-height: 1.5; }
+  .doc .empty-note { color: #6b7a77; font-size: 13px; margin: 0 0 12px; }
+  .doc .sug-toggle { margin: 0 0 8px; }
+  .doc .link { background: none; border: 0; color: #0d6e63; font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0; }
+  .doc .muted-cell { color: #8b9895; font-size: 12.5px; }
+  .doc .classes-table { font-size: 12px; }
+  .doc .table-scroll { overflow-x: auto; }
+
+  .basis { background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #4b5c59; }
+  .basis div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 3px 0; }
+
+  .notes-lines { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px 4px; }
+  .notes-lines p { margin: 0 0 8px; font-size: 12px; color: #6b7a77; }
+  .notes-lines .line { border-bottom: 1px solid #dde5e3; height: 26px; }
+  .saved-note { white-space: pre-wrap; background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; }
+
+  .signs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+  .sign { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; }
+  .sign span { font-size: 12px; color: #6b7a77; }
+  .sign .rule { border-bottom: 1px solid #b9c7c4; height: 30px; margin-top: 10px; }
+
+  @media print {
+    .no-print { display: none !important; }
+    .doc tr.unpicked { display: none; }
+
+    /* input מדפיס ערך גולמי — בהדפסה מוצג במקומו הטקסט המעוצב */
+    .doc input.cell { display: none; }
+    .doc .print-val { display: inline; }
+
+    /* 12 עמודות על A4 לאורך: גופן וריווח מוקטנים, בלי מספרים שנשברים */
+    .doc .classes-table { font-size: 8.5px; }
+    .doc .classes-table td, .doc .classes-table th { padding: 2px 2px; }
+    .doc .table-scroll { overflow: visible; }
+
+    .doc .page-break { break-before: page; }
+    .doc tr { break-inside: avoid; }
+    .doc h2 { break-after: avoid; }
+    .doc table { break-inside: auto; }
+    .signs, .notes-lines, .ratios { break-inside: avoid; }
+  }
+  .doc .schools-table { font-size: 12.5px; }
+  @media print {
+    body { background: #fff; }
+    .sheet { margin: 0; padding: 0; box-shadow: none; max-width: none; }
+    .back { display: none; }
+    .doc .schools-table { font-size: 10.5px; }
+  }
+</style>
+</head>
+<body>
+<a class="back no-print" href="index.html">← למסמכים של בתי הספר</a>
+<div class="sheet"><div class="doc">
+
+  <div class="doc-toolbar no-print"><button onclick="window.print()">הדפסה / שמירה כ-PDF</button></div>
+
+  <div class="doc-head">
+    <div class="bh"><span>ב"ה</span><span>29.8.2026</span></div>
+    <h1>תקציב הרשת — מסמך מרכז</h1>
+    <p class="sub-title">רשת חינוך חב"ד · שנת תשפ&quot;ז (2026-2027)</p>
+    <p class="counts">10 מוסדות · 48 כיתות · 862 תלמידים</p>
+    <p class="scope-note">המסמך מסכם את בתי הספר שלהבות. בית חינוך רעננה ובית חינוך עפולה אינם נכללים בו.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi inc"><span>סה"כ הכנסות</span><b>₪5,278,733</b></div>
+    <div class="kpi exp"><span>סה"כ הוצאות</span><b>₪22,657,100</b></div>
+    <div class="kpi bal neg"><span>גירעון</span><b>₪‎-17,378,367</b></div>
+  </div>
+
+  <div class="ratios">
+    <div><span>ממוצע תלמידים לכיתה</span><b>18.0</b></div>
+    <div><span>הכנסה לתלמיד</span><b>₪6,124</b></div>
+    <div><span>הוצאה לתלמיד</span><b>₪26,284</b></div>
+    <div><span>כיסוי ההוצאות מההכנסות</span><b>23%</b></div>
+    <div><span>גירעון לתלמיד</span><b class="neg">₪‎-20,161</b></div>
+    <div><span>ייעול שנבחר בכל הרשת</span><b class="pos">₪2,546,450</b></div>
+  </div>
+
+  <h2>בתי הספר</h2>
+  <div class="table-scroll"><table class="schools-table">
+    <thead><tr>
+      <th>בית ספר</th><th class="num">כיתות</th><th class="num">תל׳</th>
+      <th class="num">הכנסות</th><th class="num">הוצאות</th><th class="num">יתרה</th>
+      <th class="num">כיסוי</th><th class="num">יתרה לתלמיד</th><th class="num">ייעול נבחר</th>
+    </tr></thead>
+    <tbody>
+      
+      <tr>
+        <td>שלהבות מזכרת בתיה</td>
+        <td class="num">3</td>
+        <td class="num">73</td>
+        <td class="num pos">₪363,134</td>
+        <td class="num neg">₪1,456,400</td>
+        <td class="num neg">₪‎-1,093,266</td>
+        <td class="num">25%</td>
+        <td class="num">₪‎-14,976</td>
+        <td class="num">₪25,200</td>
+      </tr>
+      <tr>
+        <td>שלהבות אשקלון</td>
+        <td class="num">5</td>
+        <td class="num">127</td>
+        <td class="num pos">₪860,550</td>
+        <td class="num neg">₪2,333,900</td>
+        <td class="num neg">₪‎-1,473,350</td>
+        <td class="num">37%</td>
+        <td class="num">₪‎-11,601</td>
+        <td class="num">—</td>
+      </tr>
+      <tr>
+        <td>שלהבות אור עקיבא</td>
+        <td class="num">4</td>
+        <td class="num">83</td>
+        <td class="num pos">₪403,950</td>
+        <td class="num neg">₪1,942,200</td>
+        <td class="num neg">₪‎-1,538,250</td>
+        <td class="num">21%</td>
+        <td class="num">₪‎-18,533</td>
+        <td class="num">—</td>
+      </tr>
+      <tr>
+        <td>שלהבות ירושלים</td>
+        <td class="num">5</td>
+        <td class="num">73</td>
+        <td class="num pos">₪363,134</td>
+        <td class="num neg">₪1,908,000</td>
+        <td class="num neg">₪‎-1,544,866</td>
+        <td class="num">19%</td>
+        <td class="num">₪‎-21,163</td>
+        <td class="num">₪321,450</td>
+      </tr>
+      <tr>
+        <td>שלהבות קרית ביאליק</td>
+        <td class="num">8</td>
+        <td class="num">132</td>
+        <td class="num pos">₪990,456</td>
+        <td class="num neg">₪3,255,600</td>
+        <td class="num neg">₪‎-2,265,144</td>
+        <td class="num">30%</td>
+        <td class="num">₪‎-17,160</td>
+        <td class="num">₪386,400</td>
+      </tr>
+      <tr>
+        <td>שלהבות גני תקוה</td>
+        <td class="num">9</td>
+        <td class="num">179</td>
+        <td class="num pos">₪1,185,974</td>
+        <td class="num neg">₪4,206,340</td>
+        <td class="num neg">₪‎-3,020,366</td>
+        <td class="num">28%</td>
+        <td class="num">₪‎-16,874</td>
+        <td class="num">₪254,600</td>
+      </tr>
+      <tr>
+        <td>שלהבות רמת ישי</td>
+        <td class="num">4</td>
+        <td class="num">69</td>
+        <td class="num pos">₪410,502</td>
+        <td class="num neg">₪1,776,400</td>
+        <td class="num neg">₪‎-1,365,898</td>
+        <td class="num">23%</td>
+        <td class="num">₪‎-19,796</td>
+        <td class="num">₪605,600</td>
+      </tr>
+      <tr>
+        <td>שלהבות הרצליה</td>
+        <td class="num">5</td>
+        <td class="num">60</td>
+        <td class="num pos">₪239,880</td>
+        <td class="num neg">₪2,008,000</td>
+        <td class="num neg">₪‎-1,768,120</td>
+        <td class="num">12%</td>
+        <td class="num">₪‎-29,469</td>
+        <td class="num">₪953,200</td>
+      </tr>
+      <tr>
+        <td>שלהבות חיפה</td>
+        <td class="num">5</td>
+        <td class="num">66</td>
+        <td class="num pos">₪403,628</td>
+        <td class="num neg">₪2,894,660</td>
+        <td class="num neg">₪‎-2,491,032</td>
+        <td class="num">14%</td>
+        <td class="num">₪‎-37,743</td>
+        <td class="num">—</td>
+      </tr>
+      <tr>
+        <td>שלהבות באר שבע <span class="tag">טרם הוזנו נתונים</span></td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td class="num pos">₪57,525</td>
+        <td class="num neg">₪875,600</td>
+        <td class="num neg">₪‎-818,075</td>
+        <td class="num">7%</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+      </tr>
+      <tr class="total">
+        <td>סה"כ 10 מוסדות</td>
+        <td class="num">48</td>
+        <td class="num">862</td>
+        <td class="num pos">₪5,278,733</td>
+        <td class="num neg">₪22,657,100</td>
+        <td class="num neg">₪‎-17,378,367</td>
+        <td class="num">23%</td>
+        <td class="num">₪‎-20,161</td>
+        <td class="num pos">₪2,546,450</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <h2>הכנסות הרשת — כל הסעיפים</h2>
+  <table>
+    <thead><tr><th>סעיף</th><th class="num">ממוצע לחודש</th><th class="num">לשנה</th></tr></thead>
+    <tbody>
+      
+      <tr class="line">
+        <td>שעות תקן — משרד החינוך</td>
+        <td class="num muted-cell">₪286,000</td>
+        <td class="num">₪3,432,000</td>
+      </tr>
+      <tr class="line">
+        <td>תוספת כללית לתלמיד — משרד החינוך</td>
+        <td class="num muted-cell">₪26,578</td>
+        <td class="num">₪318,940</td>
+      </tr>
+      <tr class="line">
+        <td>שכר לימוד</td>
+        <td class="num muted-cell">₪24,529</td>
+        <td class="num">₪294,344</td>
+      </tr>
+      <tr class="line">
+        <td>תל&quot;ן — תשלומי הורים</td>
+        <td class="num muted-cell">₪44,994</td>
+        <td class="num">₪539,924</td>
+      </tr>
+      <tr class="line">
+        <td>הכנסות נוספות של בתי הספר</td>
+        <td class="num muted-cell">₪53,000</td>
+        <td class="num">₪636,000</td>
+      </tr>
+      <tr class="total"><td>סה"כ הכנסות</td><td class="num muted-cell">₪439,894</td><td class="num pos">₪5,278,733</td></tr>
+    </tbody>
+  </table>
+
+  <h2>הוצאות הרשת — כל הסעיפים</h2>
+  <table>
+    <thead><tr><th>סעיף</th><th class="num">ממוצע לחודש</th><th class="num">לשנה</th></tr></thead>
+    <tbody>
+      
+      <tr class="line">
+        <td>עלות הוראה בפועל</td>
+        <td class="num muted-cell">₪1,059,600</td>
+        <td class="num">₪12,715,200</td>
+      </tr>
+      <tr class="line">
+        <td>ייעוץ</td>
+        <td class="num muted-cell">₪39,900</td>
+        <td class="num">₪478,800</td>
+      </tr>
+      <tr class="line">
+        <td>תוספת חוגים</td>
+        <td class="num muted-cell">₪55,333</td>
+        <td class="num">₪664,000</td>
+      </tr>
+      <tr class="line">
+        <td>הוצאה לתלמיד</td>
+        <td class="num muted-cell">₪86,200</td>
+        <td class="num">₪1,034,400</td>
+      </tr>
+      <tr class="line group">
+        <td>שכר</td>
+        <td class="num muted-cell">₪314,079</td>
+        <td class="num">₪3,768,952</td>
+      </tr>
+      <tr class="sub">
+        <td>שכר מנהלות</td>
+        <td class="num muted-cell">₪232,000</td>
+        <td class="num">₪2,784,000</td>
+      </tr>
+      <tr class="sub">
+        <td>שאר השכר</td>
+        <td class="num muted-cell">₪92,079</td>
+        <td class="num">₪1,104,952</td>
+      </tr>
+      <tr class="line">
+        <td>בניין ותחזוקה</td>
+        <td class="num muted-cell">₪163,132</td>
+        <td class="num">₪1,957,588</td>
+      </tr>
+      <tr class="line">
+        <td>פעילויות ואירועים</td>
+        <td class="num muted-cell">₪8,092</td>
+        <td class="num">₪97,100</td>
+      </tr>
+      <tr class="line">
+        <td>ציוד ותשתיות</td>
+        <td class="num muted-cell">₪16,842</td>
+        <td class="num">₪202,100</td>
+      </tr>
+      <tr class="line">
+        <td>אחר</td>
+        <td class="num muted-cell">₪71,947</td>
+        <td class="num">₪863,360</td>
+      </tr>
+      <tr class="total"><td>סה"כ הוצאות</td><td class="num muted-cell">₪1,888,092</td><td class="num neg">₪22,657,100</td></tr>
+    </tbody>
+  </table>
+
+  <table class="bottom-line">
+    <tbody><tr class="total">
+      <td>גירעון שנתי — כלל הרשת</td>
+      <td class="num muted-cell">₪‎-1,448,197</td>
+      <td class="num neg">₪‎-17,378,367</td>
+    </tr>
+    <tr class="total">
+      <td>מצב הרשת לאחר יישום הצעות הייעול שנבחרו</td>
+      <td class="num muted-cell">₪‎-1,235,993</td>
+      <td class="num neg">₪‎-14,831,917</td>
+    </tr></tbody>
+  </table>
+
+  <h2>הערות</h2>
+  <div class="notes-lines">
+    <p class="no-print">מקום לכתיבה — אפשר להקליד כאן לפני ההדפסה, או להשאיר ריק ולכתוב ביד.</p>
+    <div class="line" contenteditable="true"></div><div class="line" contenteditable="true"></div><div class="line" contenteditable="true"></div><div class="line" contenteditable="true"></div><div class="line" contenteditable="true"></div><div class="line" contenteditable="true"></div>
+  </div>
+
+</div></div>
+</body>
+</html>

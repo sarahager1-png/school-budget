@@ -139,7 +139,7 @@ export function normalizeGrade(raw) {
 
 // extraMonthlyHours — השעות הבודדות שמוקצות לכיתה המחוברת. ברירת המחדל היא
 // ההקצאה הרשתית (12), ואפשר להעלות אותה במסך הייעול כשחיבור מסוים דורש יותר.
-export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), extraMonthlyHours = DUAL_AGE_EXTRA_MONTHLY_HOURS) {
+export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), extraMonthlyHours = DUAL_AGE_EXTRA_MONTHLY_HOURS, pinnedKeys = new Set()) {
   // רק כיתה שהיא היחידה בשכבה שלה — אם יש עוד כיתה באותה שכבה, צירוף
   // רגיל (findMerges) הוא האפשרות הזולה יותר ועדיפה
   const byGrade = new Map();
@@ -189,8 +189,10 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     const mergedBudget = calculateClassBudget(merged, constants);
     const costAfter = mergedBudget.totalExpenses + joinExtraCost;
     const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
-    if (delta >= 1000) {
+    const pinned = pinnedKeys.has(`dual:${merged.id}`);
+    if (pinned || delta >= 1000) {
       candidates.push({
+        pinned,
         lowIdx: idx,
         members: [a, partner],
         merged,
@@ -212,7 +214,16 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
   // בחירת זוגות ללא חפיפה שממקסמת את סך החיסכון (תכנון דינמי על רצף
   // השכבות) — כך "ב+ג וגם ד+ה" מנצחים "ג+ד" בודד, במקום שהזוג האמצעי
   // ישרוף את שתי השכנות (הבאג שהסתיר את החיבורים בהרצליה)
-  const byLow = new Map(candidates.map(c => [c.lowIdx, c]));
+  // הצעה שנבחרה ונשמרה נכנסת קודם — הכרעה של שרה אינה נעלמת בגלל
+  // שקומבינציה אחרת חוסכת יותר. נעוצות חופפות זו לזו: הראשונה גוברת.
+  const chosen = [];
+  const taken = new Set();
+  for (const c of candidates.filter(x => x.pinned).sort((a, b) => a.lowIdx - b.lowIdx)) {
+    if (taken.has(c.lowIdx) || taken.has(c.lowIdx + 1)) continue;
+    chosen.push(c); taken.add(c.lowIdx); taken.add(c.lowIdx + 1);
+  }
+  const byLow = new Map(candidates.filter(c => !taken.has(c.lowIdx) && !taken.has(c.lowIdx + 1))
+    .map(c => [c.lowIdx, c]));
   let prev2 = { sum: 0, chosen: [] };
   let prev1 = { sum: 0, chosen: [] };
   for (let g = 0; g < GRADE_ORDER.length; g++) {
@@ -222,7 +233,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     prev2 = prev1;
     prev1 = best;
   }
-  return [...prev1.chosen].sort((a, b) => a.lowIdx - b.lowIdx);
+  return [...chosen, ...prev1.chosen].sort((a, b) => a.lowIdx - b.lowIdx);
 }
 
 // ─── הסעות בגביית הורים ───────────────────────────────────────
@@ -497,7 +508,7 @@ export const DEFAULT_SUGGESTION_PARAMS = {
 // מקור אמת אחד ל"מה ההצעות ובכמה הן שוות" — משמש את דף הבית, את הסיכום
 // ואת המסמך החתום, כדי שהמפתחות (key) והסכומים יהיו זהים בכל מסך.
 // params — הערכים שכוונונו במסך הייעול; מי שלא מעביר מקבל את ברירת המחדל הרשתית.
-export function buildSuggestionRows(classes, expenses, expenseCategories, constants, params = {}) {
+export function buildSuggestionRows(classes, expenses, expenseCategories, constants, params = {}, savedKeys = []) {
   const p = { ...DEFAULT_SUGGESTION_PARAMS, ...params };
   const rows = [];
   const merges = findMerges(classes, constants);
@@ -507,7 +518,7 @@ export function buildSuggestionRows(classes, expenses, expenseCategories, consta
   for (const m of merges) {
     rows.push({ key: `merge:${m.merged.id}`, label: `צירוף כיתות: ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'merge', names: m.members.map(x => x.name) });
   }
-  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + p.dualAddedHours);
+  const dualMerges = dualAgeMergeReport(classes, constants, mergedIds, DUAL_AGE_EXTRA_MONTHLY_HOURS + p.dualAddedHours, new Set((savedKeys || []).filter(k => String(k).startsWith('dual:'))));
   const dualMergedIds = new Set(dualMerges.flatMap(m => m.members.map(x => x.id)));
   for (const m of dualMerges) {
     rows.push({ key: `dual:${m.merged.id}`, label: `${m.createsStandard ? 'יצירת תקן — חיבור' : 'חיבור כיתות:'} ${m.members.map(x => x.name).join(' + ')} (${m.merged.studentCount} תל׳, כולל תוספת ${m.extraMonthlyHours} שעות שבועיות)`, saving: m.delta, classDelta: -(m.members.length - 1), kind: 'dual', names: m.members.map(shortClassLabel) });
@@ -630,10 +641,22 @@ export function buildPlanSnapshot({ rows, selectedKeys, totals, classes, closedA
   };
 }
 
+// נעילת תקציב — כבויה. ההכרעה (27.8.2026): שמירה שומרת, לעולם לא נועלת.
+// כל המערכות נשארות פתוחות לעריכה תמיד, בכל בית ספר ובכל שנה.
+//
+// הדגל הזה הוא מתג יחיד: כל מסכי העריכה, המסמך והפורטל הרשתי נגזרים ממנו.
+// להחזרת ההתנהגות הישנה צריך גם להחזיר את כתיבת הסנפשוט בשמירה ובחתימה
+// (SummaryPage / EfficiencyPage) — בלעדיה אין מה לנעול.
+//
+// האכיפה במסד (migration_v20) אינה נכנסת לפעולה, כי מרגע ההכרעה אין נכתב
+// מערך suggestions ל-summary — וזה הדגל היחיד שהטריגר בודק. migration_v26
+// מסיר גם את הטריגר עצמו, למקרה שנשארה במסד שנה עם סנפשוט ישן.
+export const LOCK_BUDGET_ON_SAVE = false;
+
 // סנפשוט תקין הוא הסימן היחיד לכך שהתקציב נסגר. summary ישן (סכומים בלבד,
 // בלי מערך הצעות) נחשב "עוד לא נסגר" וממשיך להתנהג כמו קודם.
 export function isPlanClosed(summary) {
-  return Array.isArray(summary?.suggestions);
+  return LOCK_BUDGET_ON_SAVE && Array.isArray(summary?.suggestions);
 }
 
 // התוכנית הקפואה בדיוק במבנה שמחזיר useSuggestionPlan

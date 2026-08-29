@@ -1,0 +1,166 @@
+{
+  "id": "4c54b976-e682-49cc-a0e7-4d23dada8a92",
+  "school_id": "4d6ae712-c192-4955-9275-2e2e65855b9f",
+  "budget_year_id": "2d26e906-f749-4c1f-83a0-9b895742096b",
+  "summary": {
+    "balance": -1551864,
+    "classes": [
+      {
+        "id": "510a323c-2de2-4d4f-9a2c-4e9419cefc7e",
+        "name": "כיתה א",
+        "extraHours": 0,
+        "gradeLevel": "א",
+        "studentCount": 25
+      },
+      {
+        "id": "23c0f9ea-27c6-428f-bf11-9bbf1a407344",
+        "name": "כיתה ב1",
+        "extraHours": 0,
+        "gradeLevel": "ב",
+        "studentCount": 20
+      },
+      {
+        "id": "de2c6055-bd9f-40fa-9386-255d7478bbf0",
+        "name": "כיתה ג1",
+        "extraHours": 12,
+        "gradeLevel": "ג",
+        "studentCount": 15
+      },
+      {
+        "id": "9ec65820-9f64-44d7-ad17-17bc08630167",
+        "name": "כיתה ב2",
+        "extraHours": 0,
+        "gradeLevel": "ב",
+        "studentCount": 17
+      },
+      {
+        "id": "36d43605-55ca-49a2-95eb-6bec281709c4",
+        "name": "כיתה ג2",
+        "extraHours": 0,
+        "gradeLevel": "ג",
+        "studentCount": 15
+      }
+    ],
+    "version": 1,
+    "closedAt": "2026-07-28T10:08:07.820Z",
+    "students": 92,
+    "classCount": 5,
+    "suggestions": [
+      {
+        "key": "merge:36d43605-55ca-49a2-95eb-6bec281709c4+de2c6055-bd9f-40fa-9386-255d7478bbf0",
+        "kind": "merge",
+        "label": "צירוף כיתות: כיתה ג1 + כיתה ג2 (30 תל׳)",
+        "names": [
+          "כיתה ג1",
+          "כיתה ג2"
+        ],
+        "saving": 322400,
+        "selected": false,
+        "classDelta": -1
+      },
+      {
+        "key": "close:9ec65820-9f64-44d7-ad17-17bc08630167",
+        "kind": "close",
+        "label": "סגירת כיתה כיתה ב2 — הכיתה הגבוהה, 17 תל׳ בלבד",
+        "names": [
+          "כיתה ב2"
+        ],
+        "saving": 266914,
+        "selected": false,
+        "classDelta": -1
+      },
+      {
+        "key": "tuition",
+        "kind": null,
+        "label": "שכר לימוד עם גבייה ריאלית (₪3,000 × 80% × 92 תלמידים)",
+        "names": null,
+        "saving": 220800,
+        "selected": false,
+        "classDelta": 0
+      },
+      {
+        "key": "tuition-supplement",
+        "kind": null,
+        "label": "תוספת שכר לימוד (₪3,000 × 80% × 92 תלמידים)",
+        "names": null,
+        "saving": 220800,
+        "selected": false,
+        "classDelta": 0
+      },
+      {
+        "key": "partaniyot",
+        "kind": null,
+        "label": "שעות פרטניות מהמשרה כשעה פרונטלית (3 ש׳ × 5 כיתות)",
+        "names": null,
+        "saving": 126000,
+        "selected": true,
+        "classDelta": 0
+      },
+      {
+        "key": "threshold:9ec65820-9f64-44d7-ad17-17bc08630167",
+        "kind": null,
+        "label": "כיתה ב2: עוד 3 תלמידים לתקן מלא",
+        "names": null,
+        "saving": 53274,
+        "selected": false,
+        "classDelta": 0
+      },
+      {
+        "key": "principal-teaching",
+        "kind": null,
+        "label": "שעות הוראה של המנהלת (6 ש׳ שבועיות)",
+        "names": null,
+        "saving": 50400,
+        "selected": true,
+        "classDelta": 0
+      },
+      {
+        "key": "hours-cut",
+        "kind": null,
+        "label": "הורדת 1 שעות הוראה מכל כיתה (5 כיתות)",
+        "names": null,
+        "saving": 42000,
+        "selected": true,
+        "classDelta": 0
+      },
+      {
+        "key": "shabbat",
+        "kind": null,
+        "label": "קבלת שבת משותפת לכל הכיתות (שעה שבועית × 5 כיתות)",
+        "names": null,
+        "saving": 42000,
+        "selected": true,
+        "classDelta": 0
+      },
+      {
+        "key": "parents",
+        "kind": null,
+        "label": "השתתפות הורים שנתית (₪100 לתלמיד × 92)",
+        "names": null,
+        "saving": 9200,
+        "selected": false,
+        "classDelta": 0
+      }
+    ],
+    "totalIncome": 494536,
+    "totalExpenses": 2046400,
+    "classCountAfter": 5,
+    "projectedBalance": -1291464,
+    "suggestionsTotal": 260400
+  },
+  "principal_name": null,
+  "principal_signature": null,
+  "principal_signed_at": null,
+  "courier_name": null,
+  "courier_signature": null,
+  "courier_signed_at": null,
+  "created_at": "2026-07-23T16:19:32.570893+00:00",
+  "updated_at": "2026-07-28T10:08:07.82+00:00",
+  "selected_suggestion_keys": [
+    "partaniyot",
+    "principal-teaching",
+    "shabbat",
+    "hours-cut"
+  ],
+  "notes": null
+}

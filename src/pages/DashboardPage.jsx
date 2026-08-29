@@ -13,7 +13,7 @@ import {
   categoryTotals, annualAmount, formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import { useSuggestionPlan } from '../lib/useSuggestionPlan.js';
-import { REQUEST_STATUS, CLASS_TYPE, MANAGERS, OFEK_RATES } from '../data/constants.js';
+import { REQUEST_STATUS, CLASS_TYPE, MANAGERS, OFEK_RATES, ofekBlendedRate, nonOfekUnits } from '../data/constants.js';
 import CountUp from '../components/ui/CountUp.jsx';
 
 // breakdown: [{label, value, negative?}] — "מה כולל?" נפתח ומראה ממה המספר מורכב
@@ -129,13 +129,41 @@ function GettingStarted({ navigate, isSimpleMode, hasClasses, hasExpenses }) {
   );
 }
 
-// שאלה קריטית: שכר אופק חדש קובע את תעריף עלות ההוראה — נשאלת עד שעונים
+// שאלה קריטית: שכר אופק חדש קובע את תעריף עלות ההוראה — נשאלת עד שעונים.
+// "חלק וחלק" (מיגרציה v25): הספירות נשמרות והתעריף הוא ממוצע משוקלל שלהן.
 function OfekQuestion({ constants, setConstants }) {
+  const [mixOpen, setMixOpen] = useState(false);
+  // את צד העולם הישן אפשר לתאר במספר מורות או בסכום שכר שנתי
+  const [byAmount, setByAmount] = useState(false);
+  const [mix, setMix] = useState({ ofekTeachers: '', nonOfekTeachers: '', nonOfekAmount: '' });
+
   const answer = (yes) => setConstants({
     ...constants,
     ofekSalary: yes,
+    ofekTeachers: 0,
+    nonOfekTeachers: 0,
+    nonOfekAmount: 0,
     actualHourlyRate: yes ? OFEK_RATES.yes : OFEK_RATES.no,
   });
+
+  const ofek = Math.max(0, Math.round(Number(mix.ofekTeachers) || 0));
+  const draft = {
+    actualWeeklyHours: constants.actualWeeklyHours,
+    ofekTeachers: ofek,
+    nonOfekTeachers: byAmount ? 0 : Math.max(0, Math.round(Number(mix.nonOfekTeachers) || 0)),
+    nonOfekAmount: byAmount ? Math.max(0, Number(mix.nonOfekAmount) || 0) : 0,
+  };
+  const oldUnits = nonOfekUnits(draft);
+  const mixRate = ofekBlendedRate(draft);
+  const mixValid = ofek > 0 && oldUnits > 0;
+
+  const answerMix = () => setConstants({
+    ...constants,
+    ...draft,
+    ofekSalary: true,
+    actualHourlyRate: mixRate,
+  });
+
   return (
     <div className="card p-5 border-2 border-gold-300 bg-gold-50/50">
       <h3 className="font-bold text-gray-800 text-lg mb-1">שאלה חשובה לחישוב עלות ההוראה 💡</h3>
@@ -145,12 +173,92 @@ function OfekQuestion({ constants, setConstants }) {
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
         <button onClick={() => answer(true)} className="btn-primary flex-1 justify-center">
-          כן — שכר אופק ({OFEK_RATES.yes} ₪ לשעה)
+          כן — כולן באופק ({OFEK_RATES.yes} ₪ לשעה)
         </button>
         <button onClick={() => answer(false)} className="btn-outline flex-1 justify-center">
-          לא — ללא אופק ({OFEK_RATES.no} ₪ לשעה)
+          לא — כולן בעולם הישן ({OFEK_RATES.no} ₪ לשעה)
+        </button>
+        <button
+          onClick={() => setMixOpen(true)}
+          aria-pressed={mixOpen}
+          className={mixOpen ? 'btn-primary flex-1 justify-center' : 'btn-outline flex-1 justify-center'}
+        >
+          חלק וחלק
         </button>
       </div>
+
+      {mixOpen && (
+        <div className="mt-4 space-y-3 max-w-md">
+          <div>
+            <label className="label">מורות בשכר אופק ({OFEK_RATES.yes} ₪ לשעה)</label>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              inputMode="numeric"
+              value={mix.ofekTeachers}
+              onChange={e => setMix(p => ({ ...p, ofekTeachers: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+              <label className="label mb-0">צוות בעולם הישן ({OFEK_RATES.no} ₪ לשעה)</label>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setByAmount(false)}
+                  aria-pressed={!byAmount}
+                  className={!byAmount ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+                >
+                  לפי מספר מורות
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setByAmount(true)}
+                  aria-pressed={byAmount}
+                  className={byAmount ? 'btn-primary btn-sm' : 'btn-outline btn-sm'}
+                >
+                  לפי סכום שנתי
+                </button>
+              </div>
+            </div>
+            {byAmount ? (
+              <div className="flex items-center gap-2">
+                <input
+                  className="input flex-1"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  inputMode="numeric"
+                  placeholder="למשל 300000"
+                  value={mix.nonOfekAmount}
+                  onChange={e => setMix(p => ({ ...p, nonOfekAmount: e.target.value }))}
+                />
+                <span className="text-xs text-gray-400 flex-shrink-0">₪ לשנה</span>
+              </div>
+            ) : (
+              <input
+                className="input"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={mix.nonOfekTeachers}
+                onChange={e => setMix(p => ({ ...p, nonOfekTeachers: e.target.value }))}
+              />
+            )}
+          </div>
+
+          <p className="text-xs text-gray-600">
+            {mixValid
+              ? <>תעריף משוקלל: <strong>{mixRate} ₪ לשעה</strong> במקום {OFEK_RATES.yes} ₪ — {ofek} מורות באופק מול {oldUnits.toFixed(1)} בעולם הישן. מוריד את עלות ההוראה.</>
+              : (byAmount ? 'מלאי מספר מורות באופק וגם סכום שנתי לצוות העולם הישן' : 'מלאי מספר מורות בשני המסלולים')}
+          </p>
+          <button onClick={answerMix} disabled={!mixValid} className="btn-primary btn-sm disabled:opacity-50">
+            שמירת התעריף המשוקלל
+          </button>
+        </div>
+      )}
     </div>
   );
 }

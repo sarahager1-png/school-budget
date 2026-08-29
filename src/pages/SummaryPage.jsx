@@ -7,7 +7,7 @@ import {
   formatCurrency, formatCurrencyFull,
 } from '../lib/calculations.js';
 import {
-  buildSuggestionRows, normalizeSuggestionKey, buildPlanSnapshot, isPlanClosed,
+  buildSuggestionRows, normalizeSuggestionKey, isPlanClosed,
   planFromSnapshot, totalsFromSnapshot,
 } from '../lib/efficiency.js';
 import { exportSummaryToExcel } from '../lib/exportExcel.js';
@@ -132,8 +132,8 @@ export default function SummaryPage() {
   const [tableReady, setTableReady] = useState(true);
   const [quickModal, setQuickModal] = useState(null); // 'income' | 'expense' | null
 
-  // התקציב ננעל ברגע השמירה (ר' saveSelection). מאותו רגע הסכומים, מצבת
-  // הכיתות ומספרי התלמידים מוצגים מהסנפשוט השמור ולא מחושבים מחדש.
+  // התקציב אינו ננעל עוד — שמירה וחתימה שומרות בלבד (LOCK_BUDGET_ON_SAVE
+  // כבוי ב-efficiency.js), ולכן closed תמיד false והמספרים מוצגים חיים.
   const closed = isPlanClosed(approval?.summary);
   const frozenTotals = useMemo(() => totalsFromSnapshot(approval?.summary), [approval?.summary]);
   const frozenPlan = useMemo(() => planFromSnapshot(approval?.summary), [approval?.summary]);
@@ -166,7 +166,7 @@ export default function SummaryPage() {
   // שנעשה במסך הייעול (שכר לימוד, שעות וכו') — בלעדיו השורות כאן חוזרות
   // לברירת המחדל הרשתית במקום לשקף את מה שהמנהלת בפועל כיוונה
   const liveSuggestions = useMemo(
-    () => (isSimpleMode ? [] : buildSuggestionRows(classes, expenses, expenseCategories, constants, approval?.summary?.draftParams || {})),
+    () => (isSimpleMode ? [] : buildSuggestionRows(classes, expenses, expenseCategories, constants, approval?.summary?.draftParams || {}, approval?.selected_suggestion_keys || [])),
     [isSimpleMode, classes, expenses, expenseCategories, constants, approval?.summary?.draftParams],
   );
   const suggestions = frozenPlan?.suggestions ?? liveSuggestions;
@@ -176,7 +176,10 @@ export default function SummaryPage() {
   const [selectedKeys, setSelectedKeys] = useState(null);
   const [notes, setNotes] = useState('');
   const [savingSelection, setSavingSelection] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
   const selectionDirty = useRef(false);
+  // ההערות נשמרות בנפרד מהבחירה (ר' saveNotes) ולכן דורשות דגל "מלוכלך" משלהן
+  const notesDirty = useRef(false);
 
   // אחרי סגירה הבחירה נעולה — הסימון נקרא מהסנפשוט ואי אפשר לשנות אותו
   const frozenSelectedKeys = useMemo(
@@ -204,6 +207,7 @@ export default function SummaryPage() {
     setSelectedKeys(null);
     setNotes('');
     selectionDirty.current = false;
+    notesDirty.current = false;
     if (!user?.schoolId || !currentYear?.id) return;
     supabase.from('budget_approvals')
       .select('*')
@@ -221,9 +225,9 @@ export default function SummaryPage() {
       });
   }, [user?.schoolId, currentYear?.id]);
 
-  // כמו במסך הייעול — השמירה מקפיאה את התקציב כולו
+  // כמו במסך הייעול — השמירה שומרת את הבחירה וההערות ותו לא. היא אינה
+  // נועלת, אינה מקפיאה מספרים, ואפשר לשמור שוב בכל עת.
   const saveSelection = async () => {
-    if (closed) return notify('התקציב כבר נשמר ונעול — לפתיחה מחדש יש לפנות לרשת', 'error');
     setSavingSelection(true);
     const now = new Date().toISOString();
     const keys = selectedKeys == null ? suggestions.map(s => s.key) : [...selectedKeys];
@@ -231,13 +235,9 @@ export default function SummaryPage() {
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
       selected_suggestion_keys: keys,
-      summary: buildPlanSnapshot({
-        rows: suggestions,
-        selectedKeys: new Set(keys),
-        totals,
-        classes,
-        closedAt: now,
-      }),
+      // summary אינו נכתב: הוא סנפשוט הקפאה בלבד, והתקציב לא נועל עוד. הוא
+      // גם הדגל שלפיו המסד חוסם עריכה (migration_v20) — ולכן דווקא חשוב לא
+      // לכתוב אותו. מה שנשמר בו (draftParams ממסך הייעול) נשאר כמות שהוא.
       notes: notes.trim() || null,
       updated_at: now,
     };
@@ -250,24 +250,40 @@ export default function SummaryPage() {
     if (error || !data) return saveFailed(error);
     setApproval(data);
     selectionDirty.current = false;
+    notesDirty.current = false;
     notify('הבחירה נשמרה ✓');
+  };
+
+  // ההערות הן טקסט חופשי — הקשר והחלטות, לא מספרים. לכן הן נשמרות לבדן:
+  // בלי לכתוב summary (כלומר בלי להקפיא את התקציב) וגם אחרי שהתקציב נסגר,
+  // אחרת שמירת הערה אחת נועלת את השנה ואי אפשר לתקן אותה יותר. האכיפה
+  // במסד (migration_v20) ממילא לא חלה על budget_approvals אלא על הנתונים.
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    const { data, error } = await supabase.from('budget_approvals')
+      .upsert({
+        school_id: user.schoolId,
+        budget_year_id: currentYear.id,
+        notes: notes.trim() || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'school_id,budget_year_id' })
+      .select()
+      .single();
+    setSavingNotes(false);
+    if (isMissingTableError(error)) { setTableReady(false); return notify('שמירת ההערות עדיין לא הופעלה במוסד זה', 'error'); }
+    if (error || !data) return saveFailed(error);
+    setApproval(data);
+    notesDirty.current = false;
+    notify('ההערות נשמרו ✓');
   };
 
   const saveSignature = async (slot, name, dataUrl) => {
     const now = new Date().toISOString();
-    // אם התקציב כבר ננעל בשמירה — החתימה לא כותבת את הסנפשוט מחדש, אחרת
-    // המספרים היו זזים אחרי הנעילה. חתימה בלי שמירה קודמת מקפיאה כאן.
-    const summary = closed ? approval.summary : buildPlanSnapshot({
-      rows: suggestions,
-      selectedKeys,
-      totals,
-      classes,
-      closedAt: now,
-    });
+    // החתימה שומרת חתימה ותו לא — היא אינה מקפיאה את המספרים ואינה נועלת
+    // את השנה. התקציב נשאר פתוח לעריכה גם אחריה, ואפשר לחתום שוב בכל עת.
     const payload = {
       school_id: user.schoolId,
       budget_year_id: currentYear.id,
-      summary,
       updated_at: now,
       [`${slot}_name`]: name,
       [`${slot}_signature`]: dataUrl,
@@ -509,7 +525,7 @@ export default function SummaryPage() {
                 type="button"
                 onClick={() => {
                   // מגן על בחירה/הערות שלא נשמרו — אחרת נעלמות בשקט במעבר מסך
-                  if (selectionDirty.current && !window.confirm('יש שינויים שעוד לא נשמרו — לעבור בלי לשמור?')) return;
+                  if ((selectionDirty.current || notesDirty.current) && !window.confirm('יש שינויים שעוד לא נשמרו — לעבור בלי לשמור?')) return;
                   navigate('efficiency');
                 }}
                 className="btn-ghost btn-sm"
@@ -539,14 +555,14 @@ export default function SummaryPage() {
               className="input no-print"
               rows={3}
               value={notes}
-              onChange={e => { selectionDirty.current = true; setNotes(e.target.value); }}
-              onBlur={() => { if (selectionDirty.current) saveSelection(); }}
+              onChange={e => { notesDirty.current = true; setNotes(e.target.value); }}
+              onBlur={() => { if (notesDirty.current) saveNotes(); }}
               placeholder="הערות לתקציב — הקשר, החלטות, מה נדחה להמשך..."
             />
             <div className="flex justify-end mt-2 no-print">
-              <button type="button" onClick={saveSelection} disabled={savingSelection} className="btn-primary btn-sm">
+              <button type="button" onClick={saveNotes} disabled={savingNotes} className="btn-primary btn-sm">
                 <Save size={14} />
-                שמירת ההערות
+                {savingNotes ? 'שומר...' : 'שמירת ההערות'}
               </button>
             </div>
           </div>
