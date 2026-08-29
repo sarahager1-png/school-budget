@@ -544,9 +544,9 @@ export default function EfficiencyPage() {
           icon={Layers}
           tone="purple"
           index={++cardIndex}
-          title={m.createsStandard
+          title={(m.createsStandard
             ? `יצירת תקן — חיבור ${m.members.map(x => x.name).join(' + ')}`
-            : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`}
+            : `חיבור כיתות: ${m.members.map(x => x.name).join(' + ')}`) + (m.alt ? ' · חלופה' : '')}
           subtitle={`${m.members.map(x => `${x.name} (${x.studentCount} תל׳, ${CLASS_TYPE[getClassType(x.studentCount, constants)].label})`).join(' + ')} ← כיתה אחת של ${m.merged.studentCount} תלמידים (${CLASS_TYPE[getClassType(m.merged.studentCount, constants)].label}), עם ${m.extraMonthlyHours} שעות בודדות בחודש לכיתה המחוברת`}
           saving={m.delta}
           details={[

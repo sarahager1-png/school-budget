@@ -3,7 +3,9 @@ import { kindMap } from './categoryKinds.js';
 import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 
 // גודל מרבי לכיתה מאוחדת — מעבר לזה צירוף אינו ריאלי
-export const MAX_MERGED_STUDENTS = 32;
+// 34 ולא 32: בירושלים החיבור המעשי ג+ד-ה הוא 33 תלמידים, והתקרה
+// חסמה אותו בתלמיד אחד. ההצעות המנופחות (45, 60) עדיין מסוננות.
+export const MAX_MERGED_STUDENTS = 34;
 
 // ─── צירוף כיתות ──────────────────────────────────────────────
 // כיתה מאוחדת: סכום התלמידים + סכום השעות הבודדות של כל הכיתות —
@@ -233,7 +235,14 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     prev2 = prev1;
     prev1 = best;
   }
-  return [...chosen, ...prev1.chosen].sort((a, b) => a.lowIdx - b.lowIdx);
+  const picked = [...chosen, ...prev1.chosen];
+  const pickedKeys = new Set(picked.map(c => `dual:${c.merged.id}`));
+  // גם החלופות החופפות מוצגות — הבחירה של שרה, לא של האופטימיזציה.
+  // חלופה שתיבחר ותישמר תיכנס בטעינה הבאה כנעוצה ותדחק את המתחרה.
+  const alts = candidates
+    .filter(c => !pickedKeys.has(`dual:${c.merged.id}`) && c.delta >= 1000)
+    .map(c => ({ ...c, alt: true }));
+  return [...picked, ...alts].sort((a, b) => a.lowIdx - b.lowIdx);
 }
 
 // ─── הסעות בגביית הורים ───────────────────────────────────────
