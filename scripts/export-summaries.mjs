@@ -199,11 +199,11 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   ${isSimpleMode ? '' : `
   ${row(`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`, formatCurrency(totals.totalClassActualCost))}
   ${row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost))}
-  ${row(`תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`, formatCurrency(totals.totalClubsExpense))}
   ${row(`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, formatCurrency(totals.totalStudentExpenses))}
   ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}
   ${row('שכר מנהלת', formatCurrency(principalAnnual))}`}
   ${catRows.map(c => row(c.name, formatCurrency(c.value))).join('')}
+  ${!isSimpleMode && totals.totalClubsExpense > 0 ? row(`חוגים — הוצאה שוטפת (${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} × 10 ח׳)`, formatCurrency(totals.totalClubsExpense)) : ''}
   ${row('סה"כ הוצאות', formatCurrency(totals.totalExpenses), 'total')}
 
   ${suggestions.length > 0 ? `

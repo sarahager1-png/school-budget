@@ -487,7 +487,6 @@ function FullDashboard() {
   const expenseBreakdown = [
     { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
     { label: `ייעוץ (${constants.counselingHoursPerClass} ש׳ לכיתה)`, value: totals.totalCounselingCost },
-    { label: 'תוספת חוגים לכיתה (2,000 ₪ × 10 ח׳)', value: totals.totalClubsExpense },
     { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
     { label: 'פיתוח מקצועי', value: totals.totalProfDev },
     ...(principalAnnual > 0 ? [{ label: 'שכר מנהלת', value: principalAnnual }] : []),
@@ -497,6 +496,8 @@ function FullDashboard() {
         ? { label: c.name, value: c.value - principalAnnual }
         : { label: c.name, value: c.value }))
       .filter(c => c.value > 0),
+    // חוגים — הוצאה שוטפת, לא חלק מעלות ההוראה ("משולמים בנפרד", שרה 10.9)
+    ...(totals.totalClubsExpense > 0 ? [{ label: 'חוגים — הוצאה שוטפת', value: totals.totalClubsExpense }] : []),
   ];
   const balanceBreakdown = [
     { label: 'סה״כ הכנסות', value: totals.totalIncome },

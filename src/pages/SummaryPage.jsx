@@ -331,13 +331,16 @@ export default function SummaryPage() {
         ? [
             { label: `שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`, value: Math.round(totals.totalClassActualCost) },
             { label: `ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`, value: Math.round(totals.totalCounselingCost) },
-            { label: `תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`, value: Math.round(totals.totalClubsExpense) },
             { label: `הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, value: Math.round(totals.totalStudentExpenses) },
             ...(totals.totalProfDev > 0 ? [{ label: 'פיתוח מקצועי', value: Math.round(totals.totalProfDev) }] : []),
             { label: 'שכר מנהלת', value: Math.round(principalAnnual) },
           ]
         : []),
       ...catRows.map(c => ({ label: c.name, value: Math.round(c.value) })),
+      // חוגים — הוצאה שוטפת, לא חלק מעלות ההוראה ("משולמים בנפרד", שרה 10.9)
+      ...(!isSimpleMode && totals.totalClubsExpense > 0
+        ? [{ label: `חוגים — הוצאה שוטפת (${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} × 10 ח׳)`, value: Math.round(totals.totalClubsExpense) }]
+        : []),
       { label: 'סה"כ הוצאות', value: Math.round(totals.totalExpenses) },
       { label: null },
       { label: totals.isDeficit ? 'גירעון' : 'עודף', value: Math.round(totals.balance) },
@@ -486,13 +489,16 @@ export default function SummaryPage() {
             <>
               <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
               <Row label={`ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`} value={formatCurrency(totals.totalCounselingCost)} />
-              <Row label={`תוספת חוגים לכיתה (${classes.length} כיתות × 2,000 ₪ × 10 ח׳)`} value={formatCurrency(totals.totalClubsExpense)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}
               <Row label="שכר מנהלת" value={formatCurrency(principalAnnual)} />
             </>
           )}
           {catRows.map(c => <Row key={c.id} label={c.name} value={formatCurrency(c.value)} />)}
+          {/* חוגים — הוצאה שוטפת, לא חלק מעלות ההוראה ("משולמים בנפרד", שרה 10.9) */}
+          {!isSimpleMode && totals.totalClubsExpense > 0 && (
+            <Row label={`חוגים — הוצאה שוטפת (${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} × 10 ח׳)`} value={formatCurrency(totals.totalClubsExpense)} />
+          )}
           <Row label='סה"כ הוצאות' value={formatCurrency(totals.totalExpenses)} bold tone="red" />
         </div>
 

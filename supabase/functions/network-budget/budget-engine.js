@@ -13,7 +13,7 @@ export const TUITION_COLLECTION_RATE = 0.8;
 export const CLUBS_MONTHLY_EXPENSE_PER_CLASS = 2000;
 export const CLUBS_MONTHS = 10;
 export const EVENTS_CAP_PER_STUDENT = 1400;
-export const MAX_MERGED_STUDENTS = 32;
+export const MAX_MERGED_STUDENTS = 34;
 export const DUAL_AGE_EXTRA_MONTHLY_HOURS = 12;
 export const DEFAULT_SHABBAT_WEEKLY_HOURS = 1;
 export const DEFAULT_PARENT_CONTRIBUTION = 100;
@@ -87,7 +87,9 @@ export function calculateClassBudget(classItem, constants) {
   const clubsExpense = Number(constants.clubsMonthlyExpensePerClass ?? CLUBS_MONTHLY_EXPENSE_PER_CLASS) * CLUBS_MONTHS;
   const studentExpenses = n * expensePerStudent;
   const caharonExpense = n * expensePerStudentCaharon;
-  const totalExpenses = actualOperatingCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + professionalDevPerClass;
+  // שעות בודדות של הכיתה — שבועיות; התעריף הוא עלות חודשית של שעה שבועית
+  const clsExtraHoursCost = Number(classItem.extraHours || 0) * actualHourlyRate * PAYMENT_MONTHS;
+  const totalExpenses = actualOperatingCost + clsExtraHoursCost + counselingCost + clubsExpense + studentExpenses + caharonExpense + professionalDevPerClass;
 
   const balance = totalIncome - totalExpenses;
   return { type, ministryIncome, totalIncome, totalExpenses, balance, isDeficit: balance < 0 };
@@ -228,7 +230,7 @@ export function dualAgeMergeReport(classes, constants, excludeIds = new Set(), e
     const joinExtraCost = totalExtraHours * constants.actualHourlyRate * PAYMENT_MONTHS;
     const budgetA = calculateClassBudget(a, constants);
     const budgetB = calculateClassBudget(partner, constants);
-    const mergedBudget = calculateClassBudget(merged, constants);
+    const mergedBudget = calculateClassBudget({ ...merged, extraHours: 0 }, constants);
     const costAfter = mergedBudget.totalExpenses + joinExtraCost;
     const delta = (mergedBudget.totalIncome - costAfter) - (budgetA.balance + budgetB.balance);
     if (delta >= 1000) {

@@ -135,16 +135,16 @@ export const REPORT_CSS = `
   .doc-banner.hidden { display: none; }
   .doc-banner .link { background: none; border: 0; color: #0d6e63; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
 
-  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-  .kpi { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; text-align: center; }
-  .kpi span { display: block; font-size: 11.5px; color: #6b7a77; }
-  .kpi b { font-size: 19px; font-variant-numeric: tabular-nums; }
-  .kpi.inc b { color: #14804a; } .kpi.exp b { color: #c02626; }
-  .kpi.bal.pos b { color: #0d6e63; } .kpi.bal.neg b { color: #c02626; }
+  .doc .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .doc .kpi { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; text-align: center; }
+  .doc .kpi span { display: block; font-size: 11.5px; color: #6b7a77; }
+  .doc .kpi b { font-size: 19px; font-variant-numeric: tabular-nums; }
+  .doc .kpi.inc b { color: #14804a; } .doc .kpi.exp b { color: #c02626; }
+  .doc .kpi.bal.pos b { color: #0d6e63; } .doc .kpi.bal.neg b { color: #c02626; }
 
   .doc h2 { font-size: 15px; margin: 22px 0 6px; padding-bottom: 5px; border-bottom: 2px solid #cfe0dc; }
   .doc table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-  .doc td, .doc th { padding: 5px 4px; border-bottom: 1px solid #eef1f0; vertical-align: top; }
+  .doc td, .doc th { padding: 5px 4px; border-bottom: 1px solid #eef1f0; vertical-align: top; white-space: normal; }
   .doc th { text-align: right; font-size: 11.5px; color: #6b7a77; font-weight: 600; border-bottom: 1px solid #cfe0dc; }
   .doc .num { text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; }
   /* היררכיה: סעיף ראשי מודגש, והפירוט שמתחתיו נסוג פנימה ובאפור */
@@ -168,10 +168,10 @@ export const REPORT_CSS = `
   .doc button.x:hover { color: #c02626; }
   .doc button.add { font: inherit; font-size: 13px; background: none; border: 1px dashed #cfe0dc; color: #0d6e63; border-radius: 8px; padding: 6px 12px; cursor: pointer; margin-bottom: 10px; }
 
-  .ratios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-  .ratios div { border: 1px solid #e3ebe9; background: #f6f9f8; border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .ratios span { font-size: 11.5px; color: #6b7a77; }
-  .ratios b { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .doc .ratios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .doc .ratios div { border: 1px solid #e3ebe9; background: #f6f9f8; border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .doc .ratios span { font-size: 11.5px; color: #6b7a77; }
+  .doc .ratios b { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .doc .print-val { display: none; }
   .doc .tag { font-size: 10.5px; color: #9a6b00; background: #fef6e7; border: 1px solid #f0d9ae; border-radius: 5px; padding: 0 5px; white-space: nowrap; }
   .doc .scope-note { color: #6b7a77; font-size: 12px; margin: 6px 0 0; }
@@ -183,18 +183,37 @@ export const REPORT_CSS = `
   .doc .classes-table { font-size: 12px; }
   .doc .table-scroll { overflow-x: auto; }
 
-  .basis { background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #4b5c59; }
-  .basis div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 3px 0; }
+  .doc .basis { background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #4b5c59; }
+  .doc .basis div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 3px 0; }
 
-  .notes-lines { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px 4px; }
-  .notes-lines p { margin: 0 0 8px; font-size: 12px; color: #6b7a77; }
-  .notes-lines .line { border-bottom: 1px solid #dde5e3; height: 26px; }
-  .saved-note { white-space: pre-wrap; background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; }
+  .doc .notes-lines { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px 4px; }
+  .doc .notes-lines p { margin: 0 0 8px; font-size: 12px; color: #6b7a77; }
+  .doc .notes-lines .line { border-bottom: 1px solid #dde5e3; height: 26px; }
+  .doc .saved-note { white-space: pre-wrap; background: #f6f9f8; border: 1px solid #e3ebe9; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; }
 
-  .signs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
-  .sign { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; }
-  .sign span { font-size: 12px; color: #6b7a77; }
-  .sign .rule { border-bottom: 1px solid #b9c7c4; height: 30px; margin-top: 10px; }
+  .doc .signs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+  .doc .sign { border: 1px solid #dde5e3; border-radius: 10px; padding: 10px 12px; }
+  .doc .sign span { font-size: 12px; color: #6b7a77; }
+  .doc .sign .rule { border-bottom: 1px solid #b9c7c4; height: 30px; margin-top: 10px; }
+
+  /* מובייל: שלוש עמודות של סכומים לא נכנסות ב-390px — עוברים לטור אחד,
+     והשדות מתכווצים לרוחב התא. הדפסה (A4) לא מושפעת — זו שאילתת מסך בלבד */
+  @media screen and (max-width: 640px) {
+    .doc .kpis { grid-template-columns: 1fr; gap: 8px; }
+    .doc .kpi { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-align: right; padding: 8px 12px; }
+    .doc .kpi span { font-size: 12.5px; }
+    .doc .ratios { grid-template-columns: 1fr; }
+    .doc .signs { grid-template-columns: 1fr; gap: 10px; }
+    .doc input.cell, .doc input.cell.wide { width: 100%; max-width: 130px; }
+    .doc input.cell.narrow { max-width: 64px; }
+    .doc table { font-size: 13px; }
+    .doc td, .doc th { padding: 5px 3px; }
+    .doc tr.sub td { padding-right: 16px; }
+    .doc tr.sub td:first-child::before { right: 4px; }
+    .doc h1 { font-size: 21px; }
+    .doc-toolbar { justify-content: flex-start; }
+    .doc-toolbar button { flex: 1 1 auto; }
+  }
 
   @media print {
     .no-print { display: none !important; }
@@ -213,7 +232,7 @@ export const REPORT_CSS = `
     .doc tr { break-inside: avoid; }
     .doc h2 { break-after: avoid; }
     .doc table { break-inside: auto; }
-    .signs, .notes-lines, .ratios { break-inside: avoid; }
+    .doc .signs, .doc .notes-lines, .doc .ratios { break-inside: avoid; }
   }`;
 
 // ---------- הקובץ העצמאי ----------

@@ -86,10 +86,11 @@ function BudgetBreakdown({ budget }) {
     { label: 'עלות הוראה בפועל', value: formatCurrency(budget.actualOperatingCost), negative: true },
     ...(budget.extraHoursCost ? [{ label: 'שעות בודדות (שבועיות)', value: formatCurrency(budget.extraHoursCost), negative: true }] : []),
     ...(budget.counselingCost > 0 ? [{ label: `ייעוץ (${budget.counselingHours} ש׳ שבועיות)`, value: formatCurrency(budget.counselingCost), negative: true }] : []),
-    ...(budget.clubsExpense > 0 ? [{ label: 'תוספת חוגים (2,000 ₪ × 10 ח׳)', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
     { label: 'הוצאות לתלמיד', value: formatCurrency(budget.studentExpenses), negative: true },
     ...(budget.caharonExpense > 0 ? [{ label: 'הוצאות צהרון', value: formatCurrency(budget.caharonExpense), negative: true }] : []),
     ...(budget.profDevExpense > 0 ? [{ label: 'פיתוח מקצועי', value: formatCurrency(budget.profDevExpense), negative: true }] : []),
+    // חוגים — הוצאה שוטפת, לא חלק מעלות ההוראה ("משולמים בנפרד", שרה 10.9)
+    ...(budget.clubsExpense > 0 ? [{ label: 'חוגים — הוצאה שוטפת', value: formatCurrency(budget.clubsExpense), negative: true }] : []),
     { label: 'סה״כ הוצאות', value: formatCurrency(budget.totalExpenses), bold: true, negative: true },
     null,
     { label: budget.isDeficit ? 'גירעון כיתה' : 'עודף כיתה', value: formatCurrencyFull(budget.balance), bold: true, negative: budget.isDeficit, positive: !budget.isDeficit },

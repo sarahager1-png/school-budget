@@ -42,7 +42,6 @@ export function rowsExpense(d, t) {
   if (d.mode !== 'simple') {
     rows.push({ label: `עלות הוראה בפועל (${d.classes.length} כיתות · ${c.actualWeeklyHours} ש׳ בחודש · ${nis(c.actualHourlyRate)} לשעה · ${PAYMENT_MONTHS} חודשים)`, value: t.totalClassActualCost });
     rows.push({ label: `ייעוץ (${d.classes.length} כיתות · ${c.counselingHoursPerClass} ש׳ בחודש · ${nis(c.actualHourlyRate)} לשעה)`, value: t.totalCounselingCost });
-    rows.push({ label: `תוספת חוגים (${d.classes.length} כיתות · ${nis(c.clubsMonthlyExpensePerClass)} לחודש · ${CLUBS_MONTHS} חודשים)`, value: t.totalClubsExpense });
     rows.push({ label: `הוצאה לתלמיד (${t.totalStudents} × ${nis(c.expensePerStudent)})`, value: t.totalStudentExpenses });
     if (t.totalProfDev > 0) {
       rows.push({ label: `פיתוח מקצועי (${d.classes.length} כיתות × ${nis(c.professionalDevPerClass)})`, value: t.totalProfDev });
@@ -69,6 +68,11 @@ export function rowsExpense(d, t) {
         expenseIndex: i,
       }));
     rows.push({ label: cat.name, value, items });
+  }
+  // חוגים — הוצאה שוטפת, אחרי הסעיפים השוטפים ולא בגוש ההוראה
+  // ("לא חלק מהעלויות, הם משולמים בנפרד", שרה 10.9). הסכום עצמו לא השתנה.
+  if (d.mode !== 'simple' && Math.round(t.totalClubsExpense) > 0) {
+    rows.push({ label: `חוגים — הוצאה שוטפת (${d.classes.length} כיתות · ${nis(c.clubsMonthlyExpensePerClass)} לחודש · ${CLUBS_MONTHS} חודשים)`, value: t.totalClubsExpense });
   }
   return rows;
 }

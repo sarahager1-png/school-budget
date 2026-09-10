@@ -202,9 +202,10 @@ function AutoExpensesCard({ classes, constants }) {
   const rows = [
     { name: 'עלות הוראה לפי תקן', hint: `${classes.length} כיתות × ${constants.actualWeeklyHours} שעות שבועיות × ${constants.actualHourlyRate} ₪ לחודש × 12 ח׳`, monthly: teaching / 12, annual: teaching },
     { name: 'ייעוץ', hint: `${classes.length} כיתות × ${constants.counselingHoursPerClass} שעות שבועיות × ${constants.actualHourlyRate} ₪ לחודש × 12 ח׳ — משנים ב"הגדרות"`, monthly: counseling / 12, annual: counseling },
-    { name: 'תוספת חוגים לכיתה', hint: `${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} לחודש × 10 ח׳`, monthly: clubs / 10, annual: clubs },
     { name: 'הוצאות תלמיד', hint: `${totalStudents} תלמידים × ${formatCurrency(constants.expensePerStudent)} — אירועים, ערבי הורים, פיתוח מקצועי ושכפולים`, annual: students },
     { name: 'פיתוח מקצועי', hint: `${classes.length} כיתות × ${formatCurrency(constants.professionalDevPerClass)} לשנה`, annual: profDev },
+    // חוגים — הוצאה שוטפת, לא חלק מעלות ההוראה ("משולמים בנפרד", שרה 10.9)
+    { name: 'חוגים — הוצאה שוטפת', hint: `${classes.length} כיתות × ${formatCurrency(constants.clubsMonthlyExpensePerClass)} לחודש × 10 ח׳ — לא בעלות ההוראה`, monthly: clubs / 10, annual: clubs },
   ].filter(r => r.annual > 0);
   const total = teaching + counseling + clubs + students + profDev;
 

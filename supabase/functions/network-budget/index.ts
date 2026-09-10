@@ -28,7 +28,9 @@ const SCHOOLS: School[] = [
   { slug: 'ganei-tikva', name: 'שלהבות גני תקוה', ref: 'spvcflsbjleayhzsknph', url: 'https://chabad-ganei-tikva-budget.surge.sh' },
   { slug: 'ramat-yishai', name: 'שלהבות רמת ישי', ref: 'bvxoywkqefpnyxvjydpz', url: 'https://chabad-ramat-yishai-budget.surge.sh' },
   { slug: 'afula', name: 'בית חינוך עפולה', ref: 'inwiirkalzcbpnxngqpi', url: 'https://chabad-afula-budget.surge.sh', disableClubs: true },
-  { slug: 'herzliya', name: 'שלהבות הרצליה', ref: 'qawlduxrovrodmxpehvv', url: 'https://chabad-herzliya-budget.surge.sh' },
+  // שלהבות הרצליה הוסרה ממבט רשת ב-1.9.2026 לבקשת ההנהלה. המסד עצמו נשאר,
+  // וגיבוי מלא שמור ב-backup-herzliya-2026-09-01.json. להחזרה — לבטל את ההערה:
+  // { slug: 'herzliya', name: 'שלהבות הרצליה', ref: 'qawlduxrovrodmxpehvv', url: 'https://chabad-herzliya-budget.surge.sh' },
   { slug: 'haifa', name: 'שלהבות חיפה', ref: 'ygmwcdxthcmvrdrbtwuy', url: 'https://chabad-haifa-budget.surge.sh' },
   { slug: 'raanana-girls', name: 'בית חינוך רעננה - בנות', ref: 'dqxwsovaryixondmhgyz', url: 'https://chabad-raanana-girls-budget.surge.sh' },
   { slug: 'beer-sheva', name: 'שלהבות באר שבע', ref: 'xkhlvlrjcpvthmcmpokj', url: 'https://chabad-beer-sheva-budget.surge.sh' },
@@ -81,7 +83,7 @@ async function fetchSchool(s: School, key: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let approvalRow: any = null;
   try {
-    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary,notes,principal_name,courier_name&limit=1`);
+    const rows = await get(`budget_approvals?budget_year_id=eq.${year.id}&select=selected_suggestion_keys,summary,notes,principal_name,courier_name,network_support&limit=1`);
     approvalRow = rows?.[0] ?? null;
     const keys = approvalRow?.selected_suggestion_keys;
     if (Array.isArray(keys)) selectedKeys = new Set(keys.map(normalizeSuggestionKey));
@@ -103,10 +105,14 @@ async function fetchSchool(s: School, key: string) {
   }
   const principal = expenses.find((e: { name: string }) => e.name === 'שכר מנהלת');
 
+  // השתתפות רשת חב"ד — סכום שההנהלה מקלידה בכרטיס בית הספר בפורטל,
+  // נשמר בעמודת network_support (מיגרציה v19). null = טרם הוקלד.
+  const networkSupport = approvalRow?.network_support != null ? Number(approvalRow.network_support) : null;
+
   if (mode === 'simple') {
     return {
       slug: s.slug, name: s.name, url: s.url, mode, yearLabel: year.label,
-      students, classCount: classes.length, ofek: null,
+      students, classCount: classes.length, ofek: null, networkSupport,
       income: { additional, sources: income, total: additional },
       expenses: { manualTotal, byCategory, total: manualTotal },
       balance: additional - manualTotal,
@@ -137,8 +143,11 @@ async function fetchSchool(s: School, key: string) {
   // שכר לימוד ותל"ן — 80% גבייה ריאלית (TUITION_COLLECTION_RATE בקוד הראשי)
   const studentIncome = students * perStudent * 0.8;
   const talanIncome = students * talan * 0.8;
-  const teaching = classes.length * actH * actRate * PAYMENT_MONTHS;
-  // שעות בודדות הוסרו מהתחשיב (21/7) — קיימות רק כתוספת חיבור כיתות
+  const baseTeaching = classes.length * actH * actRate * PAYMENT_MONTHS;
+  // שעות בודדות (שבועיות) של כיתות — הוחזרו לתחשיב 29-30/8; התעריף הוא
+  // עלות חודשית של שעה שבועית
+  const extraHoursCost = classes.reduce((t: number, cl: { extra_hours?: number }) => t + Number(cl.extra_hours ?? 0), 0) * actRate * PAYMENT_MONTHS;
+  const teaching = baseTeaching + extraHoursCost;
   // מרכיב ייעוץ — שעות חודשיות לכל כיתה, נערך בהגדרות של בית הספר
   // (counseling_hours_per_class, מיגרציה v21). ברירת מחדל 2 כמו קודם.
   const counselingHours = Number(c.counseling_hours_per_class ?? 2);
@@ -263,6 +272,7 @@ async function fetchSchool(s: School, key: string) {
     classCount: frozenTotals ? frozenTotals.classCount : classes.length,
     locked: frozenPlan != null,
     ofek: c.ofek_salary ?? null,
+    networkSupport,
     efficiency,
     income: { ministry, grant: grantIncome, perStudent: studentIncome, talan: talanIncome, additional, sources: income, total: frozenTotals ? frozenTotals.totalIncome : totalIncome },
     expenses: { teaching, teachingMonthly: classes.length * actH * actRate, counselingCost, clubsExpense, studentExp, profDev: profDevExp, manualTotal, byCategory, total: frozenTotals ? frozenTotals.totalExpenses : totalExpenses },
@@ -330,6 +340,53 @@ async function scenarioSave(slug: string, state: unknown) {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify({ slug, state, updated_at: new Date().toISOString() }),
+  });
+  return true;
+}
+
+// השתתפות רשת חב"ד — נשמרת במסד של בית הספר עצמו, בעמודה network_support
+// של budget_approvals (מיגרציה v19). upsert על (school_id, budget_year_id)
+// כותב רק את העמודות שנשלחות — חתימות, סיכום והערות המנהלת לא נגעים.
+async function saveSupport(ref: string, key: string, amount: number | null) {
+  const h = { apikey: key, Authorization: `Bearer ${key}`, 'content-type': 'application/json' };
+  const base = `https://${ref}.supabase.co/rest/v1`;
+  const get = async (path: string) => {
+    const r = await fetch(`${base}/${path}`, { headers: h });
+    if (!r.ok) throw new Error(`${path}: ${r.status}`);
+    return r.json();
+  };
+  const years = await get('budget_years?select=id,is_active');
+  const year = years.find((y: { is_active: boolean }) => y.is_active) ?? years[0];
+  if (!year) throw new Error('אין שנת תקציב');
+  const schools = await get('schools?select=id&limit=1');
+  const schoolId = schools?.[0]?.id;
+  if (!schoolId) throw new Error('לא נמצא בית הספר');
+  const r = await fetch(`${base}/budget_approvals?on_conflict=school_id,budget_year_id`, {
+    method: 'POST',
+    headers: { ...h, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({
+      school_id: schoolId, budget_year_id: year.id,
+      network_support: amount, updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!r.ok) throw new Error(`budget_approvals: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  return { ok: true };
+}
+
+// הערות ההנהלה על כרטיס בית ספר — בטבלת hub_notes שבפרויקט של הפונקציה
+// (מיגרציה v28), נפרדות מהערות מסמך הסיכום של המנהלת.
+async function notesGetAll(): Promise<Record<string, string>> {
+  try {
+    const rows = await hubRest('hub_notes?select=slug,notes');
+    return Object.fromEntries((rows ?? []).map((r: { slug: string; notes: string }) => [r.slug, r.notes]));
+  } catch { return {}; }   // הטבלה עוד לא הוקמה — הפורטל ממשיך בלי הערות
+}
+
+async function notesSave(slug: string, notes: string) {
+  await hubRest('hub_notes', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ slug, notes: String(notes ?? ''), updated_at: new Date().toISOString() }),
   });
   return true;
 }
@@ -443,6 +500,13 @@ Deno.serve(async (req) => {
     try {
       if (body.action === 'scenario:get') return json({ scenario: await scenarioGet(s.slug) });
       if (body.action === 'scenario:save') return json({ ok: await scenarioSave(s.slug, body.state) });
+      if (body.action === 'support:save') {
+        if (!keys[s.ref]) return json({ error: 'no key' }, 400);
+        const amount = body.amount == null || body.amount === '' ? null : Number(body.amount);
+        if (amount != null && !Number.isFinite(amount)) return json({ error: 'סכום לא תקין' }, 400);
+        return json(await saveSupport(s.ref, keys[s.ref], amount));
+      }
+      if (body.action === 'notes:save') return json({ ok: await notesSave(s.slug, body.notes) });
       if (body.action === 'scenario:apply') {
         if (!keys[s.ref]) return json({ error: 'no key' }, 400);
         return json(await applyToSchool(s.ref, keys[s.ref], body.state));
@@ -453,15 +517,19 @@ Deno.serve(async (req) => {
     return json({ error: 'unknown action' }, 400);
   }
 
-  const schools = await Promise.all(
-    SCHOOLS.map(async (s) => {
-      try {
-        if (!keys[s.ref]) return { slug: s.slug, name: s.name, url: s.url, error: 'no key' };
-        return await fetchSchool(s, keys[s.ref]);
-      } catch (e) {
-        return { slug: s.slug, name: s.name, url: s.url, error: String(e) };
-      }
-    }),
-  );
+  const [schools, hubNotes] = await Promise.all([
+    Promise.all(
+      SCHOOLS.map(async (s) => {
+        try {
+          if (!keys[s.ref]) return { slug: s.slug, name: s.name, url: s.url, error: 'no key' };
+          return await fetchSchool(s, keys[s.ref]);
+        } catch (e) {
+          return { slug: s.slug, name: s.name, url: s.url, error: String(e) };
+        }
+      }),
+    ),
+    notesGetAll(),
+  ]);
+  for (const s of schools) (s as { hubNotes?: string }).hubNotes = hubNotes[s.slug] ?? '';
   return json({ generatedAt: new Date().toISOString(), schools });
 });

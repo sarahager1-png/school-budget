@@ -94,10 +94,10 @@ const TONES = {
   green: 'bg-green-100 text-green-600',
 };
 
-function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, savingLabel = 'חיסכון בשנה', details, children, action, index = 0, selected, onToggle }) {
+function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, savingLabel = 'חיסכון בשנה', details, children, action, index = 0, selected, onToggle, onDismiss }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`card p-5 spring-enter transition-opacity ${onToggle && !selected ? 'opacity-50' : ''}`} style={{ animationDelay: `${Math.min(index, 6) * 70}ms` }}>
+    <div className={`card p-5 spring-enter transition-opacity relative ${onToggle && !selected ? 'opacity-50' : ''}`} style={{ animationDelay: `${Math.min(index, 6) * 70}ms` }}>
       <div className="flex items-start gap-3 flex-wrap">
         {onToggle && (
           <input
@@ -111,6 +111,10 @@ function SuggestionCard({ icon: Icon, tone = 'teal', title, subtitle, saving, sa
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${TONES[tone]}`}>
           <Icon size={21} />
         </div>
+        {onDismiss && (
+          <button onClick={onDismiss} title="הסתרת ההצעה מהמסך (לא משנה את התקציב)"
+            className="absolute top-3 left-3 w-6 h-6 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center text-lg leading-none transition-colors">✕</button>
+        )}
         <div className="flex-1 min-w-40">
           <h3 className="font-bold text-gray-800 leading-snug">{title}</h3>
           {subtitle && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{subtitle}</p>}
@@ -191,6 +195,18 @@ export default function EfficiencyPage() {
 
   // מוכרז לפני הדוח — הדוח נועץ את הבחירות השמורות
   const [selectedKeys, setSelectedKeys] = useState(null);
+  // הצעות שהוסתרו מהמסך — מקומי לדפדפן, מפתח לפי בית ספר. לא נוגע בתקציב.
+  const hideKey = `eff-hidden-${user?.schoolId || 'x'}`;
+  const [hidden, setHidden] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(hideKey) || '[]')); } catch { return new Set(); }
+  });
+  const dismiss = (key) => setHidden(prev => {
+    const next = new Set(prev); next.add(key);
+    try { localStorage.setItem(hideKey, JSON.stringify([...next])); } catch { /* אין אחסון */ }
+    return next;
+  });
+  const restoreHidden = () => { setHidden(new Set()); try { localStorage.removeItem(hideKey); } catch { /* */ } };
+  const isHidden = (key) => hidden.has(key);
   const report = useMemo(() => {
     const merges = findMerges(classes, constants);
     const mergedIds = new Set(merges.flatMap(m => m.members.map(x => x.id)));
@@ -433,6 +449,11 @@ export default function EfficiencyPage() {
           <p className="text-gray-500 text-sm mt-0.5">
             המערכת מציעה — את בוחרת: סמני ✓ על ההצעות שמאמצים, והסכומים יתעדכנו מיד
           </p>
+          {hidden.size > 0 && (
+            <button onClick={restoreHidden} className="text-xs text-teal-600 hover:text-teal-800 underline mt-1">
+              {hidden.size} הצעות הוסתרו — החזרת הכל
+            </button>
+          )}
         </div>
         {!closed && (
           <button type="button" onClick={() => setConfirmSave(true)} disabled={savingSelection} className="btn-primary btn-sm flex-shrink-0">
@@ -515,8 +536,9 @@ export default function EfficiencyPage() {
       </div>
 
       {/* Merges */}
-      {merges.map(m => (
+      {merges.filter(m => !isHidden(`merge:${m.merged.id}`)).map(m => (
         <SuggestionCard
+          onDismiss={() => dismiss(`merge:${m.merged.id}`)}
           key={m.merged.id}
           icon={Merge}
           tone="purple"
@@ -538,8 +560,9 @@ export default function EfficiencyPage() {
       ))}
 
       {/* Dual-age merges */}
-      {dualMerges.map(m => (
+      {dualMerges.filter(m => !isHidden(`dual:${m.merged.id}`)).map(m => (
         <SuggestionCard
+          onDismiss={() => dismiss(`dual:${m.merged.id}`)}
           key={`dual-${m.merged.id}`}
           icon={Layers}
           tone="purple"
