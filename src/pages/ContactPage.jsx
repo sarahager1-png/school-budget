@@ -153,7 +153,6 @@ export default function ContactPage() {
         )}
       </form>
 
-      <p className="text-center text-gray-400 text-xs">בנוי ופיתוח: שרה הגר · 0503339770</p>
     </div>
   );
 }

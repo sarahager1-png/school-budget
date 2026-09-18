@@ -225,7 +225,7 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   </div>
 
   <p class="note">אנו מאשרים שעברנו על סיכום התקציב לשנת ${esc(yearLabel)} כפי שמופיע בדף זה. כל הצעה מחושבת בנפרד לפי מודל התקציב; יישום של כמה הצעות יחד עשוי לחפוף חלקית.</p>
-  <footer>הופק ממערכת ניהול תקציב בית חינוך · רשת חינוך חב"ד · בנוי ופיתוח: שרה הגר · 0503339770</footer>
+  <footer>הופק ממערכת ניהול תקציב בית חינוך · רשת חינוך חב"ד</footer>
 </body></html>`;
 }
 

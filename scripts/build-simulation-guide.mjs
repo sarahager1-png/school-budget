@@ -202,7 +202,6 @@ const html = `<!DOCTYPE html>
 </div>
 
 <footer>
-  <p>יעוץ ארגוני | פתרונות דיגיטליים · מהבנת הארגון לפתרון שעובד.</p>
 </footer>
 
 </div>
