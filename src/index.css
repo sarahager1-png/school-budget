@@ -128,3 +128,31 @@ html, body { overflow-x: hidden; }
 @media (max-width: 767px) {
   .overflow-x-auto { -webkit-overflow-scrolling: touch; }
 }
+
+/* כרטיסיות תמיד באותו גודל (שרה 20.9.2026): קבוצת כרטיסיות / בועות מספרים / כפתורי סינון
+   יושבת ברשת של עמודות ושורות שוות — לא flex-wrap, שנותן לכל אחת רוחב לפי אורך הטקסט. */
+.even-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--even-min, 150px)), 1fr));
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: 8px;
+}
+.even-grid.sm { --even-min: 104px; }
+.even-grid.lg { --even-min: 220px; }
+.even-grid > * { width: 100%; height: 100%; min-width: 0; }
+
+/* פס לשוניות / כפתורי סינון (הרצועה האפורה): כל הלשוניות באותו רוחב ובאותו גובה.
+   נייד — שתי עמודות שוות; ממסך רחב — שורה אחת של עמודות שוות. הפעילה נבדלת בצבע בלבד. */
+.even-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+}
+@media (min-width: 640px) {
+  .even-tabs { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+}
+.even-tabs > * { min-width: 0; justify-content: center; text-align: center; line-height: 1.25; }

@@ -261,7 +261,7 @@ function FinancialTab() {
       <div className="card p-4 border border-gold-200">
         <label className="label">שכר אופק חדש?</label>
         <p className="text-xs text-gray-400 mb-3">קובע את תעריף השעה בעלות ההוראה: כן = {OFEK_RATES.yes} ₪, לא = {OFEK_RATES.no} ₪. אם חלק מהמורות באופק וחלק בעולם הישן — בוחרים "חלק וחלק", לפי מספר מורות או לפי סכום השכר השנתי של צוות העולם הישן, והתעריף מחושב כממוצע משוקלל. לא לשכוח לשמור למטה.</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="even-grid lg max-w-3xl">
           <button
             onClick={() => setOfek(true)}
             aria-pressed={mode === true}
@@ -388,7 +388,7 @@ function FinancialTab() {
             לראות גם אותן כהצעת "סגירת כיתה" נפרדת במסך הייעול — כל שכבה מסומנת תופיע ככרטיס
             נפרד, ואפשר לבחור בכל אחת בנפרד. לא לשכוח לשמור למטה.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="even-grid sm" style={{ '--even-min': '84px' }}>
             {closeableGrades.map(label => (
               <button
                 key={label}
@@ -545,7 +545,7 @@ export default function SettingsPage() {
         <p className="text-gray-500 text-sm mt-0.5">ניהול מערכת ותצורה</p>
       </div>
 
-      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
+      <div className="even-tabs bg-gray-100 p-1 rounded-xl">
         {availableTabs.map(tab => (
           <button
             key={tab.key}

@@ -142,7 +142,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full no-print">
+      <div className="even-tabs bg-gray-100 p-1 rounded-xl no-print">
         {TABS.map(tab => (
           <button
             key={tab.key}
@@ -331,7 +331,7 @@ export default function ReportsPage() {
       {activeTab === 'summary' && (
         <div className="space-y-4">
           {!isSimpleMode && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid auto-rows-fr grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'סה״כ כיתות', value: classes.length, unit: 'כיתות', color: 'text-teal-600' },
                 { label: 'סה״כ תלמידים', value: totals.totalStudents, unit: 'תלמידים', color: 'text-purple-600' },

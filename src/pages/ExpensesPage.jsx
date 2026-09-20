@@ -499,7 +499,7 @@ export default function ExpensesPage() {
 
           {/* Totals per category */}
           {activeCategory === 'all' && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid auto-rows-fr grid-cols-2 lg:grid-cols-4 gap-3">
               {expenseCategories.map((cat, i) => (
                 <button key={cat.id} className="card p-4 text-right cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveCategory(cat.id)}>
                   <div className="flex items-center gap-2 mb-2">

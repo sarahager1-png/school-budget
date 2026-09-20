@@ -275,7 +275,7 @@ export default function SimulationsPage() {
             <Bookmark size={15} className="text-teal-500" />
             תרחישים שמורים — {currentYear?.label}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid auto-rows-fr grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {scenarios.map(s => (
               <div
                 key={s.id}

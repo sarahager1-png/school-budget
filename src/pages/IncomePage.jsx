@@ -132,7 +132,7 @@ export default function IncomePage() {
 
       {/* Summary Row — budget mode only */}
       {!isSimpleMode && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid auto-rows-fr grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { label: 'תקן משרד החינוך', value: totalMinistry, bar: 'bg-teal-500', pct: grandTotal ? totalMinistry / grandTotal * 100 : 0 },
             { label: 'תוספת כללית — משרד', value: totalMinistryGrant, bar: 'bg-blue-500', pct: grandTotal ? totalMinistryGrant / grandTotal * 100 : 0 },

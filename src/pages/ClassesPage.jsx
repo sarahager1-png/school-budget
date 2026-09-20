@@ -173,7 +173,7 @@ export default function ClassesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className={`grid gap-3 ${isSimpleMode ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'}`}>
+      <div className={`grid auto-rows-fr gap-3 ${isSimpleMode ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'}`}>
         {[
           { label: 'כיתות', value: classes.length, color: 'text-teal-600 bg-teal-50' },
           { label: 'תלמידים', value: totals.students, color: 'text-purple-600 bg-purple-50' },
@@ -191,7 +191,7 @@ export default function ClassesPage() {
 
       {/* Filter Tabs — budget mode only */}
       {!isSimpleMode && classes.length > 0 && (
-        <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-fit max-w-full">
+        <div className="even-tabs bg-gray-100 p-1 rounded-xl">
           {FILTERS.map(f => (
             <button
               key={f.key}

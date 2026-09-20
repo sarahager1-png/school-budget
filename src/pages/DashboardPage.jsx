@@ -330,7 +330,7 @@ function SimpleDashboard() {
 
       {!isEmpty && <SummaryDocCard />}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid auto-rows-fr grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={0} label="סה״כ הכנסות שנתיות" rawValue={totals.totalIncome} format={formatCurrency} sub={`${incomeSources.length} מקורות`} color="teal" icon={TrendingUp} isNegative={false}
           breakdown={incomeSources.map(s => ({ label: s.name, value: s.amount || 0 }))} />
         <StatCard index={1} label="סה״כ הוצאות שנתיות" rawValue={totals.totalExpenses} format={formatCurrency} sub={`${expenses.length} סעיפים`} color="coral" icon={TrendingDown} isNegative={true}
@@ -531,7 +531,7 @@ function FullDashboard() {
       )}
 
       {/* Stat Cards */}
-      <div className={`grid grid-cols-2 gap-4 ${hasPlan ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'}`}>
+      <div className={`grid auto-rows-fr grid-cols-2 gap-4 ${hasPlan ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <StatCard
           index={0}
           label="סה״כ הכנסות שנתיות"
