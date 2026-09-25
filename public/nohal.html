@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>נוהל עבודה — בניית תקציב בית ספר</title>
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; background: #F8F7FB; color: #1A0B35; line-height: 1.7; font-size: 16px; }
+  .page { max-width: 820px; margin: 0 auto; padding: 16px 16px 60px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px 10px; }
+  .topbar .bh { font-weight: 900; font-size: 15px; color: #3D2570; }
+  .topbar img { height: 34px; }
+  header.hero {
+    background: linear-gradient(135deg, #1A0B35 0%, #3D2570 60%, #00B4CC 100%);
+    color: #fff; border-radius: 20px; padding: 32px 24px; margin-bottom: 24px; text-align: center;
+  }
+  header.hero h1 { font-size: 28px; font-weight: 900; margin-bottom: 6px; }
+  header.hero p { color: rgba(255,255,255,.8); font-size: 15px; }
+  header.hero .meta { color: rgba(255,255,255,.6); font-size: 13px; margin-top: 10px; }
+  .print-btn {
+    display: inline-block; margin-top: 16px; background: #fff; color: #3D2570; border: none;
+    border-radius: 12px; padding: 10px 22px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 44px;
+  }
+  h2 { font-size: 21px; font-weight: 900; color: #1A0B35; margin: 34px 0 12px; padding-bottom: 6px; border-bottom: 3px solid #00B4CC; }
+  h3 { font-size: 16px; font-weight: 700; color: #3D2570; margin: 16px 0 6px; }
+  p, li, td, th { color: #334155; font-size: 15px; }
+  .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 18px 20px; margin: 12px 0; }
+  .lead { font-size: 16px; color: #1A0B35; }
+  ul.plain { padding-right: 20px; }
+  ul.plain li { margin: 4px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); grid-auto-rows: 1fr; gap: 12px; margin: 12px 0; }
+  .rule { background: #fff; border: 1px solid #E2E8F0; border-right: 5px solid #4B2E83; border-radius: 14px; padding: 14px 16px; }
+  .rule b { display: block; color: #1A0B35; font-size: 15px; margin-bottom: 4px; }
+  .rule p { font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid #E2E8F0; margin: 12px 0; }
+  th { background: #F3F0FA; color: #3D2570; font-weight: 700; text-align: right; padding: 10px 12px; font-size: 14px; }
+  td { padding: 10px 12px; border-top: 1px solid #EEF0F5; vertical-align: top; font-size: 14px; }
+  td.who { font-weight: 700; color: #1A0B35; white-space: nowrap; }
+  .tag { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 700; margin-inline-start: 6px; vertical-align: middle; }
+  .tag.p { background: #EDE7F6; color: #4B2E83; }
+  .tag.c { background: #E0F7FA; color: #00838F; }
+  .tag.s { background: #FFF3E0; color: #C05621; }
+  .tag.n { background: #F1F5F9; color: #475569; }
+  .step { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 0; margin: 14px 0; overflow: hidden; break-inside: avoid; }
+  .step .head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #F3F0FA; border-bottom: 1px solid #E2E8F0; flex-wrap: wrap; }
+  .step .num { width: 34px; height: 34px; border-radius: 50%; background: #4B2E83; color: #fff; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step .head h3 { margin: 0; font-size: 17px; color: #1A0B35; flex: 1; min-width: 160px; }
+  .step .head .when { font-size: 13px; color: #64748B; font-weight: 700; }
+  .step .body { padding: 14px 18px 16px; }
+  .step .body ol { padding-right: 22px; }
+  .step .body ol li { margin: 5px 0; }
+  .done { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 14px; margin-top: 12px; font-size: 14px; color: #065F46; }
+  .done b { color: #047857; }
+  .handoff { background: #F3E8FF; border: 1px solid #E9D5FF; border-radius: 12px; padding: 10px 14px; margin-top: 8px; font-size: 14px; color: #6B21A8; }
+  .handoff b { color: #581C87; }
+  .handoff .msg { display: block; background: #fff; border-radius: 8px; padding: 6px 10px; margin-top: 6px; color: #3D2570; font-size: 14px; }
+  .warn { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; margin: 10px 0; font-size: 14px; color: #B91C1C; }
+  .tip { background: #F3E8FF; border: 1px solid #E9D5FF; border-radius: 12px; padding: 12px 16px; margin: 10px 0; font-size: 14px; color: #6B21A8; }
+  .check { list-style: none; }
+  .check li { position: relative; padding-right: 30px; margin: 7px 0; }
+  .check li::before { content: ''; position: absolute; right: 2px; top: 5px; width: 17px; height: 17px; border: 2px solid #4B2E83; border-radius: 5px; }
+  @media (max-width: 640px) {
+    table.stack thead { display: none; }
+    table.stack tr { display: block; border-top: 6px solid #F3F0FA; }
+    table.stack td { display: block; border-top: none; padding: 6px 12px; white-space: normal; }
+    table.stack td::before { content: attr(data-l); display: block; font-size: 12px; font-weight: 700; color: #3D2570; }
+    table.stack td.who { padding-top: 12px; }
+  }
+  footer { text-align: center; color: #94A3B8; font-size: 13px; margin-top: 40px; }
+  @media print {
+    body { background: #fff; }
+    .print-btn, .topbar img { display: none; }
+    header.hero { border-radius: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .step, .card, table, .rule { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h2 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <span class="bh">ב"ה</span>
+    <img src="/logo-reshet.png" alt="רשת חינוך חב״ד" />
+  </div>
+
+  <header class="hero">
+    <h1>נוהל עבודה — בניית תקציב בית ספר</h1>
+    <p>מי עושה מה, מתי, מה נחשב "סיים" ולמי מוסרים הלאה</p>
+    <div class="meta">גרסה 1 · תשרי תשפ"ז · חל על כל בתי הספר שבמערכת התקציב</div>
+    <button class="print-btn" onclick="window.print()">🖨️ הדפסה / שמירה כ-PDF</button>
+  </header>
+
+  <div class="card">
+    <p class="lead">
+      התקציב נבנה במערכת, בשלבים קבועים. לכל שלב יש <b>בעל תפקיד אחד</b> שאחראי עליו,
+      <b>הגדרה ברורה מתי הוא גמור</b>, ו<b>מסירה כתובה</b> לבעל השלב הבא.
+      ככה משימה לא נופלת בין הכיסאות, ולא נמשכת מעבר לגודל שלה.
+    </p>
+  </div>
+
+  <h2>בעלי התפקידים</h2>
+  <table class="stack">
+    <thead><tr><th>תפקיד</th><th>אחריות בתקציב</th><th>מה עורך/ת במערכת</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="who" data-l="תפקיד">מנהלת בית הספר</td>
+        <td data-l="אחריות בתקציב">בעלת התקציב. הנתונים הפדגוגיים והתקן, הבחירה בהצעות הייעול, חתימה.</td>
+        <td data-l="מה עורך/ת במערכת">כיתות ומספרי תלמידים · הגדרות (אופק, שכר מנהלת, קבועים) · גבייה · משכורות · שליחת בקשות תשלום · בחירת ייעול · חתימה</td>
+      </tr>
+      <tr>
+        <td class="who" data-l="תפקיד">מנהל בית חב"ד<br /><span class="tag c">השליח</span></td>
+        <td data-l="אחריות בתקציב">הצד הכספי השוטף של בית הספר. שותף מלא לתקציב וחותם עליו.</td>
+        <td data-l="מה עורך/ת במערכת">הכנסות (עירייה, תרומות, שכ"ד) · הוצאות שוטפות · ביצוע בקשות תשלום וצירוף קבלות · חתימה</td>
+      </tr>
+      <tr>
+        <td class="who" data-l="תפקיד">מדריכה מתכללת אגף<br /><span class="tag p">גב' רינה אלהרר — שלהבות</span><br /><span class="tag p">גב' חנה אברומוביץ — בתי חינוך</span></td>
+        <td data-l="אחריות בתקציב">מלווה את בית הספר בבנייה, בודקת סבירות, מקבלת את התקציב החתום, מציגה אותו בדיון ההנהלה ומחזירה לבית הספר את ההחלטה. נקודת הקשר היחידה של בית הספר לכל שאלה של תוכן.</td>
+        <td data-l="מה עורך/ת במערכת">צפייה במבט רשת (כל בתי הספר של האגף). לא עורכת נתונים של בית ספר.</td>
+      </tr>
+      <tr>
+        <td class="who" data-l="תפקיד">שרה הגר<br /><span class="tag s">תפעול המערכת</span></td>
+        <td data-l="אחריות בתקציב">המערכת עצמה: הקמה, משתמשים, פתיחת שנה, מבט רשת ודף הפגישה, הפקת מסמך התקציב לחתימה, פתיחה מחדש של תקציב שנחתם, פתרון תקלות.</td>
+        <td data-l="מה עורך/ת במערכת">כל המסכים בכל בתי הספר (מנהלת מערכת). לא משנה מספרים של בית ספר בלי בקשה כתובה של המנהלת או המדריכה.</td>
+      </tr>
+      <tr>
+        <td class="who" data-l="תפקיד">סמנכ"לית<br /><span class="tag n">גב' שולמית</span></td>
+        <td data-l="אחריות בתקציב">האישור הכספי: השתתפות הרשת בכל בית ספר, חריגות, שכר מנהלת.</td>
+        <td data-l="מה עורך/ת במערכת">צפייה (מבט רשת / דף הפגישה).</td>
+      </tr>
+      <tr>
+        <td class="who" data-l="תפקיד">מנהל הרשת</td>
+        <td data-l="אחריות בתקציב">אישור סופי של תקציבי הרשת והחלטות עקרוניות: פתיחה, סגירה או חיבור של כיתות, בתי ספר חדשים.</td>
+        <td data-l="מה עורך/ת במערכת">צפייה (מבט רשת / דף הפגישה).</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    בבתי ספר שבהם השליח קיבל הרשאת "מנהל מערכת", האחריות נשארת לפי הטבלה. ההרשאה הטכנית לא מעבירה אחריות.
+  </div>
+
+  <h2>שישה כללי יסוד</h2>
+  <div class="grid">
+    <div class="rule"><b>1. מקור אמת אחד — המערכת</b><p>מספר שלא נמצא במערכת לא קיים. אין אקסל צדדי, ואין מספרים בוואטסאפ. תיקון נעשה במערכת ורק אחר כך מדברים עליו.</p></div>
+    <div class="rule"><b>2. בעל תפקיד אחד לכל שלב</b><p>לכל שלב אחראי אחד. מי שלא אחראי לשלב לא נכנס לערוך בו, גם אם יש לו הרשאה.</p></div>
+    <div class="rule"><b>3. שלב נגמר במסירה כתובה</b><p>שלב שהסתיים נמסר בהודעה קצרה לבעל השלב הבא, עם תאריך יעד. בלי מסירה השלב לא נחשב סגור.</p></div>
+    <div class="rule"><b>4. מספר לא מאומת לא נכנס</b><p>שכר מנהלת מוזן אמיתי ולא ברירת המחדל. שאלת "אופק חדש" נענית לפני שממשיכים. מספר תלמידים לפי הרשמה בפועל.</p></div>
+    <div class="rule"><b>5. אחרי חתימה משנים רק דרך המדריכה</b><p>תקציב שנחתם הוא הסכם. שינוי מהותי מדווח למדריכה בהודעה אחת עם הסיבה, והיא מחליטה אם צריך אישור מחדש.</p></div>
+    <div class="rule"><b>6. תקלה לא עוצרת את התהליך</b><p>בעיה טכנית נשלחת דרך "יצירת קשר" במערכת או לשרה. ממשיכים בשלב הבא שאפשר, ולא מחכים.</p></div>
+  </div>
+
+  <h2>לוח השנה של התקציב</h2>
+  <table class="stack">
+    <thead><tr><th>שלב</th><th>אחראי/ת</th><th>מועד יעד</th><th>זמן מוקצב</th></tr></thead>
+    <tbody>
+      <tr><td data-l="שלב">0 · הכנה רשתית</td><td data-l="אחראי/ת">שרה</td><td data-l="מועד יעד">אייר</td><td data-l="זמן מוקצב">שבוע</td></tr>
+      <tr><td data-l="שלב">1 · נתוני היסוד</td><td data-l="אחראי/ת">מנהלת</td><td data-l="מועד יעד">סיון</td><td data-l="זמן מוקצב">שבוע</td></tr>
+      <tr><td data-l="שלב">2 · הכנסות והוצאות</td><td data-l="אחראי/ת">מנהל בית חב"ד</td><td data-l="מועד יעד">סיון–תמוז</td><td data-l="זמן מוקצב">שבוע</td></tr>
+      <tr><td data-l="שלב">3 · הצעות ייעול</td><td data-l="אחראי/ת">מנהלת + שליח</td><td data-l="מועד יעד">תמוז</td><td data-l="זמן מוקצב">פגישה אחת</td></tr>
+      <tr><td data-l="שלב">4 · סיכום וחתימה</td><td data-l="אחראי/ת">מנהלת + שליח</td><td data-l="מועד יעד">תמוז</td><td data-l="זמן מוקצב">יום</td></tr>
+      <tr><td data-l="שלב">5 · בדיקת המדריכה</td><td data-l="אחראי/ת">רינה / חנה</td><td data-l="מועד יעד">תמוז–אב</td><td data-l="זמן מוקצב">עד 5 ימי עבודה</td></tr>
+      <tr><td data-l="שלב">6 · דיון ההנהלה</td><td data-l="אחראי/ת">מנהל הרשת, סמנכ"לית, שרה, המדריכות</td><td data-l="מועד יעד">אב</td><td data-l="זמן מוקצב">פגישה אחת לאגף</td></tr>
+      <tr><td data-l="שלב">7 · סגירה והפצה</td><td data-l="אחראי/ת">שרה + המדריכה</td><td data-l="מועד יעד">אלול</td><td data-l="זמן מוקצב">שבוע</td></tr>
+      <tr><td data-l="שלב">8 · עדכון אחרי מפקד תלמידים</td><td data-l="אחראי/ת">מנהלת</td><td data-l="מועד יעד">חשוון</td><td data-l="זמן מוקצב">שבוע</td></tr>
+      <tr><td data-l="שלב">9 · שוטף</td><td data-l="אחראי/ת">מנהלת + שליח</td><td data-l="מועד יעד">כל חודש</td><td data-l="זמן מוקצב">עד ה-10 בחודש</td></tr>
+      <tr><td data-l="שלב">10 · סוף שנה</td><td data-l="אחראי/ת">המדריכה + שרה</td><td data-l="מועד יעד">אייר</td><td data-l="זמן מוקצב">שבוע — וחוזרים לשלב 0</td></tr>
+    </tbody>
+  </table>
+  <div class="warn">
+    מבנייה ראשונה ועד הפצה (שלבים 1–7) התהליך כולו נמשך <b>עד שישה שבועות</b>. בית ספר שעבר את הזמן המוקצב בשלב כלשהו עולה למדריכה באותו יום, לא בסוף התהליך.
+  </div>
+  <div class="tip">
+    בשנת תשפ"ז הנוהל נכנס לתוקף באמצע הסבב. כל בית ספר ממשיך מהשלב שבו הוא נמצא, בלי לחזור אחורה. יעד לסיום הסבב הנוכחי לכל בתי הספר: סוף חשוון תשפ"ז.
+  </div>
+
+  <h2>השלבים בפירוט</h2>
+
+  <div class="step">
+    <div class="head"><span class="num">0</span><h3>הכנה רשתית</h3><span class="when">שרה · אייר · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li>פותחת שנת תקציב חדשה בכל בית ספר (הגדרות ← שנות תקציב ← "הוסף שנה" ← "הפעל"). הקבועים מועתקים לבד מהשנה הקודמת.</li>
+        <li>מעדכנת קבועים רשתיים שהשתנו (תעריף שעה, אופק, תל"ן, הוצאה לתלמיד) לפי הנחיית הסמנכ"לית.</li>
+        <li>מוודאת שלמנהלת ולשליח של כל בית ספר יש כניסה פעילה.</li>
+        <li>שולחת למנהלת ולשליח הודעת פתיחה: קישור למערכת, קישור לנוהל הזה, ותאריך יעד לשלבים 1–4.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> בכל בית ספר השנה החדשה פעילה, והודעת הפתיחה יצאה עם תאריכי יעד.</div>
+      <div class="handoff"><b>מסירה:</b> למנהלת ולשליח של כל בית ספר, ועותק למדריכה של האגף.
+        <span class="msg">"שנת התקציב תשפ"ח פתוחה במערכת. מנהלת: כיתות והגדרות עד ___. שליח: הכנסות והוצאות עד ___. הנוהל המלא: קישור."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">1</span><h3>נתוני היסוד</h3><span class="when">מנהלת · סיון · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li><b>הגדרות ← קבועים פיננסיים.</b> עונים על שאלת "אופק חדש" (כן / לא / חלק וחלק). מזינים <b>שכר מנהלת אמיתי</b>, ברוטו לחודש. המספר שמופיע כברירת מחדל אינו נכון לאף בית ספר ומנפח את הגירעון.</li>
+        <li>מסמנים אם יש חוגים (תוספת לכיתה בחודש, או 0), ובודקים את שעות הייעוץ לכיתה.</li>
+        <li><b>כיתות.</b> כל כיתה בנפרד: שם, שכבה, ומספר תלמידים לפי ההרשמה בפועל. בנים ובנות בכיתות נפרדות נרשמות כשתי כיתות. כיתה שלומדת חלק מהשעות יחד עם כיתה אחרת מקבלת הערה בשדה ההערות.</li>
+        <li>בודקים בדף הבית שהבאנר "שאלה חשובה לחישוב עלות ההוראה" נעלם, ושמספר התלמידים הכולל נכון.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> שאלת אופק נענתה, שכר המנהלת הוזן אמיתי, כל הכיתות עם שכבה ומספר תלמידים, ודף הבית מציג את המספר הכולל הנכון.</div>
+      <div class="handoff"><b>מסירה:</b> לשליח, עם עותק למדריכה.
+        <span class="msg">"הכיתות והקבועים של ___ מוזנים. תורך: הכנסות והוצאות עד ___."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">2</span><h3>הכנסות והוצאות</h3><span class="when">מנהל בית חב"ד · סיון–תמוז · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li><b>הכנסות.</b> מזינים רק מקורות שאינם מחושבים אוטומטית: עירייה, תרומות, שכר דירה שמתקבל, השתתפויות. הכנסת משרד החינוך, שכר לימוד ותל"ן מחושבים לבד מהכיתות — <b>לא מזינים אותם ידנית</b> (זה יוצר כפל).</li>
+        <li><b>הוצאות.</b> כל סעיף בקטגוריה הנכונה, ועם התקופה הנכונה: "חודשי" מוכפל לבד ב-12, "שנתי" נרשם פעם אחת. הזנה, הסעות, שכר דירה, אחזקה, ציוד, פעילות.</li>
+        <li>לא מזינים שכר מורות (מחושב מהשעות) ולא שכר מנהלת (מהקבועים). הכרטיס "הוצאות אוטומטיות" במסך ההוצאות מראה מה כבר מחושב.</li>
+        <li>הוצאה שלא ברור לאיזו קטגוריה שייכת נרשמת עם הערה, ולא נשמטת.</li>
+        <li>בודקים במסך "עזרה" שכלל האירועים (עד 1,400 ₪ לתלמיד) ירוק. אם אדום, מדווחים למנהלת לפני שממשיכים.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> כל ההוצאות וההכנסות הידועות מוזנות, אין כפילות עם המחושב אוטומטית, וכלל האירועים ירוק או שהחריגה דווחה.</div>
+      <div class="handoff"><b>מסירה:</b> למנהלת, עם עותק למדריכה.
+        <span class="msg">"הכנסות והוצאות של ___ מוזנות. אפשר לקבוע את פגישת הייעול."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">3</span><h3>הצעות ייעול</h3><span class="when">מנהלת + שליח · תמוז · פגישה אחת</span></div>
+    <div class="body">
+      <ol>
+        <li>נפגשים יחד מול מסך <b>"הצעות ייעול"</b>. המערכת מציעה: חיבור כיתות, כיתות קרובות לסף תקן, שעות מנהלת, סגירת כיתה, שכר לימוד, קיצוץ מדורג ועוד, עם החיסכון של כל אחת.</li>
+        <li>מסמנים ✓ <b>רק</b> הצעות שמחליטים ליישם בפועל. הצעה שלא סומנה לא נספרת.</li>
+        <li>מכוונים את המחוונים (שעות, אחוז קיצוץ) לפי מה שבאמת אפשרי בבית הספר.</li>
+        <li>לוחצים <b>"שמירת בחירה"</b>. הבחירה שנשמרה מוצגת גם במסך הסיכום.</li>
+        <li>מתלבטים? שולחים שאלה אחת מרוכזת למדריכה, לא מחכים בלי לשמור. אפשר לשמור, ולשנות אחרי התשובה.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> הבחירה נשמרה, ומסך "סיכום ואישור" מציג את ההצעות שנבחרו ואת "מצב התקציב לאחר ייעול".</div>
+      <div class="handoff"><b>מסירה:</b> אין. ממשיכים ישר לשלב 4, באותו יום או למחרת.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">4</span><h3>סיכום וחתימה</h3><span class="when">מנהלת + שליח · תמוז · יום</span></div>
+    <div class="body">
+      <ol>
+        <li>פותחים את מסך <b>"סיכום ואישור"</b> ועוברים על "רשימת הבדיקה לפני חתימה" שבהמשך נוהל זה.</li>
+        <li>כותבים בשדה ההערות מה שההנהלה צריכה לדעת ואינו בטבלאות: כיתה שעדיין לא ודאית, הסכם עירייה שבדרך, בקשה מיוחדת.</li>
+        <li>המנהלת חותמת במשטח החתימה שלה, השליח בשלו. החתימה נשמרת במערכת.</li>
+        <li>מדפיסים או שומרים PDF מאותו מסך.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> שתי החתימות נשמרו, וה-PDF נשלח למדריכה.</div>
+      <div class="handoff"><b>מסירה:</b> למדריכה של האגף.
+        <span class="msg">"התקציב של ___ לשנת ___ חתום במערכת. מצורף ה-PDF. נקודות לתשומת לב: ___."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">5</span><h3>בדיקת המדריכה</h3><span class="when">רינה / חנה · תמוז–אב · עד 5 ימי עבודה</span></div>
+    <div class="body">
+      <ol>
+        <li>פותחת את <b>מבט רשת</b> ← לשונית בית הספר. בודקת סבירות: מספר תלמידים מול המצבה הידועה, כיתות שחסרות או עודפות, הוצאות חריגות מול שנה קודמת, שכר מנהלת, ההצעות שנבחרו.</li>
+        <li>שאלות חוזרות למנהלת <b>בהודעה אחת מרוכזת</b>, עם תאריך יעד לתשובה. לא טפטוף של שאלות.</li>
+        <li>תיקון נעשה במערכת על ידי בית הספר (לפי בעל השלב), ולא על ידי המדריכה. אחרי תיקון מהותי חותמים מחדש.</li>
+        <li>כשהתקציב סביר, מסמנת אותו כ"מוכן לדיון" ומעבירה לשרה לרשימת הפגישה.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> כל שאלות המדריכה נענו ותוקנו במערכת, והתקציב סומן "מוכן לדיון".</div>
+      <div class="handoff"><b>מסירה:</b> לשרה.
+        <span class="msg">"___ מוכן לדיון ההנהלה. נקודות להחלטה: ___."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">6</span><h3>דיון ההנהלה</h3><span class="when">מנהל הרשת · סמנכ"לית · שרה · המדריכות — אב · פגישה אחת לאגף</span></div>
+    <div class="body">
+      <ol>
+        <li><b>לפני הפגישה</b> שרה מרעננת את דף הפגישה כך שיציג את המצב העדכני של כל בתי הספר, כולל השוואה לעלות ההוראה בפועל ממערכת השכר.</li>
+        <li>בפגישה עוברים בית ספר אחר בית ספר: הפער, ההצעות שנבחרו, ההערות של המנהלת, ההשוואה לפועל.</li>
+        <li>לכל בית ספר מתקבלת החלטה אחת מתוך שלוש: <b>מאושר</b> · <b>מאושר בתנאי</b> (מה צריך להשתנות) · <b>חוזר לתיקון</b>.</li>
+        <li>הסמנכ"לית קובעת את <b>השתתפות הרשת</b> לכל בית ספר. הסכום נרשם במקום, בשדה ההשתתפות בדף הפגישה, ולא נשאר בראש.</li>
+        <li>החלטות עקרוניות (סגירת כיתה, חיבור, פתיחת כיתה) מתקבלות על ידי מנהל הרשת ונרשמות בפרוטוקול קצר: בית ספר · החלטה · מי מבצע · עד מתי.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> לכל בית ספר בפגישה יש החלטה וסכום השתתפות רשומים, והפרוטוקול נשלח למשתתפים באותו יום.</div>
+      <div class="handoff"><b>מסירה:</b> שרה שולחת את הפרוטוקול למדריכות ולסמנכ"לית.
+        <span class="msg">"סיכום דיון תקציבים אגף ___: [בית ספר · החלטה · השתתפות · פעולה נדרשת · אחראי · עד מתי]."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">7</span><h3>סגירה והפצה</h3><span class="when">שרה + המדריכה · אלול · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li>בית ספר ש"חוזר לתיקון" חוזר לשלב שבו התיקון נדרש, עם תאריך יעד של שבוע, ומשם חוזר לשלב 5.</li>
+        <li>לבית ספר מאושר שרה מפיקה את <b>מסמך "תקציב לחתימה"</b>: עלות הוראה, צהרון (מושלם ביד, אין נתוני צהרון במערכת), וכל שאר הסעיפים.</li>
+        <li>המדריכה מעבירה למנהלת ולשליח את המסמך יחד עם ההחלטה וסכום ההשתתפות, ומקבלת בחזרה את המסמך חתום.</li>
+        <li>המסמך החתום נשמר אצל המדריכה ובמשרד הרשת. מרגע זה התקציב מאושר.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> המסמך החתום של כל בית ספר מאושר נמצא אצל המדריכה ובמשרד.</div>
+      <div class="handoff"><b>מסירה:</b> המדריכה למנהלת ולשליח.
+        <span class="msg">"התקציב של ___ לשנת ___ אושר. השתתפות הרשת: ___ ₪. מצורף המסמך לחתימה. שינוי מהותי במהלך השנה מדווח אליי לפני שמבצעים."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">8</span><h3>עדכון אחרי מפקד התלמידים ושינויים במהלך השנה</h3><span class="when">מנהלת · חשוון, ובכל שינוי מהותי · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li>אחרי מפקד התלמידים של תחילת השנה המנהלת מעדכנת במסך "כיתות" את מספרי התלמידים בפועל. חובה, גם אם ההפרש קטן.</li>
+        <li>שינוי מהותי במהלך השנה: כיתה שנפתחה או נסגרה, שינוי של יותר מ-3 תלמידים בכיתה, שינוי בשכר המנהלת, הוצאה חדשה מעל 20,000 ₪ לשנה. המנהלת מעדכנת במערכת, ושולחת למדריכה הודעה אחת: מה השתנה, למה, ומה ההשפעה על הפער.</li>
+        <li>המדריכה מחליטה: מספיק הדיווח, או שצריך אישור מחודש של הסמנכ"לית.</li>
+        <li>אם התקציב נעול במערכת ומסך העריכה לא נפתח, פונים לשרה, והיא פותחת מחדש לאחר אישור המדריכה.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> המספרים במערכת תואמים את המצב בפועל, והמדריכה אישרה בכתב שהדיווח התקבל.</div>
+      <div class="handoff"><b>מסירה:</b> מהמנהלת למדריכה.
+        <span class="msg">"עדכון תקציב ___: [מה השתנה] בגלל [סיבה]. הפער השתנה מ-___ ל-___."</span></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">9</span><h3>עבודה שוטפת במהלך השנה</h3><span class="when">מנהלת + שליח · כל חודש · עד ה-10 בחודש</span></div>
+    <div class="body">
+      <ol>
+        <li><b>השליח:</b> מטפל בבקשות תשלום שהמנהלת שלחה (ממתין ← בביצוע ← שולם ← הושלם) ומצרף קבלה לכל תשלום. בקשה לא נשארת "ממתין" יותר משבוע בלי הודעה למנהלת.</li>
+        <li><b>המנהלת:</b> במסך "משכורות" מסמנת "שולם" לכל עובד עד ה-10 בחודש. במסך "גבייה" רושמת תשלומי הורים שהתקבלו.</li>
+        <li><b>המדריכה:</b> פעם בחודש מסתכלת במבט רשת על בתי הספר של האגף. פער שגדל מעבר למאושר עולה למנהלת בשאלה אחת.</li>
+        <li>אין צורך בדיווח חודשי נפרד. המערכת היא הדיווח.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> בכל חודש, עד ה-10, המשכורות מסומנות, אין בקשת תשלום שממתינה מעל שבוע, והגבייה מעודכנת.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><span class="num">10</span><h3>סוף שנה</h3><span class="when">המדריכה + שרה · אייר · שבוע</span></div>
+    <div class="body">
+      <ol>
+        <li>המדריכה עוברת עם המנהלת על "דוחות ← סיכום שנתי": תכנון מול ביצוע, ואיפה היו הפערים הגדולים.</li>
+        <li>לקח אחד לכל בית ספר, בשורה אחת, נכנס להערות של שנת התקציב הבאה.</li>
+        <li>שרה פותחת את השנה החדשה (שלב 0). הכיתות אינן מועתקות: השנה החדשה מתחילה מהרשמה בפועל.</li>
+      </ol>
+      <div class="done"><b>סיים כאשר:</b> לכל בית ספר יש שורת לקח, והשנה החדשה פתוחה. חוזרים לשלב 0.</div>
+    </div>
+  </div>
+
+  <h2>רשימת הבדיקה לפני חתימה</h2>
+  <div class="card">
+    <ul class="check">
+      <li>כל הכיתות מוזנות, לכל אחת שכבה ומספר תלמידים לפי ההרשמה בפועל.</li>
+      <li>שאלת "אופק חדש" נענתה, והבאנר בדף הבית נעלם.</li>
+      <li>שכר המנהלת בהגדרות הוא הברוטו האמיתי, לא ברירת המחדל.</li>
+      <li>אין הכנסה ידנית של שכר לימוד, תל"ן או משרד החינוך (הם מחושבים לבד).</li>
+      <li>אין הוצאה ידנית של שכר מורות או שכר מנהלת (הם מחושבים לבד).</li>
+      <li>לכל הוצאה התקופה הנכונה: חודשי (×12) או שנתי.</li>
+      <li>כלל האירועים (עד 1,400 ₪ לתלמיד) ירוק במסך העזרה, או שהחריגה מוסברת בהערות.</li>
+      <li>חוגים: הוגדר כן או לא, לא נשאר במקרה.</li>
+      <li>הצעות הייעול סומנו רק אם באמת מתכוונים ליישם, והבחירה נשמרה.</li>
+      <li>ההערות למנהלת הרשת נכתבו: מה עוד לא ודאי ומה מבקשים.</li>
+      <li>המנהלת והשליח שניהם ראו את המסך הסופי לפני שחתמו.</li>
+    </ul>
+  </div>
+
+  <h2>חריגים</h2>
+  <div class="card">
+    <h3>בית ספר במצב "מעקב פשוט, ללא תקציב"</h3>
+    <p>אין כיתות, אין ייעול ואין תקן. מבצעים רק את שלב 2 (הכנסות והוצאות), שלב 4 (סיכום וחתימה), ושלב 9 (שוטף). המדריכה בודקת סבירות של ההוצאות בלבד.</p>
+    <h3>צהרון</h3>
+    <p>אין נתוני צהרון במערכת. חלק הצהרון במסמך "תקציב לחתימה" מושלם ביד על ידי המנהלת לפני החתימה הסופית בשלב 7.</p>
+    <h3>בתי ספר שיש להם נתונים במערכת השכר</h3>
+    <p>בדיון ההנהלה מוצגת לצד התחשיב גם עלות ההוראה בפועל ממערכת השכר. כשיש פער ניכר ביניהם, ההחלטה מתבססת על הפועל, והמדריכה מבררת עם המנהלת מאיפה ההפרש.</p>
+    <h3>בית ספר חדש</h3>
+    <p>שרה מקימה את בית הספר במערכת ופותחת משתמשים למנהלת ולשליח לפני שלב 1. הם מקבלים את הודעת הפתיחה של שלב 0 ואת הנוהל הזה.</p>
+  </div>
+
+  <h2>למי פונים</h2>
+  <table class="stack">
+    <thead><tr><th>סוג הבעיה</th><th>למי</th><th>איך</th></tr></thead>
+    <tbody>
+      <tr><td data-l="סוג הבעיה">המערכת לא נפתחת, כפתור לא עובד, נתון נעלם, חתימה לא נשמרת</td><td class="who" data-l="למי">שרה</td><td data-l="איך">"יצירת קשר" בתפריט המערכת, או הודעה. מציינים בית ספר, מסך, ומה ניסיתם.</td></tr>
+      <tr><td data-l="סוג הבעיה">שאלה על מספרים, על הצעת ייעול, על מה מותר להזין</td><td class="who" data-l="למי">המדריכה של האגף</td><td data-l="איך">הודעה אחת מרוכזת עם כל השאלות. תשובה תוך יומיים.</td></tr>
+      <tr><td data-l="סוג הבעיה">בקשה לשנות תקציב שכבר אושר</td><td class="who" data-l="למי">המדריכה</td><td data-l="איך">לפי שלב 8. לא משנים לפני שמדווחים.</td></tr>
+      <tr><td data-l="סוג הבעיה">בקשה לשנות תעריף או קבוע רשתי</td><td class="who" data-l="למי">הסמנכ"לית</td><td data-l="איך">דרך המדריכה. שרה מיישמת רק אחרי אישור כתוב.</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    רשת חינוך חב"ד · מערכת ניהול תקציב בית חינוך · נוהל עבודה גרסה 1 · תשרי תשפ"ז
+  </footer>
+</div>
+</body>
+</html>

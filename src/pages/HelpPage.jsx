@@ -3,7 +3,7 @@ import { annualAmount, formatCurrency } from '../lib/calculations.js';
 import { EVENTS_CAP_PER_STUDENT, PAYMENT_MONTHS } from '../data/constants.js';
 import {
   AlertTriangle, CheckCircle, BookOpen, Calculator, Users, CreditCard,
-  TrendingUp, BarChart2, Settings, Package, Wallet, FlaskConical, Printer, UserCog,
+  TrendingUp, BarChart2, Settings, Package, Wallet, FlaskConical, Printer, UserCog, ClipboardList,
 } from 'lucide-react';
 
 // "מי מנהל מה" — התפקיד מתחלק בין מנהלת (מערכת ה-1200 לתלמיד: כיתות
@@ -108,7 +108,11 @@ export default function HelpPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-shrink-0 flex-wrap">
-          <a href="/system-guide.html" target="_blank" rel="noopener noreferrer" className="btn-primary">
+          <a href="/nohal.html" target="_blank" rel="noopener noreferrer" className="btn-primary">
+            <ClipboardList size={15} />
+            נוהל עבודה
+          </a>
+          <a href="/system-guide.html" target="_blank" rel="noopener noreferrer" className="btn-outline">
             <BookOpen size={15} />
             מדריך כולל למערכת
           </a>
