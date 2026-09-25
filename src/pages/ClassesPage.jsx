@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 
-function ClassModal({ cls, onSave, onClose }) {
+export function ClassModal({ cls, onSave, onClose }) {
   const [form, setForm] = useState({
     name: cls?.name || '',
     gradeLevel: cls?.gradeLevel || '',

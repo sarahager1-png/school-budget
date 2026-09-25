@@ -29,7 +29,7 @@ export function ExpenseModal({ exp, categories, onSave, onClose }) {
   };
 
   return (
-    <Modal title={exp ? 'עריכת הוצאה' : 'הוספת הוצאה'} onClose={onClose}>
+    <Modal title={exp?.id ? 'עריכת הוצאה' : 'הוספת הוצאה'} onClose={onClose}>
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-700 text-sm mb-4">{error}</div>
       )}
@@ -241,7 +241,7 @@ function AutoExpensesCard({ classes, constants }) {
 }
 
 export default function ExpensesPage() {
-  const { expenses, expenseCategories, classes, constants, addExpense, updateExpense, deleteExpense, addExpenseRequest, isSimpleMode, user } = useApp();
+  const { expenses, expenseCategories, classes, constants, addExpense, updateExpense, deleteExpense, addExpenseRequest, isSimpleMode, user, notify } = useApp();
   // הכנסות/הוצאות בעריכת השליח — "שכר מנהלת" נשאר מוגבל למנהלת/אדמין כי הוא מסונכרן מההגדרות (מערכת ה-1200)
   const canEdit = INCOME_EXPENSE_EDITORS.includes(user?.role);
   const canEditExpense = (exp) => exp?.name === 'שכר מנהלת' ? MANAGERS.includes(user?.role) : canEdit;
@@ -521,7 +521,11 @@ export default function ExpensesPage() {
         <ExpenseModal
           exp={modal === 'new' ? null : modal}
           categories={expenseCategories}
-          onSave={data => modal === 'new' ? addExpense(data) : updateExpense(modal.id, data)}
+          onSave={data => {
+            // השם 'שכר מנהלת' שמור לשורה המסונכרנת מההגדרות — שליח לא יוצר אותה ולא משנה אליה
+            if ((data.name || '').trim() === 'שכר מנהלת' && !MANAGERS.includes(user?.role)) return notify('שכר מנהלת נערך רק על ידי המנהלת, דרך ההגדרות או טופס התקציב', 'error');
+            return modal === 'new' ? addExpense(data) : updateExpense(modal.id, data);
+          }}
           onClose={() => setModal(null)}
         />
       )}

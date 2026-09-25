@@ -172,6 +172,7 @@ export const INCOME_EXPENSE_EDITORS = ['courier', 'admin'];
 // כל תפקיד רואה את כל המסכים (צפייה) — פעולות כתיבה מוגנות בכל דף בנפרד + ב-RLS
 export const NAV_ITEMS = [
   { id: 'dashboard', label: 'דף הבית', icon: 'LayoutDashboard', roles: ALL_ROLES, simpleMode: true },
+  { id: 'budget', label: 'טופס תקציב', icon: 'ClipboardList', roles: ALL_ROLES, simpleMode: true },
   { id: 'classes', label: 'כיתות', icon: 'School', roles: ALL_ROLES, simpleMode: true },
   { id: 'income', label: 'הכנסות', icon: 'TrendingUp', roles: ALL_ROLES, simpleMode: true },
   { id: 'tuition', label: 'גבייה', icon: 'HandCoins', roles: ALL_ROLES, simpleMode: true },

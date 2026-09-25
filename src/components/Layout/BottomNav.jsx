@@ -1,9 +1,9 @@
-import { LayoutDashboard, School, CreditCard, Package, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, CreditCard, Package, MoreHorizontal } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
 
 const ITEMS = [
   { id: 'dashboard', label: 'הבית', icon: LayoutDashboard },
-  { id: 'classes', label: 'כיתות', icon: School },
+  { id: 'budget', label: 'טופס', icon: ClipboardList },
   { id: 'expenses', label: 'הוצאות', icon: CreditCard },
   { id: 'courier', label: 'בקשות', icon: Package },
 ];

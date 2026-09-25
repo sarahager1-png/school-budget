@@ -45,7 +45,7 @@ export function IncomeModal({ src, totalStudents = 0, onSave, onClose }) {
   };
 
   return (
-    <Modal title={src ? 'עריכת מקור הכנסה' : 'הוספת מקור הכנסה'} onClose={onClose}>
+    <Modal title={src?.id ? 'עריכת מקור הכנסה' : 'הוספת מקור הכנסה'} onClose={onClose}>
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-700 text-sm mb-4">{error}</div>
       )}
@@ -55,7 +55,7 @@ export function IncomeModal({ src, totalStudents = 0, onSave, onClose }) {
           <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="תרומות שנתיות" />
         </div>
 
-        {!src && totalStudents > 0 && (
+        {!src?.id && totalStudents > 0 && (
           <label className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-gray-50 cursor-pointer select-none">
             <input type="checkbox" checked={perStudent} onChange={e => togglePerStudent(e.target.checked)} className="w-4 h-4 accent-teal-600" />
             <span className="text-sm text-gray-700">חישוב לפי מספר תלמידים ({totalStudents} תלמידים במערכת)</span>
