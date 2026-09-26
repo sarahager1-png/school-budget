@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTANTS, HEBREW_MONTHS, PAYMENT_MONTHS, TUITION_COLLECTION_RATE, CLUBS_MONTHS } from '../data/constants.js';
+import { DEFAULT_CONSTANTS, HEBREW_MONTHS, PAYMENT_MONTHS, TUITION_COLLECTION_RATE, CLUBS_MONTHS, EXTRA_HOURS_IN_TOTALS_FROM_YEAR } from '../data/constants.js';
 import { kindMap } from './categoryKinds.js';
 
 export function getClassType(studentCount, constants = DEFAULT_CONSTANTS) {
@@ -109,7 +109,9 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalClassActualCost = classBreakdowns.reduce((sum, c) => sum + c.budget.actualOperatingCost, 0);
   // שעות בודדות (פיצול/תגבור לכיתה) — הוצאה אמיתית, נספרת בסה"כ (שרה 26.9.2026:
   // "בחיבור כיתות תמיד יש מרכיב של שעות בודדות"). עד אז נספרו רק ברמת הכיתה.
-  const totalExtraHoursCost = classBreakdowns.reduce((sum, c) => sum + c.budget.extraHoursCost, 0);
+  // constants.budgetYear מגיע מ-AppContext (שנת התקציב שנטענה); בלי שנה — נספרות.
+  const countExtraHours = constants.budgetYear == null || Number(constants.budgetYear) >= EXTRA_HOURS_IN_TOTALS_FROM_YEAR;
+  const totalExtraHoursCost = countExtraHours ? classBreakdowns.reduce((sum, c) => sum + c.budget.extraHoursCost, 0) : 0;
   const totalCounselingCost = classBreakdowns.reduce((sum, c) => sum + c.budget.counselingCost, 0);
   const totalClubsExpense = classBreakdowns.reduce((sum, c) => sum + c.budget.clubsExpense, 0);
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);

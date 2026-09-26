@@ -70,6 +70,11 @@ export const TUITION_COLLECTION_RATE = 0.8;
 // תוספת הוצאות חוגים — 2,000 ₪ לכיתה לחודש × 10 חודשי פעילות (שנה"ל, ללא יולי-אוגוסט)
 // = 20,000 ₪ לכיתה לשנה. מרכיב קבוע בתחשיב (כמו ייעוץ)
 export const CLUBS_MONTHLY_EXPENSE_PER_CLASS = 2000;
+
+// שעות בודדות (חיבור כיתות, הפרדת בנים ובנות) נספרות בסה"כ ההוצאות של בית הספר
+// החל משנת התקציב תשפ"ח (שרה 26.9.2026: "כל מה שאנחנו בונים זה לשנה הבאה" —
+// מספרי תשפ"ז שכבר אושרו לא זזים). לשנה בלי מספר ידוע — נספרות.
+export const EXTRA_HOURS_IN_TOTALS_FROM_YEAR = 2027;
 export const CLUBS_MONTHS = 10;
 
 export const DEFAULT_CONSTANTS = {

@@ -358,9 +358,9 @@ export default function BudgetFormPage() {
             <Row
               key={c.id}
               name={`${c.name}${c.gradeLevel ? ` · שכבה ${c.gradeLevel}` : ''}`}
-              basis={`${c.studentCount} תלמידים · ${CLASS_TYPE[c.budget.type].label} · תקן משרד ${nis(c.budget.ministryIncome)}${c.extraHours ? ` · ${c.extraHours} שעות בודדות בחודש` : ''}`}
-              annual={c.budget.actualOperatingCost + c.budget.extraHoursCost}
-              monthly={c.budget.actualMonthlyCost + Number(c.extraHours || 0) * constants.actualHourlyRate}
+              basis={`${c.studentCount} תלמידים · ${CLASS_TYPE[c.budget.type].label} · תקן משרד ${nis(c.budget.ministryIncome)}${c.extraHours ? ` · ${c.extraHours} שעות בודדות בחודש${teaching.extraHours > 0 ? '' : ' (לא נספרות בשנה זו)'}` : ''}`}
+              annual={c.budget.actualOperatingCost + (teaching.extraHours > 0 ? c.budget.extraHoursCost : 0)}
+              monthly={c.budget.actualMonthlyCost + (teaching.extraHours > 0 ? Number(c.extraHours || 0) * constants.actualHourlyRate : 0)}
               onEdit={canEditClasses ? () => open({ kind: 'class', cls: c }) : undefined}
               onDelete={canEditClasses ? () => setConfirm({ msg: `למחוק את ${c.name}?`, run: () => deleteClass(c.id) }) : undefined}
             />

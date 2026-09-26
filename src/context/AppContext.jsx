@@ -129,12 +129,13 @@ export function AppProvider({ children }) {
 
   const loadDataForYear = useCallback(async (schoolId, yearId) => {
     setYearDataInfo(null);
-    const [classesRes, incomeRes, expensesRes, requestsRes, constRes] = await Promise.all([
+    const [classesRes, incomeRes, expensesRes, requestsRes, constRes, yearRes] = await Promise.all([
       supabase.from('classes').select('*').eq('school_id', schoolId).eq('budget_year_id', yearId),
       supabase.from('income_sources').select('*').eq('school_id', schoolId).eq('budget_year_id', yearId),
       supabase.from('expenses').select('*').eq('school_id', schoolId).eq('budget_year_id', yearId),
       supabase.from('expense_requests').select('*').eq('school_id', schoolId).order('created_at', { ascending: false }),
       supabase.from('financial_constants').select('*').eq('budget_year_id', yearId).maybeSingle(),
+      supabase.from('budget_years').select('year').eq('id', yearId).maybeSingle(),
     ]);
 
     setClasses((classesRes.data ?? []).map(c => ({
@@ -157,7 +158,10 @@ export function AppProvider({ children }) {
       paidAt: r.paid_at?.split('T')[0] ?? null,
     })));
     // No constants row yet for this year → fall back to defaults, never to a stale year
-    setConstantsState(constRes.data ? mapConstantsFromDB(constRes.data) : DEFAULT_CONSTANTS);
+    // budgetYear נצמד לקבועים כדי שהמנוע ידע מאיזו שנה לספור שעות בודדות בסה"כ
+    // (EXTRA_HOURS_IN_TOTALS_FROM_YEAR). mapConstantsToDB לא כותב אותו למסד.
+    const budgetYear = yearRes?.data?.year ?? null;
+    setConstantsState({ ...(constRes.data ? mapConstantsFromDB(constRes.data) : DEFAULT_CONSTANTS), budgetYear });
     setYearDataInfo({ yearId, hasConstantsRow: !!constRes.data });
   }, []);
 
