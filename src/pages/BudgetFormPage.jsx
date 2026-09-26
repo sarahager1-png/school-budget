@@ -267,12 +267,13 @@ export default function BudgetFormPage() {
   // ── עלות הוראה ──
   const teaching = !isSimpleMode ? {
     classCost: totals.totalClassActualCost,
+    extraHours: totals.totalExtraHoursCost,
     counseling: totals.totalCounselingCost,
     clubs: totals.totalClubsExpense,
     profDev: totals.totalProfDev,
   } : null;
-  // תואם בדיוק ל-calculateSchoolTotals: הוראה + ייעוץ + חוגים + פיתוח מקצועי לכיתה + שורת שכר מנהלת
-  const teachingTotal = teaching ? teaching.classCost + teaching.counseling + teaching.clubs + teaching.profDev + principalAnnual : 0;
+  // תואם בדיוק ל-calculateSchoolTotals: הוראה + שעות בודדות + ייעוץ + חוגים + פיתוח מקצועי לכיתה + שורת שכר מנהלת
+  const teachingTotal = teaching ? teaching.classCost + teaching.extraHours + teaching.counseling + teaching.clubs + teaching.profDev + principalAnnual : 0;
 
   const mode = ofekMode(constants);
   const rateLabel = mode === 'mixed'
@@ -357,9 +358,9 @@ export default function BudgetFormPage() {
             <Row
               key={c.id}
               name={`${c.name}${c.gradeLevel ? ` · שכבה ${c.gradeLevel}` : ''}`}
-              basis={`${c.studentCount} תלמידים · ${CLASS_TYPE[c.budget.type].label} · תקן משרד ${nis(c.budget.ministryIncome)}${c.extraHours ? ` · ${c.extraHours} שעות בודדות (בפירוט הכיתה)` : ''}`}
-              annual={c.budget.actualOperatingCost}
-              monthly={c.budget.actualMonthlyCost}
+              basis={`${c.studentCount} תלמידים · ${CLASS_TYPE[c.budget.type].label} · תקן משרד ${nis(c.budget.ministryIncome)}${c.extraHours ? ` · ${c.extraHours} שעות בודדות בחודש` : ''}`}
+              annual={c.budget.actualOperatingCost + c.budget.extraHoursCost}
+              monthly={c.budget.actualMonthlyCost + Number(c.extraHours || 0) * constants.actualHourlyRate}
               onEdit={canEditClasses ? () => open({ kind: 'class', cls: c }) : undefined}
               onDelete={canEditClasses ? () => setConfirm({ msg: `למחוק את ${c.name}?`, run: () => deleteClass(c.id) }) : undefined}
             />

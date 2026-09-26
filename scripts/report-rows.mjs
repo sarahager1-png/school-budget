@@ -41,6 +41,7 @@ export function rowsExpense(d, t) {
 
   if (d.mode !== 'simple') {
     rows.push({ label: `עלות הוראה בפועל (${d.classes.length} כיתות · ${c.actualWeeklyHours} ש׳ בחודש · ${nis(c.actualHourlyRate)} לשעה · ${PAYMENT_MONTHS} חודשים)`, value: t.totalClassActualCost });
+    if (t.totalExtraHoursCost > 0) rows.push({ label: 'שעות בודדות (חיבור כיתות, הפרדת בנים ובנות)', value: t.totalExtraHoursCost });
     rows.push({ label: `ייעוץ (${d.classes.length} כיתות · ${c.counselingHoursPerClass} ש׳ בחודש · ${nis(c.actualHourlyRate)} לשעה)`, value: t.totalCounselingCost });
     rows.push({ label: `הוצאה לתלמיד (${t.totalStudents} × ${nis(c.expensePerStudent)})`, value: t.totalStudentExpenses });
     if (t.totalProfDev > 0) {

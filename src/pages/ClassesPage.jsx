@@ -56,7 +56,7 @@ export function ClassModal({ cls, onSave, onClose }) {
           <div>
             <label className="label">שעות בודדות בשבוע</label>
             <input className="input" type="number" inputMode="numeric" min="0" max="100" value={form.extraHours} onChange={e => set('extraHours', e.target.value)} placeholder="0" />
-            <p className="text-xs text-gray-400 mt-1">שעות שבועיות · מתווספות לעלות בתקציב הכיתה (התעריף הוא עלות חודשית של שעה שבועית)</p>
+            <p className="text-xs text-gray-400 mt-1">למשל חיבור כיתות או הפרדת בנים ובנות לפי החלטה · מתווספות לעלות הכיתה ולסה"כ ההוצאות (התעריף הוא עלות חודשית של שעה שבועית)</p>
           </div>
         </div>
         <div>

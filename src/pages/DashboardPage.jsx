@@ -486,6 +486,7 @@ function FullDashboard() {
   const principalAnnual = principalLine ? annualAmount(principalLine) : 0;
   const expenseBreakdown = [
     { label: 'עלות הוראה לפי תקן', value: totals.totalClassActualCost },
+    ...(totals.totalExtraHoursCost > 0 ? [{ label: 'שעות בודדות (חיבור כיתות, הפרדת בנים ובנות)', value: totals.totalExtraHoursCost }] : []),
     { label: `ייעוץ (${constants.counselingHoursPerClass} ש׳ לכיתה)`, value: totals.totalCounselingCost },
     { label: 'הוצאות תלמיד', value: totals.totalStudentExpenses },
     { label: 'פיתוח מקצועי', value: totals.totalProfDev },

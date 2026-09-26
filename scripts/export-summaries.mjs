@@ -198,6 +198,7 @@ function renderHtml({ school, yearLabel, classes, totals, incomeSources, catRows
   <h2>הוצאות — על מה זה יוצא</h2>
   ${isSimpleMode ? '' : `
   ${row(`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ בחודש × ${formatCurrency(constants.actualHourlyRate)})`, formatCurrency(totals.totalClassActualCost))}
+  ${totals.totalExtraHoursCost > 0 ? row('שעות בודדות (חיבור כיתות, הפרדת בנים ובנות)', formatCurrency(totals.totalExtraHoursCost)) : ''}
   ${row(`ייעוץ (${classes.length} כיתות × 2 ש׳ בחודש)`, formatCurrency(totals.totalCounselingCost))}
   ${row(`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, formatCurrency(totals.totalStudentExpenses))}
   ${totals.totalProfDev > 0 ? row('פיתוח מקצועי', formatCurrency(totals.totalProfDev)) : ''}

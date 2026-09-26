@@ -330,6 +330,7 @@ export default function SummaryPage() {
       ...(!isSimpleMode
         ? [
             { label: `שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`, value: Math.round(totals.totalClassActualCost) },
+            ...(totals.totalExtraHoursCost > 0 ? [{ label: 'שעות בודדות (חיבור כיתות, הפרדת בנים ובנות)', value: Math.round(totals.totalExtraHoursCost) }] : []),
             { label: `ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`, value: Math.round(totals.totalCounselingCost) },
             { label: `הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`, value: Math.round(totals.totalStudentExpenses) },
             ...(totals.totalProfDev > 0 ? [{ label: 'פיתוח מקצועי', value: Math.round(totals.totalProfDev) }] : []),
@@ -488,6 +489,7 @@ export default function SummaryPage() {
           {!isSimpleMode && (
             <>
               <Row label={`שעות הוראה — עלות הוראה (${classes.length} כיתות × ${constants.actualWeeklyHours} ש׳ שבועיות × ${formatCurrency(constants.actualHourlyRate)})`} value={formatCurrency(totals.totalClassActualCost)} />
+              {totals.totalExtraHoursCost > 0 && <Row label="שעות בודדות (חיבור כיתות, הפרדת בנים ובנות)" value={formatCurrency(totals.totalExtraHoursCost)} />}
               <Row label={`ייעוץ (${classes.length} כיתות × ${constants.counselingHoursPerClass} ש׳ שבועיות)`} value={formatCurrency(totals.totalCounselingCost)} />
               <Row label={`הוצאה לתלמיד (${totals.totalStudents} × ${formatCurrency(constants.expensePerStudent)})`} value={formatCurrency(totals.totalStudentExpenses)} />
               {totals.totalProfDev > 0 && <Row label="פיתוח מקצועי" value={formatCurrency(totals.totalProfDev)} />}

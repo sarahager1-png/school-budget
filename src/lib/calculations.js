@@ -107,6 +107,9 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const totalIncome = totalMinistryIncome + totalMinistryGrantIncome + totalStudentIncome + totalTalanIncome + additionalIncome;
 
   const totalClassActualCost = classBreakdowns.reduce((sum, c) => sum + c.budget.actualOperatingCost, 0);
+  // שעות בודדות (פיצול/תגבור לכיתה) — הוצאה אמיתית, נספרת בסה"כ (שרה 26.9.2026:
+  // "בחיבור כיתות תמיד יש מרכיב של שעות בודדות"). עד אז נספרו רק ברמת הכיתה.
+  const totalExtraHoursCost = classBreakdowns.reduce((sum, c) => sum + c.budget.extraHoursCost, 0);
   const totalCounselingCost = classBreakdowns.reduce((sum, c) => sum + c.budget.counselingCost, 0);
   const totalClubsExpense = classBreakdowns.reduce((sum, c) => sum + c.budget.clubsExpense, 0);
   const totalStudentExpenses = classBreakdowns.reduce((sum, c) => sum + c.budget.studentExpenses, 0);
@@ -127,7 +130,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
   const miscExpenses = sumKind('other');
 
   const otherExpenses = salaryExpenses + buildingExpenses + operationExpenses + summerExpenses + miscExpenses;
-  const totalExpenses = totalClassActualCost + totalCounselingCost + totalClubsExpense + totalStudentExpenses + totalProfDev + otherExpenses;
+  const totalExpenses = totalClassActualCost + totalExtraHoursCost + totalCounselingCost + totalClubsExpense + totalStudentExpenses + totalProfDev + otherExpenses;
   const balance = totalIncome - totalExpenses;
   const ministryGap = totalClassActualCost - totalMinistryIncome;
 
@@ -141,6 +144,7 @@ export function calculateSchoolTotals(classes, incomeSources, expenses, constant
     additionalIncome,
     totalIncome,
     totalClassActualCost,
+    totalExtraHoursCost,
     totalCounselingCost,
     totalClubsExpense,
     totalStudentExpenses,
