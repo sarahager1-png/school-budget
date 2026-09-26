@@ -69,10 +69,12 @@
     table.stack td::before { content: attr(data-l); display: block; font-size: 12px; font-weight: 700; color: #3D2570; }
     table.stack td.who { padding-top: 12px; }
   }
+  span[dir="ltr"] { white-space: nowrap; unicode-bidi: isolate; }
   footer { text-align: center; color: #94A3B8; font-size: 13px; margin-top: 40px; }
   @media print {
     body { background: #fff; }
-    .print-btn, .topbar img { display: none; }
+    .print-btn { display: none; }
+    .topbar img { display: block; height: 30px; }
     header.hero { border-radius: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .step, .card, table, .rule { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     h2 { break-after: avoid; }
